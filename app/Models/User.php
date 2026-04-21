@@ -7,6 +7,8 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -16,6 +18,53 @@ class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
+
+    public function roles(): BelongsToMany
+    {
+        return $this->belongsToMany(Role::class)->withTimestamps();
+    }
+
+    public function departments(): BelongsToMany
+    {
+        return $this->belongsToMany(Department::class)
+            ->withPivot('is_manager')
+            ->withTimestamps();
+    }
+
+    public function requestedTickets(): HasMany
+    {
+        return $this->hasMany(Ticket::class, 'requester_id');
+    }
+
+    public function assignedTickets(): HasMany
+    {
+        return $this->hasMany(Ticket::class, 'assignee_id');
+    }
+
+    public function ticketComments(): HasMany
+    {
+        return $this->hasMany(TicketComment::class);
+    }
+
+    public function ticketAttachments(): HasMany
+    {
+        return $this->hasMany(TicketAttachment::class);
+    }
+
+    public function watchedTickets(): BelongsToMany
+    {
+        return $this->belongsToMany(Ticket::class, 'ticket_watchers')->withTimestamps();
+    }
+
+    public function ticketHistory(): HasMany
+    {
+        return $this->hasMany(TicketHistory::class);
+    }
+
+    public function announcements(): HasMany
+    {
+        return $this->hasMany(Announcement::class, 'author_id');
+    }
 
     /**
      * Get the attributes that should be cast.
