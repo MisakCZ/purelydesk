@@ -12,6 +12,67 @@
             background: #fff;
         }
 
+        .announcement-stack {
+            display: grid;
+            gap: 0.85rem;
+            margin-bottom: 1rem;
+        }
+
+        .announcement-card {
+            padding: 1rem 1.1rem;
+            border: 1px solid #d9e0e7;
+            border-left-width: 0.45rem;
+            border-radius: 1rem;
+            background: #fff;
+        }
+
+        .announcement-card[data-type="info"] {
+            border-left-color: #2563eb;
+            background: #f8fbff;
+        }
+
+        .announcement-card[data-type="warning"] {
+            border-left-color: #d97706;
+            background: #fffaf0;
+        }
+
+        .announcement-card[data-type="outage"] {
+            border-left-color: #dc2626;
+            background: #fff6f6;
+        }
+
+        .announcement-card[data-type="maintenance"] {
+            border-left-color: #7c3aed;
+            background: #f9f7ff;
+        }
+
+        .announcement-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 0.65rem;
+        }
+
+        .announcement-title {
+            margin: 0;
+            font-size: 1.02rem;
+            color: #13202b;
+        }
+
+        .announcement-body {
+            margin: 0;
+            color: #334155;
+            line-height: 1.6;
+            white-space: pre-line;
+        }
+
+        .announcement-meta {
+            margin-top: 0.75rem;
+            color: #5b6b79;
+            font-size: 0.9rem;
+        }
+
         .filter-form {
             display: grid;
             gap: 1rem;
@@ -260,6 +321,10 @@
             .pagination-wrap {
                 align-items: stretch;
             }
+
+            .announcement-head {
+                flex-direction: column;
+            }
         }
     </style>
 @endpush
@@ -279,6 +344,39 @@
     <div class="page-body">
         @if (session('status'))
             <div class="alert" role="status">{{ session('status') }}</div>
+        @endif
+
+        @if ($activeAnnouncements->isNotEmpty())
+            <section class="announcement-stack" aria-label="Provozní oznámení">
+                @foreach ($activeAnnouncements as $announcement)
+                    <article class="announcement-card" data-type="{{ $announcement->type }}">
+                        <div class="announcement-head">
+                            <div>
+                                <p class="announcement-title">{{ $announcement->title }}</p>
+                            </div>
+
+                            <span class="badge">
+                                <span class="badge-dot"></span>
+                                {{ \App\Models\Announcement::typeOptions()[$announcement->type] ?? ucfirst($announcement->type) }}
+                            </span>
+                        </div>
+
+                        <p class="announcement-body">{{ $announcement->body }}</p>
+
+                        @if ($announcement->starts_at || $announcement->ends_at)
+                            <div class="announcement-meta">
+                                Aktivní
+                                @if ($announcement->starts_at)
+                                    od {{ $announcement->starts_at->format('d.m.Y H:i') }}
+                                @endif
+                                @if ($announcement->ends_at)
+                                    do {{ $announcement->ends_at->format('d.m.Y H:i') }}
+                                @endif
+                            </div>
+                        @endif
+                    </article>
+                @endforeach
+            </section>
         @endif
 
         <section class="filter-card" aria-label="Filtrování ticketů">

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\UpdateTicketAssigneeRequest;
 use App\Http\Requests\UpdateTicketStatusRequest;
+use App\Models\Announcement;
 use App\Models\Ticket;
 use App\Models\TicketCategory;
 use App\Models\TicketPriority;
@@ -54,7 +55,19 @@ class TicketController extends Controller
             ->paginate(15)
             ->withQueryString();
 
+        $activeAnnouncements = Announcement::query()
+            ->active()
+            ->publicVisible()
+            ->orderByDesc('starts_at')
+            ->orderByDesc('created_at')
+            ->select(['id', 'title', 'body', 'starts_at', 'ends_at']);
+
+        if (Announcement::hasTypeColumn()) {
+            $activeAnnouncements->addSelect('type');
+        }
+
         return view('tickets.index', [
+            'activeAnnouncements' => $activeAnnouncements->get(),
             'tickets' => $tickets,
             'filters' => $filters,
             'statuses' => TicketStatus::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name']),

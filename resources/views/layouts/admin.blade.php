@@ -217,6 +217,9 @@
                     <a class="nav-link {{ request()->routeIs('tickets.index') ? 'active' : '' }}" href="{{ route('tickets.index') }}">
                         Tickety
                     </a>
+                    <a class="nav-link {{ request()->routeIs('announcements.*') ? 'active' : '' }}" href="{{ route('announcements.index') }}">
+                        Oznámení
+                    </a>
                 </nav>
             </header>
 
