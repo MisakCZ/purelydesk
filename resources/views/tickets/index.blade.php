@@ -97,6 +97,15 @@
             line-height: 1.6;
         }
 
+        .alert {
+            margin-bottom: 1rem;
+            padding: 0.9rem 1rem;
+            border-radius: 0.9rem;
+            border: 1px solid #b7e4dd;
+            background: #ecfdf8;
+            color: #0f513f;
+        }
+
         @media (max-width: 720px) {
             .empty-state {
                 padding: 2.5rem 1rem;
@@ -107,11 +116,21 @@
 
 @section('content')
     <div class="page-head">
-        <h2>Seznam ticketů</h2>
-        <p>Přehled aktuálních helpdesk požadavků v systému.</p>
+        <div class="page-head-bar">
+            <div>
+                <h2>Seznam ticketů</h2>
+                <p>Přehled aktuálních helpdesk požadavků v systému.</p>
+            </div>
+
+            <a class="button button-primary" href="{{ route('tickets.create') }}">Nový ticket</a>
+        </div>
     </div>
 
     <div class="page-body">
+        @if (session('status'))
+            <div class="alert" role="status">{{ session('status') }}</div>
+        @endif
+
         @if ($tickets->isEmpty())
             <section class="empty-state" aria-label="Prázdný seznam ticketů">
                 <h3>Zatím nejsou evidované žádné tickety</h3>

@@ -120,6 +120,13 @@
                     var(--panel);
             }
 
+            .page-head-bar {
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 1rem;
+            }
+
             .page-head h2 {
                 margin: 0;
                 font-size: 1.35rem;
@@ -132,6 +139,39 @@
 
             .page-body {
                 padding: 1.5rem;
+            }
+
+            .button {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 2.75rem;
+                padding: 0.65rem 1rem;
+                border: 0;
+                border-radius: 0.9rem;
+                text-decoration: none;
+                font-weight: 600;
+                cursor: pointer;
+                transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+            }
+
+            .button-primary {
+                background: var(--accent);
+                color: #fff;
+            }
+
+            .button-primary:hover {
+                background: #0b625b;
+            }
+
+            .button-secondary {
+                background: #f8fafc;
+                color: var(--text);
+                border: 1px solid var(--line);
+            }
+
+            .button-secondary:hover {
+                background: #eef2f6;
             }
 
             @media (max-width: 720px) {
@@ -148,6 +188,11 @@
                 .page-head,
                 .page-body {
                     padding: 1rem;
+                }
+
+                .page-head-bar {
+                    flex-direction: column;
+                    align-items: stretch;
                 }
             }
         </style>
