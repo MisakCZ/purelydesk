@@ -66,7 +66,7 @@
                     </option>
                 @endforeach
             </select>
-            <div class="hint">Restricted ticket uvidí jen requester, assignee, sledující a administrativní režim aplikace.</div>
+            <div class="hint">Restricted ticket uvidí jen requester, assignee a administrativní režim aplikace.</div>
             @if ($viewErrors->has('visibility'))
                 <div class="field-error">{{ $viewErrors->first('visibility') }}</div>
             @endif

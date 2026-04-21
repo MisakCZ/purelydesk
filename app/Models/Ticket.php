@@ -87,8 +87,7 @@ class Ticket extends Model
                     ->where(function (Builder $query) use ($user): void {
                         $query
                             ->where('requester_id', $user->id)
-                            ->orWhere('assignee_id', $user->id)
-                            ->orWhereHas('watchers', fn (Builder $query) => $query->whereKey($user->id));
+                            ->orWhere('assignee_id', $user->id);
                     });
             });
         });
@@ -112,11 +111,7 @@ class Ticket extends Model
             return true;
         }
 
-        if ($this->relationLoaded('watchers')) {
-            return $this->watchers->contains('id', $user->id);
-        }
-
-        return $this->watchers()->whereKey($user->id)->exists();
+        return false;
     }
 
     public function department(): BelongsTo

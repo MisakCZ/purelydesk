@@ -113,6 +113,7 @@ class TicketController extends Controller
         $originalVersionSnapshot = $this->extractOriginalVersionSnapshot($originalSnapshotEntry?->new_value ?? []);
         $currentOriginalVersionSnapshot = $this->extractOriginalVersionSnapshot($this->captureTicketSnapshot($ticket));
         $watcherUser = $this->currentHelpdeskUser();
+        $closedStatus = $this->findStatusBySlugOrCode('closed');
 
         return view('tickets.show', [
             'ticket' => $ticket,
@@ -125,6 +126,9 @@ class TicketController extends Controller
             'watcherActionEnabled' => $watcherUser instanceof User,
             'isWatchingTicket' => $watcherUser instanceof User
                 ? $ticket->watchers->contains('id', $watcherUser->id)
+                : false,
+            'isClosedTicket' => $closedStatus instanceof TicketStatus
+                ? (int) $ticket->ticket_status_id === (int) $closedStatus->id
                 : false,
             'originalSnapshot' => $originalVersionSnapshot,
             'originalSnapshotSource' => $originalSnapshotEntry?->meta['source'] ?? null,
@@ -140,6 +144,36 @@ class TicketController extends Controller
         return $this->applyTicketUpdateWithHistory($ticket, [
             'ticket_status_id' => $request->integer('status_id'),
         ], 'Stav ticketu byl úspěšně změněn.', 'status_update');
+    }
+
+    public function close(Ticket $ticket): RedirectResponse
+    {
+        $this->ensureTicketCanBeViewed($ticket);
+
+        $closedStatus = $this->resolveWorkflowStatus(
+            ['closed'],
+            'Stav "closed" v systému neexistuje. Ticket zatím nelze uzavřít.',
+        );
+
+        return $this->applyTicketUpdateWithHistory($ticket, [
+            'ticket_status_id' => $closedStatus->id,
+            'closed_at' => now(),
+        ], 'Ticket byl úspěšně uzavřen.', 'ticket_close');
+    }
+
+    public function reopen(Ticket $ticket): RedirectResponse
+    {
+        $this->ensureTicketCanBeViewed($ticket);
+
+        $reopenedStatus = $this->resolveWorkflowStatus(
+            ['in_progress', 'new'],
+            'V systému chybí stav "in_progress" i náhradní stav "new". Ticket zatím nelze znovu otevřít.',
+        );
+
+        return $this->applyTicketUpdateWithHistory($ticket, [
+            'ticket_status_id' => $reopenedStatus->id,
+            'closed_at' => null,
+        ], 'Ticket byl úspěšně znovu otevřen.', 'ticket_reopen');
     }
 
     public function updateAssignee(UpdateTicketAssigneeRequest $request, Ticket $ticket): RedirectResponse
@@ -262,15 +296,7 @@ class TicketController extends Controller
 
     private function resolveInitialStatus(): TicketStatus
     {
-        $status = TicketStatus::query()
-            ->where(function ($query): void {
-                $query->where('slug', 'new');
-
-                if (Schema::hasColumn('ticket_statuses', 'code')) {
-                    $query->orWhere('code', 'new');
-                }
-            })
-            ->first();
+        $status = $this->findStatusBySlugOrCode('new');
 
         if ($status instanceof TicketStatus) {
             return $status;
@@ -279,6 +305,34 @@ class TicketController extends Controller
         throw ValidationException::withMessages([
             'status' => 'Nelze vytvořit ticket, protože v systému chybí výchozí stav "new". Kontaktujte administrátora.',
         ]);
+    }
+
+    private function findStatusBySlugOrCode(string $identifier): ?TicketStatus
+    {
+        return TicketStatus::query()
+            ->where(function ($query) use ($identifier): void {
+                $query->where('slug', $identifier);
+
+                if (Schema::hasColumn('ticket_statuses', 'code')) {
+                    $query->orWhere('code', $identifier);
+                }
+            })
+            ->first();
+    }
+
+    private function resolveWorkflowStatus(array $identifiers, string $errorMessage): TicketStatus
+    {
+        foreach ($identifiers as $identifier) {
+            $status = $this->findStatusBySlugOrCode($identifier);
+
+            if ($status instanceof TicketStatus) {
+                return $status;
+            }
+        }
+
+        throw ValidationException::withMessages([
+            'workflow' => $errorMessage,
+        ])->errorBag('ticketWorkflow');
     }
 
     private function generateTicketNumber(Ticket $ticket): string
@@ -575,6 +629,7 @@ class TicketController extends Controller
                     'pinned_at' => $ticket->pinned_at?->toIso8601String(),
                 ]
                 : null,
+            'closed_at' => $ticket->closed_at?->toIso8601String(),
             'created_at' => $ticket->created_at?->toIso8601String(),
         ];
     }
