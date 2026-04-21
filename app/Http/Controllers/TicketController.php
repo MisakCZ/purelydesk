@@ -17,8 +17,16 @@ use Illuminate\Validation\ValidationException;
 
 class TicketController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
+        $filters = [
+            'search' => trim((string) $request->query('search', '')),
+            'status' => (string) $request->query('status', ''),
+            'priority' => (string) $request->query('priority', ''),
+            'category' => (string) $request->query('category', ''),
+            'assignee' => (string) $request->query('assignee', ''),
+        ];
+
         $tickets = Ticket::query()
             ->with([
                 'status:id,name,color',
@@ -27,11 +35,33 @@ class TicketController extends Controller
                 'assignee:id,name',
             ])
             ->withCount('publicComments')
+            ->when($filters['search'] !== '', function ($query) use ($filters): void {
+                $query->where('subject', 'like', '%'.addcslashes($filters['search'], '\\%_').'%');
+            })
+            ->when($filters['status'] !== '', function ($query) use ($filters): void {
+                $query->where('ticket_status_id', (int) $filters['status']);
+            })
+            ->when($filters['priority'] !== '', function ($query) use ($filters): void {
+                $query->where('ticket_priority_id', (int) $filters['priority']);
+            })
+            ->when($filters['category'] !== '', function ($query) use ($filters): void {
+                $query->where('ticket_category_id', (int) $filters['category']);
+            })
+            ->when($filters['assignee'] !== '', function ($query) use ($filters): void {
+                $query->where('assignee_id', (int) $filters['assignee']);
+            })
             ->orderByDesc('updated_at')
-            ->get();
+            ->paginate(15)
+            ->withQueryString();
 
         return view('tickets.index', [
             'tickets' => $tickets,
+            'filters' => $filters,
+            'statuses' => TicketStatus::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name']),
+            'priorities' => TicketPriority::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name']),
+            'categories' => TicketCategory::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'assignees' => User::query()->orderBy('name')->get(['id', 'name']),
+            'hasActiveFilters' => collect($filters)->contains(fn ($value) => $value !== ''),
         ]);
     }
 
