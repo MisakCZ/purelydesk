@@ -10,6 +10,11 @@ class TicketHistory extends Model
 {
     use HasFactory;
 
+    public const EVENT_CREATED = 'created';
+    public const EVENT_UPDATED = 'updated';
+    public const EVENT_ORIGINAL_SNAPSHOT_BACKFILLED = 'original_snapshot_backfilled';
+    public const FIELD_SNAPSHOT = 'snapshot';
+
     public const UPDATED_AT = null;
 
     protected $table = 'ticket_history';

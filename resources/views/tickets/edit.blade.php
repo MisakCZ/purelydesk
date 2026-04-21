@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Nový ticket')
+@section('title', $ticket->ticket_number ? 'Upravit '.$ticket->ticket_number : 'Upravit ticket')
 
 @php
     $viewErrors = $errors ?? new \Illuminate\Support\ViewErrorBag();
@@ -122,17 +122,18 @@
     <div class="page-head">
         <div class="page-head-bar">
             <div>
-                <h2>Nový ticket</h2>
-                <p>Vytvoření prvního helpdesk požadavku přes interní administraci.</p>
+                <h2>Upravit ticket</h2>
+                <p>Základní editace ticketu včetně připnutí.</p>
             </div>
 
-            <a class="button button-secondary" href="{{ route('tickets.index') }}">Zpět na seznam</a>
+            <a class="button button-secondary" href="{{ route('tickets.show', $ticket) }}">Zpět na detail</a>
         </div>
     </div>
 
     <div class="page-body">
-        <form class="form-layout" method="post" action="{{ route('tickets.store') }}">
+        <form class="form-layout" method="post" action="{{ route('tickets.update', $ticket) }}">
             @csrf
+            @method('patch')
 
             @if ($viewErrors->any())
                 <ul class="error-list">
@@ -142,11 +143,11 @@
                 </ul>
             @endif
 
-            @include('tickets._form', ['ticket' => null])
+            @include('tickets._form', ['ticket' => $ticket])
 
             <div class="actions">
-                <button class="button button-primary" type="submit">Uložit ticket</button>
-                <a class="button button-secondary" href="{{ route('tickets.index') }}">Zrušit</a>
+                <button class="button button-primary" type="submit">Uložit změny</button>
+                <a class="button button-secondary" href="{{ route('tickets.show', $ticket) }}">Zrušit</a>
             </div>
         </form>
     </div>

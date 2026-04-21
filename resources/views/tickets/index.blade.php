@@ -73,6 +73,90 @@
             font-size: 0.9rem;
         }
 
+        .pinned-section {
+            margin-bottom: 1rem;
+            padding: 1rem;
+            border: 1px solid #ead9b5;
+            border-radius: 1rem;
+            background: linear-gradient(180deg, #fffdfa 0%, #fff7e8 100%);
+        }
+
+        .pinned-section-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .pinned-section-head h3 {
+            margin: 0;
+            font-size: 1.05rem;
+            color: #13202b;
+        }
+
+        .pinned-section-head p {
+            margin: 0.35rem 0 0;
+            color: #6b5a2e;
+        }
+
+        .pinned-grid {
+            display: grid;
+            gap: 0.9rem;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        }
+
+        .pinned-ticket {
+            padding: 1rem 1.05rem;
+            border: 1px solid #ead9b5;
+            border-radius: 1rem;
+            background: rgba(255, 255, 255, 0.88);
+            box-shadow: 0 10px 24px rgba(148, 123, 55, 0.08);
+        }
+
+        .pinned-ticket-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.75rem;
+        }
+
+        .pinned-ticket-number {
+            color: #8a5a00;
+            font-size: 0.84rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .pinned-ticket-subject {
+            margin: 0.35rem 0 0;
+            font-size: 1rem;
+            line-height: 1.45;
+            color: #13202b;
+        }
+
+        .pinned-ticket-meta {
+            display: grid;
+            gap: 0.45rem;
+            margin-top: 0.9rem;
+            color: #5b6b79;
+            font-size: 0.92rem;
+        }
+
+        .pinned-ticket-badges {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 0.9rem;
+        }
+
+        .badge-pinned {
+            background: #fce7b2;
+            color: #8a5a00;
+        }
+
         .filter-form {
             display: grid;
             gap: 1rem;
@@ -314,6 +398,10 @@
                 grid-column: auto;
             }
 
+            .pinned-section-head {
+                flex-direction: column;
+            }
+
             .empty-state {
                 padding: 2.5rem 1rem;
             }
@@ -442,6 +530,56 @@
             </form>
         </section>
 
+        @if ($pinningEnabled && $pinnedTickets->isNotEmpty())
+            <section class="pinned-section" aria-label="Připnuté tickety">
+                <div class="pinned-section-head">
+                    <div>
+                        <h3>Připnuté tickety</h3>
+                        <p>Rychlý přehled ticketů označených pro zvýšenou pozornost.</p>
+                    </div>
+
+                    <span class="badge badge-pinned">
+                        <span class="badge-dot"></span>
+                        {{ $pinnedTickets->count() }}× připnuto
+                    </span>
+                </div>
+
+                <div class="pinned-grid">
+                    @foreach ($pinnedTickets as $ticket)
+                        <article class="pinned-ticket">
+                            <div class="pinned-ticket-head">
+                                <div>
+                                    <div class="pinned-ticket-number">{{ $ticket->ticket_number ?? 'Bez čísla' }}</div>
+                                    <h3 class="pinned-ticket-subject">
+                                        <a class="ticket-link" href="{{ route('tickets.show', $ticket) }}">{{ $ticket->subject }}</a>
+                                    </h3>
+                                </div>
+
+                                <span class="badge badge-pinned">Připnuto</span>
+                            </div>
+
+                            <div class="pinned-ticket-badges">
+                                <span class="badge">
+                                    <span class="badge-dot"></span>
+                                    {{ $ticket->status?->name ?? '—' }}
+                                </span>
+                                <span class="badge">
+                                    <span class="badge-dot"></span>
+                                    {{ $ticket->priority?->name ?? '—' }}
+                                </span>
+                            </div>
+
+                            <div class="pinned-ticket-meta">
+                                <div>Requester: {{ $ticket->requester?->name ?? '—' }}</div>
+                                <div>Assignee: {{ $ticket->assignee?->name ?? '—' }}</div>
+                                <div>Updated: {{ $ticket->updated_at?->format('d.m.Y H:i') ?? '—' }}</div>
+                            </div>
+                        </article>
+                    @endforeach
+                </div>
+            </section>
+        @endif
+
         @if ($tickets->isEmpty())
             <section class="empty-state" aria-label="Prázdný seznam ticketů">
                 @if ($hasActiveFilters)
@@ -481,7 +619,12 @@
                                             {{ $ticket->subject }}
                                         </a>
                                     </strong>
-                                    <span>{{ $ticket->visibility === 'restricted' ? 'Restricted' : 'Public' }}</span>
+                                    <span>
+                                        {{ $ticket->visibility === 'restricted' ? 'Restricted' : 'Public' }}
+                                        @if ($pinningEnabled && $ticket->is_pinned)
+                                            · Připnuto
+                                        @endif
+                                    </span>
                                 </td>
                                 <td>
                                     <span class="badge">

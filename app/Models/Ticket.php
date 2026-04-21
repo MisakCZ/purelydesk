@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Schema;
 
 class Ticket extends Model
 {
@@ -26,6 +27,8 @@ class Ticket extends Model
         'due_at',
         'last_activity_at',
         'closed_at',
+        'is_pinned',
+        'pinned_at',
     ];
 
     protected function casts(): array
@@ -34,7 +37,21 @@ class Ticket extends Model
             'due_at' => 'datetime',
             'last_activity_at' => 'datetime',
             'closed_at' => 'datetime',
+            'is_pinned' => 'boolean',
+            'pinned_at' => 'datetime',
         ];
+    }
+
+    public static function supportsPinning(): bool
+    {
+        static $supportsPinning;
+
+        if ($supportsPinning === null) {
+            $supportsPinning = Schema::hasColumn('tickets', 'is_pinned')
+                && Schema::hasColumn('tickets', 'pinned_at');
+        }
+
+        return $supportsPinning;
     }
 
     public function department(): BelongsTo

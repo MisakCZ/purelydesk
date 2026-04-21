@@ -7,6 +7,7 @@
     $commentErrors = $errorBags->getBag('comment');
     $internalNoteErrors = $errorBags->getBag('internalNote');
     $assigneeErrors = $errorBags->getBag('ticketAssignee');
+    $pinErrors = $errorBags->getBag('ticketPin');
     $statusErrors = $errorBags->getBag('ticketStatus');
 @endphp
 
@@ -15,6 +16,13 @@
         .ticket-detail {
             display: grid;
             gap: 1.5rem;
+        }
+
+        .page-head-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
         }
 
         .ticket-hero {
@@ -74,6 +82,18 @@
             text-transform: uppercase;
         }
 
+        .detail-label-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 0.4rem;
+        }
+
+        .detail-label-row .detail-label {
+            margin-bottom: 0;
+        }
+
         .detail-value {
             color: #13202b;
             font-size: 1rem;
@@ -82,6 +102,84 @@
 
         .detail-empty {
             color: #64748b;
+        }
+
+        .detail-flag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.45rem 0.7rem;
+            border-radius: 999px;
+            background: #fff4d6;
+            color: #8a5a00;
+            font-size: 0.88rem;
+            font-weight: 700;
+        }
+
+        .original-version-panel {
+            display: grid;
+            gap: 1rem;
+            padding: 1.25rem;
+            border: 1px solid #ead9b5;
+            border-radius: 1rem;
+            background: linear-gradient(180deg, #fffdfa 0%, #fff7e8 100%);
+        }
+
+        .original-version-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .original-version-copy h3 {
+            margin: 0;
+            font-size: 1.05rem;
+            color: #13202b;
+        }
+
+        .original-version-copy p {
+            margin: 0.35rem 0 0;
+            color: #6b5a2e;
+            line-height: 1.6;
+        }
+
+        .original-version-panel .detail-card {
+            border-color: #ead9b5;
+            background: rgba(255, 255, 255, 0.88);
+        }
+
+        .original-version-note {
+            margin: 0;
+            padding: 0.8rem 0.95rem;
+            border: 1px solid #ead9b5;
+            border-radius: 0.9rem;
+            background: rgba(255, 252, 244, 0.95);
+            color: #6b5a2e;
+            line-height: 1.6;
+        }
+
+        .original-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            min-height: 2.1rem;
+            padding: 0.4rem 0.75rem;
+            border: 1px solid #ead9b5;
+            border-radius: 999px;
+            background: #fff8e6;
+            color: #8a5a00;
+            font-size: 0.82rem;
+            font-weight: 700;
+        }
+
+        .original-indicator:hover {
+            background: #fff1c9;
+        }
+
+        .original-indicator svg {
+            width: 0.95rem;
+            height: 0.95rem;
         }
 
         .badge {
@@ -260,6 +358,13 @@
             background: #fff;
         }
 
+        .comment-form-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
         .comment-form-head h3 {
             margin: 0;
             font-size: 1.1rem;
@@ -366,19 +471,28 @@
                 flex-direction: column;
                 align-items: stretch;
             }
+
+            .original-version-head,
+            .detail-label-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
         }
     </style>
 @endpush
 
 @section('content')
     <div class="page-head">
-        <div class="page-head-bar">
-            <div>
-                <h2>Detail ticketu</h2>
-                <p>První detailní přehled helpdesk požadavku.</p>
-            </div>
+            <div class="page-head-bar">
+                <div>
+                    <h2>Detail ticketu</h2>
+                    <p>První detailní přehled helpdesk požadavku.</p>
+                </div>
 
-            <a class="button button-secondary" href="{{ route('tickets.index') }}">Zpět na seznam</a>
+            <div class="page-head-actions">
+                <a class="button button-secondary" href="{{ route('tickets.edit', $ticket) }}">Upravit ticket</a>
+                <a class="button button-secondary" href="{{ route('tickets.index') }}">Zpět na seznam</a>
+            </div>
         </div>
     </div>
 
@@ -386,6 +500,46 @@
         <div class="ticket-detail">
             @if (session('status'))
                 <div class="alert" role="status">{{ session('status') }}</div>
+            @endif
+
+            @if ($hasOriginalVersionChanges && $originalSnapshot)
+                <section
+                    id="original-version-box"
+                    class="original-version-panel"
+                    data-editor-panel
+                    hidden
+                >
+                    <div class="original-version-head">
+                        <div class="original-version-copy">
+                            <h3>Původní verze ticketu</h3>
+                            <p>Neměnný otisk ticketu uložený do historie před pozdějšími úpravami.</p>
+                        </div>
+
+                        <button class="button button-secondary button-compact" type="button" data-editor-cancel="original-version-box">
+                            Zavřít
+                        </button>
+                    </div>
+
+                    @if ($originalSnapshotSource !== 'create')
+                        <p class="original-version-note">
+                            U staršího ticketu byl původní snapshot zachycen až při první následné změně po zavedení historie.
+                        </p>
+                    @endif
+
+                    <section class="detail-grid">
+                        <article class="detail-card full">
+                            <span class="detail-label">Subject</span>
+                            <div class="detail-value">{{ $originalSnapshot['subject'] ?? '—' }}</div>
+                        </article>
+
+                        <article class="detail-card full">
+                            <span class="detail-label">Description</span>
+                            <div class="detail-value">
+                                {!! nl2br(e($originalSnapshot['description'] ?? '—')) !!}
+                            </div>
+                        </article>
+                    </section>
+                </section>
             @endif
 
             <section class="ticket-hero">
@@ -405,7 +559,28 @@
 
             <section class="detail-grid">
                 <article class="detail-card full">
-                    <span class="detail-label">Description</span>
+                    <div class="detail-label-row">
+                        <span class="detail-label">Description</span>
+
+                        @if ($hasOriginalVersionChanges && $originalSnapshot)
+                            <button
+                                class="button original-indicator"
+                                type="button"
+                                data-editor-toggle="original-version-box"
+                                aria-controls="original-version-box"
+                                aria-expanded="false"
+                                title="Zobrazit původní verzi ticketu"
+                            >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M3 3v5h5"/>
+                                    <path d="M3.05 13a9 9 0 1 0 2.13-5.7L3 8"/>
+                                    <path d="M12 7v5l3 2"/>
+                                </svg>
+                                Upraveno
+                            </button>
+                        @endif
+                    </div>
+
                     <div class="detail-value">
                         {!! nl2br(e($ticket->description ?? '—')) !!}
                     </div>
@@ -583,14 +758,76 @@
                     <span class="detail-label">Updated at</span>
                     <div class="detail-value">{{ $ticket->updated_at?->format('d.m.Y H:i') ?? '—' }}</div>
                 </article>
+
+                <article class="detail-card">
+                    <span class="detail-label">Připnutí</span>
+                    @if ($pinningEnabled)
+                        <div class="detail-value">
+                            @if ($ticket->is_pinned)
+                                <span class="detail-flag">Připnuto</span>
+                            @else
+                                <span class="detail-empty">Nepřipnuto</span>
+                            @endif
+                        </div>
+
+                        <form class="inline-form" method="post" action="{{ route('tickets.pin.update', $ticket) }}">
+                            @csrf
+                            @method('patch')
+                            <input type="hidden" name="pinned" value="{{ $ticket->is_pinned ? '0' : '1' }}">
+
+                            @if ($pinErrors->any())
+                                <ul class="field-error-list">
+                                    @foreach ($pinErrors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            @endif
+
+                            @if ($pinErrors->has('pinned'))
+                                <div class="field-error">{{ $pinErrors->first('pinned') }}</div>
+                            @endif
+
+                            <div class="inline-form-actions">
+                                <button class="button button-primary button-compact" type="submit">
+                                    {{ $ticket->is_pinned ? 'Odepnout ticket' : 'Připnout ticket' }}
+                                </button>
+                            </div>
+
+                            <p class="inline-help">Interní administrativní akce připravená pro pozdější doplnění oprávnění.</p>
+                        </form>
+                    @else
+                        <div class="detail-value detail-empty">Připnutí bude dostupné po spuštění databázové migrace.</div>
+                    @endif
+                </article>
             </section>
 
             <section class="comment-section">
                 <div class="page-head" id="comments">
-                    <div>
-                        <h2>Komentáře</h2>
-                        <p>Veřejná komunikace k tomuto ticketu v chronologickém pořadí.</p>
+                    <div class="page-head-bar">
+                        <div>
+                            <h2>Komentáře</h2>
+                            <p>Veřejná komunikace k tomuto ticketu v chronologickém pořadí.</p>
+                        </div>
+
+                        <button
+                            class="button icon-button"
+                            type="button"
+                            data-editor-toggle="comment-editor"
+                            aria-controls="comment-editor"
+                            aria-expanded="false"
+                            title="Přidat veřejný komentář"
+                        >
+                            <span class="sr-only">Přidat veřejný komentář</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M12 20h9"/>
+                                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/>
+                            </svg>
+                        </button>
                     </div>
+
+                    @if ($commentErrors->any())
+                        <div class="field-error">Formulář veřejného komentáře obsahuje chyby. Otevřete editor tlačítkem s tužkou.</div>
+                    @endif
                 </div>
 
                 @if ($ticket->publicComments->isEmpty())
@@ -611,7 +848,14 @@
                     </div>
                 @endif
 
-                <form class="comment-form" method="post" action="{{ route('tickets.comments.store', $ticket) }}">
+                <form
+                    id="comment-editor"
+                    class="comment-form"
+                    data-editor-panel
+                    method="post"
+                    action="{{ route('tickets.comments.store', $ticket) }}"
+                    hidden
+                >
                     @csrf
 
                     <div class="comment-form-head">
@@ -634,18 +878,40 @@
                         @endif
                     </div>
 
-                    <div>
+                    <div class="comment-form-actions">
                         <button class="button button-primary" type="submit">Přidat komentář</button>
+                        <button class="button button-secondary" type="button" data-editor-cancel="comment-editor">Zrušit</button>
                     </div>
                 </form>
             </section>
 
             <section class="comment-section">
                 <div class="page-head" id="internal-notes">
-                    <div>
-                        <h2>Interní poznámky</h2>
-                        <p>Oddělený interní blok pro administrativní poznámky k ticketu.</p>
+                    <div class="page-head-bar">
+                        <div>
+                            <h2>Interní poznámky</h2>
+                            <p>Oddělený interní blok pro administrativní poznámky k ticketu.</p>
+                        </div>
+
+                        <button
+                            class="button icon-button"
+                            type="button"
+                            data-editor-toggle="internal-note-editor"
+                            aria-controls="internal-note-editor"
+                            aria-expanded="false"
+                            title="Přidat interní poznámku"
+                        >
+                            <span class="sr-only">Přidat interní poznámku</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M12 20h9"/>
+                                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/>
+                            </svg>
+                        </button>
                     </div>
+
+                    @if ($internalNoteErrors->any())
+                        <div class="field-error">Formulář interní poznámky obsahuje chyby. Otevřete editor tlačítkem s tužkou.</div>
+                    @endif
                 </div>
 
                 @if ($ticket->internalComments->isEmpty())
@@ -666,7 +932,14 @@
                     </div>
                 @endif
 
-                <form class="comment-form internal-note-form" method="post" action="{{ route('tickets.internal-notes.store', $ticket) }}">
+                <form
+                    id="internal-note-editor"
+                    class="comment-form internal-note-form"
+                    data-editor-panel
+                    method="post"
+                    action="{{ route('tickets.internal-notes.store', $ticket) }}"
+                    hidden
+                >
                     @csrf
 
                     <div class="comment-form-head">
@@ -689,8 +962,9 @@
                         @endif
                     </div>
 
-                    <div>
+                    <div class="comment-form-actions">
                         <button class="button button-primary" type="submit">Uložit interní poznámku</button>
+                        <button class="button button-secondary" type="button" data-editor-cancel="internal-note-editor">Zrušit</button>
                     </div>
                 </form>
             </section>
