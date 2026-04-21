@@ -10,6 +10,7 @@ use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 
 class TicketController extends Controller
@@ -34,7 +35,6 @@ class TicketController extends Controller
     public function create(): View
     {
         return view('tickets.create', [
-            'statuses' => TicketStatus::query()->orderBy('sort_order')->orderBy('name')->get(),
             'priorities' => TicketPriority::query()->orderBy('sort_order')->orderBy('name')->get(),
             'categories' => TicketCategory::query()->where('is_active', true)->orderBy('name')->get(),
         ]);
@@ -60,10 +60,11 @@ class TicketController extends Controller
         $validated = $request->validate([
             'subject' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string'],
-            'status_id' => ['required', 'integer', 'exists:ticket_statuses,id'],
             'priority_id' => ['required', 'integer', 'exists:ticket_priorities,id'],
             'category_id' => ['required', 'integer', 'exists:ticket_categories,id'],
         ]);
+
+        $initialStatus = $this->resolveInitialStatus();
 
         $ticket = Ticket::query()->create([
             'subject' => $validated['subject'],
@@ -71,7 +72,7 @@ class TicketController extends Controller
             'visibility' => 'public',
             'requester_id' => $this->resolveRequester()->id,
             'assignee_id' => null,
-            'ticket_status_id' => $validated['status_id'],
+            'ticket_status_id' => $initialStatus->id,
             'ticket_priority_id' => $validated['priority_id'],
             'ticket_category_id' => $validated['category_id'],
         ]);
@@ -102,6 +103,27 @@ class TicketController extends Controller
 
         throw ValidationException::withMessages([
             'requester' => 'Pro vytvoření ticketu zatím musí v databázi existovat alespoň jeden uživatel.',
+        ]);
+    }
+
+    private function resolveInitialStatus(): TicketStatus
+    {
+        $status = TicketStatus::query()
+            ->where(function ($query): void {
+                $query->where('slug', 'new');
+
+                if (Schema::hasColumn('ticket_statuses', 'code')) {
+                    $query->orWhere('code', 'new');
+                }
+            })
+            ->first();
+
+        if ($status instanceof TicketStatus) {
+            return $status;
+        }
+
+        throw ValidationException::withMessages([
+            'status' => 'Nelze vytvořit ticket, protože v systému chybí výchozí stav "new". Kontaktujte administrátora.',
         ]);
     }
 
