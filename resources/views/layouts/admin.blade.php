@@ -22,6 +22,10 @@
                 box-sizing: border-box;
             }
 
+            [hidden] {
+                display: none !important;
+            }
+
             body {
                 margin: 0;
                 min-height: 100vh;
@@ -220,5 +224,7 @@
                 @yield('content')
             </main>
         </div>
+
+        @stack('scripts')
     </body>
 </html>

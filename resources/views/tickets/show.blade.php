@@ -117,6 +117,20 @@
             gap: 1rem;
         }
 
+        .editable-summary {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+        }
+
+        .editable-value {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
         .inline-form {
             display: grid;
             gap: 0.75rem;
@@ -134,10 +148,56 @@
             min-height: 3rem;
         }
 
+        .inline-form-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
         .inline-help {
             margin: 0;
             color: #64748b;
             font-size: 0.92rem;
+        }
+
+        .button-compact {
+            min-height: 2.5rem;
+            padding: 0.55rem 0.8rem;
+            border-radius: 0.75rem;
+        }
+
+        .icon-button {
+            width: 2.35rem;
+            min-width: 2.35rem;
+            min-height: 2.35rem;
+            padding: 0;
+            border: 1px solid #d9e0e7;
+            border-radius: 999px;
+            background: #f8fafc;
+            color: #5b6b79;
+        }
+
+        .icon-button:hover {
+            background: #eef2f6;
+            color: #0f766e;
+        }
+
+        .icon-button svg {
+            width: 1rem;
+            height: 1rem;
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
         }
 
         .comment-empty {
@@ -294,6 +354,7 @@
                 gap: 0.35rem;
             }
 
+            .editable-summary,
             .inline-form-row {
                 flex-direction: column;
                 align-items: stretch;
@@ -345,14 +406,38 @@
 
                 <article class="detail-card">
                     <span class="detail-label">Status</span>
-                    <div class="detail-value">
-                        <span class="badge">
-                            <span class="badge-dot"></span>
-                            {{ $ticket->status?->name ?? '—' }}
-                        </span>
+                    <div class="editable-summary">
+                        <div class="detail-value editable-value">
+                            <span class="badge">
+                                <span class="badge-dot"></span>
+                                {{ $ticket->status?->name ?? '—' }}
+                            </span>
+                        </div>
+
+                        <button
+                            class="button icon-button"
+                            type="button"
+                            data-editor-toggle="status-editor"
+                            aria-controls="status-editor"
+                            aria-expanded="false"
+                            title="Upravit stav"
+                        >
+                            <span class="sr-only">Upravit stav</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M12 20h9"/>
+                                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/>
+                            </svg>
+                        </button>
                     </div>
 
-                    <form class="inline-form" method="post" action="{{ route('tickets.status.update', $ticket) }}">
+                    <form
+                        id="status-editor"
+                        class="inline-form"
+                        data-editor-panel
+                        method="post"
+                        action="{{ route('tickets.status.update', $ticket) }}"
+                        hidden
+                    >
                         @csrf
                         @method('patch')
 
@@ -377,11 +462,15 @@
                                         </option>
                                     @endforeach
                                 </select>
-                                <button class="button button-primary" type="submit">Uložit stav</button>
                             </div>
                             @if ($statusErrors->has('status_id'))
                                 <div class="field-error">{{ $statusErrors->first('status_id') }}</div>
                             @endif
+                        </div>
+
+                        <div class="inline-form-actions">
+                            <button class="button button-primary button-compact" type="submit">Uložit stav</button>
+                            <button class="button button-secondary button-compact" type="button" data-editor-cancel="status-editor">Zrušit</button>
                         </div>
 
                         <p class="inline-help">Interní administrativní akce připravená pro pozdější doplnění oprávnění.</p>
@@ -405,15 +494,39 @@
 
                 <article class="detail-card">
                     <span class="detail-label">Assignee</span>
-                    <div class="detail-value">
-                        @if ($ticket->assignee)
-                            {{ $ticket->assignee->name }}
-                        @else
-                            <span class="detail-empty">Nepřiřazeno</span>
-                        @endif
+                    <div class="editable-summary">
+                        <div class="detail-value editable-value">
+                            @if ($ticket->assignee)
+                                {{ $ticket->assignee->name }}
+                            @else
+                                <span class="detail-empty">Nepřiřazeno</span>
+                            @endif
+                        </div>
+
+                        <button
+                            class="button icon-button"
+                            type="button"
+                            data-editor-toggle="assignee-editor"
+                            aria-controls="assignee-editor"
+                            aria-expanded="false"
+                            title="Upravit řešitele"
+                        >
+                            <span class="sr-only">Upravit řešitele</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M12 20h9"/>
+                                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/>
+                            </svg>
+                        </button>
                     </div>
 
-                    <form class="inline-form" method="post" action="{{ route('tickets.assignee.update', $ticket) }}">
+                    <form
+                        id="assignee-editor"
+                        class="inline-form"
+                        data-editor-panel
+                        method="post"
+                        action="{{ route('tickets.assignee.update', $ticket) }}"
+                        hidden
+                    >
                         @csrf
                         @method('patch')
 
@@ -439,11 +552,15 @@
                                         </option>
                                     @endforeach
                                 </select>
-                                <button class="button button-primary" type="submit">Uložit řešitele</button>
                             </div>
                             @if ($assigneeErrors->has('assignee_id'))
                                 <div class="field-error">{{ $assigneeErrors->first('assignee_id') }}</div>
                             @endif
+                        </div>
+
+                        <div class="inline-form-actions">
+                            <button class="button button-primary button-compact" type="submit">Uložit řešitele</button>
+                            <button class="button button-secondary button-compact" type="button" data-editor-cancel="assignee-editor">Zrušit</button>
                         </div>
 
                         <p class="inline-help">Prázdná hodnota znamená, že ticket zůstane nepřiřazený.</p>
@@ -518,3 +635,53 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const setExpanded = (panelId, expanded) => {
+                document.querySelectorAll(`[data-editor-toggle="${panelId}"]`).forEach((button) => {
+                    button.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+                });
+            };
+
+            document.querySelectorAll('[data-editor-toggle]').forEach((button) => {
+                button.addEventListener('click', () => {
+                    const panelId = button.getAttribute('data-editor-toggle');
+                    const panel = document.getElementById(panelId);
+
+                    if (!panel) {
+                        return;
+                    }
+
+                    panel.hidden = false;
+                    setExpanded(panelId, true);
+
+                    const focusTarget = panel.querySelector('select, textarea, input');
+
+                    if (focusTarget) {
+                        focusTarget.focus();
+                    }
+                });
+            });
+
+            document.querySelectorAll('[data-editor-cancel]').forEach((button) => {
+                button.addEventListener('click', () => {
+                    const panelId = button.getAttribute('data-editor-cancel');
+                    const panel = document.getElementById(panelId);
+
+                    if (!panel) {
+                        return;
+                    }
+
+                    panel.hidden = true;
+                    setExpanded(panelId, false);
+                });
+            });
+
+            document.querySelectorAll('[data-editor-panel]').forEach((panel) => {
+                setExpanded(panel.id, !panel.hidden);
+            });
+        });
+    </script>
+@endpush
