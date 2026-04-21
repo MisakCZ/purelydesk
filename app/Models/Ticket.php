@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -12,6 +13,9 @@ use Illuminate\Support\Facades\Schema;
 class Ticket extends Model
 {
     use HasFactory;
+
+    public const VISIBILITY_PUBLIC = 'public';
+    public const VISIBILITY_RESTRICTED = 'restricted';
 
     protected $fillable = [
         'ticket_number',
@@ -52,6 +56,67 @@ class Ticket extends Model
         }
 
         return $supportsPinning;
+    }
+
+    public static function visibilityOptions(): array
+    {
+        return [
+            self::VISIBILITY_PUBLIC => 'Public',
+            self::VISIBILITY_RESTRICTED => 'Restricted',
+        ];
+    }
+
+    public function scopeVisibleTo(Builder $query, ?User $user, bool $administrativeMode = false): Builder
+    {
+        return $query->where(function (Builder $query) use ($user, $administrativeMode): void {
+            $query->where('visibility', self::VISIBILITY_PUBLIC);
+
+            if ($administrativeMode) {
+                $query->orWhere('visibility', self::VISIBILITY_RESTRICTED);
+
+                return;
+            }
+
+            if (! $user instanceof User) {
+                return;
+            }
+
+            $query->orWhere(function (Builder $query) use ($user): void {
+                $query
+                    ->where('visibility', self::VISIBILITY_RESTRICTED)
+                    ->where(function (Builder $query) use ($user): void {
+                        $query
+                            ->where('requester_id', $user->id)
+                            ->orWhere('assignee_id', $user->id)
+                            ->orWhereHas('watchers', fn (Builder $query) => $query->whereKey($user->id));
+                    });
+            });
+        });
+    }
+
+    public function isVisibleTo(?User $user, bool $administrativeMode = false): bool
+    {
+        if ($this->visibility !== self::VISIBILITY_RESTRICTED) {
+            return true;
+        }
+
+        if ($administrativeMode) {
+            return true;
+        }
+
+        if (! $user instanceof User) {
+            return false;
+        }
+
+        if ((int) $this->requester_id === (int) $user->id || (int) $this->assignee_id === (int) $user->id) {
+            return true;
+        }
+
+        if ($this->relationLoaded('watchers')) {
+            return $this->watchers->contains('id', $user->id);
+        }
+
+        return $this->watchers()->whereKey($user->id)->exists();
     }
 
     public function department(): BelongsTo

@@ -7,8 +7,11 @@
     $commentErrors = $errorBags->getBag('comment');
     $internalNoteErrors = $errorBags->getBag('internalNote');
     $assigneeErrors = $errorBags->getBag('ticketAssignee');
+    $categoryErrors = $errorBags->getBag('ticketCategory');
     $pinErrors = $errorBags->getBag('ticketPin');
+    $priorityErrors = $errorBags->getBag('ticketPriority');
     $statusErrors = $errorBags->getBag('ticketStatus');
+    $visibilityErrors = $errorBags->getBag('ticketVisibility');
     $watcherErrors = $errorBags->getBag('ticketWatcher');
 @endphp
 
@@ -581,6 +584,10 @@
                         <span class="badge-dot"></span>
                         {{ $ticket->priority?->name ?? '—' }}
                     </span>
+                    <span class="badge">
+                        <span class="badge-dot"></span>
+                        {{ $visibilityOptions[$ticket->visibility] ?? ucfirst((string) $ticket->visibility) }}
+                    </span>
                     <span class="badge{{ $isWatchingTicket ? ' badge-watching' : '' }}">
                         <span class="badge-dot"></span>
                         {{ $isWatchingTicket ? 'Sledujete' : 'Nesledujete' }}
@@ -692,12 +699,209 @@
 
                 <article class="detail-card">
                     <span class="detail-label">Priority</span>
-                    <div class="detail-value">{{ $ticket->priority?->name ?? '—' }}</div>
+                    <div class="editable-summary">
+                        <div class="detail-value editable-value">
+                            <span class="badge">
+                                <span class="badge-dot"></span>
+                                {{ $ticket->priority?->name ?? '—' }}
+                            </span>
+                        </div>
+
+                        <button
+                            class="button icon-button"
+                            type="button"
+                            data-editor-toggle="priority-editor"
+                            aria-controls="priority-editor"
+                            aria-expanded="false"
+                            title="Upravit prioritu"
+                        >
+                            <span class="sr-only">Upravit prioritu</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M12 20h9"/>
+                                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <form
+                        id="priority-editor"
+                        class="inline-form"
+                        data-editor-panel
+                        method="post"
+                        action="{{ route('tickets.priority.update', $ticket) }}"
+                        hidden
+                    >
+                        @csrf
+                        @method('patch')
+
+                        @if ($priorityErrors->any())
+                            <ul class="field-error-list">
+                                @foreach ($priorityErrors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        @endif
+
+                        <div class="field">
+                            <label class="label" for="priority_id">Změnit prioritu</label>
+                            <div class="inline-form-row">
+                                <select class="select" id="priority_id" name="priority_id" required>
+                                    @foreach ($priorities as $priority)
+                                        <option
+                                            value="{{ $priority->id }}"
+                                            @selected((string) old('priority_id', $ticket->ticket_priority_id) === (string) $priority->id)
+                                        >
+                                            {{ $priority->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            @if ($priorityErrors->has('priority_id'))
+                                <div class="field-error">{{ $priorityErrors->first('priority_id') }}</div>
+                            @endif
+                        </div>
+
+                        <div class="inline-form-actions">
+                            <button class="button button-primary button-compact" type="submit">Uložit prioritu</button>
+                            <button class="button button-secondary button-compact" type="button" data-editor-cancel="priority-editor">Zrušit</button>
+                        </div>
+                    </form>
                 </article>
 
                 <article class="detail-card">
                     <span class="detail-label">Category</span>
-                    <div class="detail-value">{{ $ticket->category?->name ?? '—' }}</div>
+                    <div class="editable-summary">
+                        <div class="detail-value editable-value">
+                            {{ $ticket->category?->name ?? '—' }}
+                        </div>
+
+                        <button
+                            class="button icon-button"
+                            type="button"
+                            data-editor-toggle="category-editor"
+                            aria-controls="category-editor"
+                            aria-expanded="false"
+                            title="Upravit kategorii"
+                        >
+                            <span class="sr-only">Upravit kategorii</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M12 20h9"/>
+                                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <form
+                        id="category-editor"
+                        class="inline-form"
+                        data-editor-panel
+                        method="post"
+                        action="{{ route('tickets.category.update', $ticket) }}"
+                        hidden
+                    >
+                        @csrf
+                        @method('patch')
+
+                        @if ($categoryErrors->any())
+                            <ul class="field-error-list">
+                                @foreach ($categoryErrors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        @endif
+
+                        <div class="field">
+                            <label class="label" for="category_id">Změnit kategorii</label>
+                            <div class="inline-form-row">
+                                <select class="select" id="category_id" name="category_id" required>
+                                    @foreach ($categories as $category)
+                                        <option
+                                            value="{{ $category->id }}"
+                                            @selected((string) old('category_id', $ticket->ticket_category_id) === (string) $category->id)
+                                        >
+                                            {{ $category->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            @if ($categoryErrors->has('category_id'))
+                                <div class="field-error">{{ $categoryErrors->first('category_id') }}</div>
+                            @endif
+                        </div>
+
+                        <div class="inline-form-actions">
+                            <button class="button button-primary button-compact" type="submit">Uložit kategorii</button>
+                            <button class="button button-secondary button-compact" type="button" data-editor-cancel="category-editor">Zrušit</button>
+                        </div>
+                    </form>
+                </article>
+
+                <article class="detail-card">
+                    <span class="detail-label">Visibility</span>
+                    <div class="editable-summary">
+                        <div class="detail-value editable-value">
+                            {{ $visibilityOptions[$ticket->visibility] ?? ucfirst((string) $ticket->visibility) }}
+                        </div>
+
+                        <button
+                            class="button icon-button"
+                            type="button"
+                            data-editor-toggle="visibility-editor"
+                            aria-controls="visibility-editor"
+                            aria-expanded="false"
+                            title="Upravit viditelnost"
+                        >
+                            <span class="sr-only">Upravit viditelnost</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M12 20h9"/>
+                                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <form
+                        id="visibility-editor"
+                        class="inline-form"
+                        data-editor-panel
+                        method="post"
+                        action="{{ route('tickets.visibility.update', $ticket) }}"
+                        hidden
+                    >
+                        @csrf
+                        @method('patch')
+
+                        @if ($visibilityErrors->any())
+                            <ul class="field-error-list">
+                                @foreach ($visibilityErrors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        @endif
+
+                        <div class="field">
+                            <label class="label" for="visibility">Změnit viditelnost</label>
+                            <div class="inline-form-row">
+                                <select class="select" id="visibility" name="visibility" required>
+                                    @foreach ($visibilityOptions as $value => $label)
+                                        <option
+                                            value="{{ $value }}"
+                                            @selected((string) old('visibility', $ticket->visibility) === (string) $value)
+                                        >
+                                            {{ $label }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            @if ($visibilityErrors->has('visibility'))
+                                <div class="field-error">{{ $visibilityErrors->first('visibility') }}</div>
+                            @endif
+                        </div>
+
+                        <div class="inline-form-actions">
+                            <button class="button button-primary button-compact" type="submit">Uložit viditelnost</button>
+                            <button class="button button-secondary button-compact" type="button" data-editor-cancel="visibility-editor">Zrušit</button>
+                        </div>
+                    </form>
                 </article>
 
                 <article class="detail-card">
@@ -793,15 +997,39 @@
                 <article class="detail-card">
                     <span class="detail-label">Připnutí</span>
                     @if ($pinningEnabled)
-                        <div class="detail-value">
-                            @if ($ticket->is_pinned)
-                                <span class="detail-flag">Připnuto</span>
-                            @else
-                                <span class="detail-empty">Nepřipnuto</span>
-                            @endif
+                        <div class="editable-summary">
+                            <div class="detail-value editable-value">
+                                @if ($ticket->is_pinned)
+                                    <span class="detail-flag">Připnuto</span>
+                                @else
+                                    <span class="detail-empty">Nepřipnuto</span>
+                                @endif
+                            </div>
+
+                            <button
+                                class="button icon-button"
+                                type="button"
+                                data-editor-toggle="pin-editor"
+                                aria-controls="pin-editor"
+                                aria-expanded="false"
+                                title="Upravit připnutí"
+                            >
+                                <span class="sr-only">Upravit připnutí</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M12 20h9"/>
+                                    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/>
+                                </svg>
+                            </button>
                         </div>
 
-                        <form class="inline-form" method="post" action="{{ route('tickets.pin.update', $ticket) }}">
+                        <form
+                            id="pin-editor"
+                            class="inline-form"
+                            data-editor-panel
+                            method="post"
+                            action="{{ route('tickets.pin.update', $ticket) }}"
+                            hidden
+                        >
                             @csrf
                             @method('patch')
                             <input type="hidden" name="pinned" value="{{ $ticket->is_pinned ? '0' : '1' }}">
@@ -822,6 +1050,7 @@
                                 <button class="button button-primary button-compact" type="submit">
                                     {{ $ticket->is_pinned ? 'Odepnout ticket' : 'Připnout ticket' }}
                                 </button>
+                                <button class="button button-secondary button-compact" type="button" data-editor-cancel="pin-editor">Zrušit</button>
                             </div>
 
                             <p class="inline-help">Interní administrativní akce připravená pro pozdější doplnění oprávnění.</p>
@@ -833,11 +1062,30 @@
 
                 <article class="detail-card full">
                     <span class="detail-label">Sledující</span>
-                    <div class="detail-value">
-                        @if ($isWatchingTicket)
-                            Ticket aktuálně sledujete.
-                        @else
-                            Ticket aktuálně nesledujete.
+                    <div class="editable-summary">
+                        <div class="detail-value editable-value">
+                            @if ($isWatchingTicket)
+                                Ticket aktuálně sledujete.
+                            @else
+                                Ticket aktuálně nesledujete.
+                            @endif
+                        </div>
+
+                        @if ($watcherActionEnabled)
+                            <button
+                                class="button icon-button"
+                                type="button"
+                                data-editor-toggle="watcher-editor"
+                                aria-controls="watcher-editor"
+                                aria-expanded="false"
+                                title="Upravit sledování"
+                            >
+                                <span class="sr-only">Upravit sledování</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M12 20h9"/>
+                                    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/>
+                                </svg>
+                            </button>
                         @endif
                     </div>
 
@@ -851,20 +1099,36 @@
 
                     @if ($watcherActionEnabled)
                         @if ($isWatchingTicket)
-                            <form class="inline-form" method="post" action="{{ route('tickets.watchers.destroy', $ticket) }}">
+                            <form
+                                id="watcher-editor"
+                                class="inline-form"
+                                data-editor-panel
+                                method="post"
+                                action="{{ route('tickets.watchers.destroy', $ticket) }}"
+                                hidden
+                            >
                                 @csrf
                                 @method('delete')
 
                                 <div class="inline-form-actions">
                                     <button class="button button-secondary button-compact" type="submit">Přestat sledovat</button>
+                                    <button class="button button-secondary button-compact" type="button" data-editor-cancel="watcher-editor">Zrušit</button>
                                 </div>
                             </form>
                         @else
-                            <form class="inline-form" method="post" action="{{ route('tickets.watchers.store', $ticket) }}">
+                            <form
+                                id="watcher-editor"
+                                class="inline-form"
+                                data-editor-panel
+                                method="post"
+                                action="{{ route('tickets.watchers.store', $ticket) }}"
+                                hidden
+                            >
                                 @csrf
 
                                 <div class="inline-form-actions">
                                     <button class="button button-primary button-compact" type="submit">Začít sledovat</button>
+                                    <button class="button button-secondary button-compact" type="button" data-editor-cancel="watcher-editor">Zrušit</button>
                                 </div>
                             </form>
                         @endif
@@ -1058,6 +1322,22 @@
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            const openPanel = (panel) => {
+                panel.hidden = false;
+                setExpanded(panel.id, true);
+
+                const focusTarget = panel.querySelector('select, textarea, input');
+
+                if (focusTarget) {
+                    focusTarget.focus();
+                }
+            };
+
+            const closePanel = (panel) => {
+                panel.hidden = true;
+                setExpanded(panel.id, false);
+            };
+
             const setExpanded = (panelId, expanded) => {
                 document.querySelectorAll(`[data-editor-toggle="${panelId}"]`).forEach((button) => {
                     button.setAttribute('aria-expanded', expanded ? 'true' : 'false');
@@ -1073,13 +1353,10 @@
                         return;
                     }
 
-                    panel.hidden = false;
-                    setExpanded(panelId, true);
-
-                    const focusTarget = panel.querySelector('select, textarea, input');
-
-                    if (focusTarget) {
-                        focusTarget.focus();
+                    if (panel.hidden) {
+                        openPanel(panel);
+                    } else {
+                        closePanel(panel);
                     }
                 });
             });
@@ -1093,8 +1370,7 @@
                         return;
                     }
 
-                    panel.hidden = true;
-                    setExpanded(panelId, false);
+                    closePanel(panel);
                 });
             });
 

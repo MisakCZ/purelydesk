@@ -4,13 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Models\Ticket;
 use App\Models\User;
+use App\Policies\TicketPolicy;
+use App\Support\ResolvesHelpdeskUser;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Validation\ValidationException;
 
 class TicketWatcherController extends Controller
 {
+    use ResolvesHelpdeskUser;
+
     public function store(Ticket $ticket): RedirectResponse
     {
+        $this->ensureTicketCanBeViewed($ticket);
+
         $user = $this->resolveWatcher();
 
         $ticket->watchers()->syncWithoutDetaching([$user->id]);
@@ -22,6 +28,8 @@ class TicketWatcherController extends Controller
 
     public function destroy(Ticket $ticket): RedirectResponse
     {
+        $this->ensureTicketCanBeViewed($ticket);
+
         $user = $this->resolveWatcher();
 
         $ticket->watchers()->detach($user->id);
@@ -33,14 +41,7 @@ class TicketWatcherController extends Controller
 
     private function resolveWatcher(): User
     {
-        $authenticatedUser = auth()->user();
-
-        if ($authenticatedUser instanceof User) {
-            return $authenticatedUser;
-        }
-
-        // Temporary fallback until authentication is integrated.
-        $fallbackUser = User::query()->orderBy('id')->first();
+        $fallbackUser = $this->currentHelpdeskUser();
 
         if ($fallbackUser instanceof User) {
             return $fallbackUser;
@@ -49,5 +50,13 @@ class TicketWatcherController extends Controller
         throw ValidationException::withMessages([
             'watcher' => 'Sledování ticketu zatím nelze změnit, protože v databázi neexistuje žádný uživatel.',
         ])->errorBag('ticketWatcher');
+    }
+
+    private function ensureTicketCanBeViewed(Ticket $ticket): void
+    {
+        abort_unless(
+            app(TicketPolicy::class)->view($this->currentHelpdeskUser(), $ticket),
+            403,
+        );
     }
 }

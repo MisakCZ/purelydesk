@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\UpdateTicketPinRequest;
+use App\Http\Requests\UpdateTicketCategoryRequest;
 use App\Http\Requests\UpdateTicketAssigneeRequest;
+use App\Http\Requests\UpdateTicketPriorityRequest;
 use App\Http\Requests\UpdateTicketStatusRequest;
+use App\Http\Requests\UpdateTicketVisibilityRequest;
 use App\Models\Announcement;
 use App\Models\Ticket;
 use App\Models\TicketCategory;
@@ -12,6 +15,8 @@ use App\Models\TicketHistory;
 use App\Models\TicketPriority;
 use App\Models\TicketStatus;
 use App\Models\User;
+use App\Policies\TicketPolicy;
+use App\Support\ResolvesHelpdeskUser;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -21,12 +26,14 @@ use Illuminate\Validation\ValidationException;
 
 class TicketController extends Controller
 {
+    use ResolvesHelpdeskUser;
+
     private const INDEX_FILTERS_SESSION_KEY = 'tickets.index.filters';
 
     public function index(Request $request): View
     {
         $filters = $this->resolveTicketIndexFilters($request);
-        $watcherUser = $this->currentWatcherUser();
+        $watcherUser = $this->currentHelpdeskUser();
 
         $tickets = $this->applyTicketFilters($this->ticketIndexQuery($watcherUser), $filters, $watcherUser)
             ->orderByDesc('updated_at')
@@ -63,6 +70,7 @@ class TicketController extends Controller
             'statuses' => TicketStatus::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name']),
             'priorities' => TicketPriority::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name']),
             'categories' => TicketCategory::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'visibilityOptions' => Ticket::visibilityOptions(),
             'hasActiveFilters' => collect($filters)->contains(fn ($value) => $value !== ''),
         ]);
     }
@@ -74,6 +82,8 @@ class TicketController extends Controller
 
     public function edit(Ticket $ticket): View
     {
+        $this->ensureTicketCanBeViewed($ticket);
+
         return view('tickets.edit', [
             'ticket' => $ticket,
             ...$this->ticketFormViewData(),
@@ -82,6 +92,8 @@ class TicketController extends Controller
 
     public function show(Ticket $ticket): View
     {
+        $this->ensureTicketCanBeViewed($ticket);
+
         $ticket->load([
             'status:id,name,color',
             'priority:id,name,color',
@@ -100,13 +112,16 @@ class TicketController extends Controller
         $originalSnapshotEntry = $this->originalSnapshotEntry($ticket);
         $originalVersionSnapshot = $this->extractOriginalVersionSnapshot($originalSnapshotEntry?->new_value ?? []);
         $currentOriginalVersionSnapshot = $this->extractOriginalVersionSnapshot($this->captureTicketSnapshot($ticket));
-        $watcherUser = $this->currentWatcherUser();
+        $watcherUser = $this->currentHelpdeskUser();
 
         return view('tickets.show', [
             'ticket' => $ticket,
             'statuses' => TicketStatus::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name']),
             'assignees' => User::query()->orderBy('name')->get(['id', 'name']),
+            'priorities' => TicketPriority::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name']),
+            'categories' => TicketCategory::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'pinningEnabled' => Ticket::supportsPinning(),
+            'visibilityOptions' => Ticket::visibilityOptions(),
             'watcherActionEnabled' => $watcherUser instanceof User,
             'isWatchingTicket' => $watcherUser instanceof User
                 ? $ticket->watchers->contains('id', $watcherUser->id)
@@ -120,6 +135,8 @@ class TicketController extends Controller
 
     public function updateStatus(UpdateTicketStatusRequest $request, Ticket $ticket): RedirectResponse
     {
+        $this->ensureTicketCanBeViewed($ticket);
+
         return $this->applyTicketUpdateWithHistory($ticket, [
             'ticket_status_id' => $request->integer('status_id'),
         ], 'Stav ticketu byl úspěšně změněn.', 'status_update');
@@ -127,6 +144,8 @@ class TicketController extends Controller
 
     public function updateAssignee(UpdateTicketAssigneeRequest $request, Ticket $ticket): RedirectResponse
     {
+        $this->ensureTicketCanBeViewed($ticket);
+
         return $this->applyTicketUpdateWithHistory($ticket, [
             'assignee_id' => $request->filled('assignee_id')
                 ? (int) $request->input('assignee_id')
@@ -134,8 +153,37 @@ class TicketController extends Controller
         ], 'Řešitel ticketu byl úspěšně změněn.', 'assignee_update');
     }
 
+    public function updatePriority(UpdateTicketPriorityRequest $request, Ticket $ticket): RedirectResponse
+    {
+        $this->ensureTicketCanBeViewed($ticket);
+
+        return $this->applyTicketUpdateWithHistory($ticket, [
+            'ticket_priority_id' => $request->integer('priority_id'),
+        ], 'Priorita ticketu byla úspěšně změněna.', 'priority_update');
+    }
+
+    public function updateCategory(UpdateTicketCategoryRequest $request, Ticket $ticket): RedirectResponse
+    {
+        $this->ensureTicketCanBeViewed($ticket);
+
+        return $this->applyTicketUpdateWithHistory($ticket, [
+            'ticket_category_id' => $request->integer('category_id'),
+        ], 'Kategorie ticketu byla úspěšně změněna.', 'category_update');
+    }
+
+    public function updateVisibility(UpdateTicketVisibilityRequest $request, Ticket $ticket): RedirectResponse
+    {
+        $this->ensureTicketCanBeViewed($ticket);
+
+        return $this->applyTicketUpdateWithHistory($ticket, [
+            'visibility' => $request->string('visibility')->toString(),
+        ], 'Viditelnost ticketu byla úspěšně změněna.', 'visibility_update');
+    }
+
     public function updatePin(UpdateTicketPinRequest $request, Ticket $ticket): RedirectResponse
     {
+        $this->ensureTicketCanBeViewed($ticket);
+
         if (! Ticket::supportsPinning()) {
             throw ValidationException::withMessages([
                 'pinned' => 'Připnutí ticketu zatím není v databázi dostupné. Spusťte migrace aplikace.',
@@ -182,6 +230,8 @@ class TicketController extends Controller
 
     public function update(Request $request, Ticket $ticket): RedirectResponse
     {
+        $this->ensureTicketCanBeViewed($ticket);
+
         $validated = $this->validateTicketInput($request);
 
         return $this->applyTicketUpdateWithHistory($ticket, $this->buildEditableTicketAttributes(
@@ -267,6 +317,7 @@ class TicketController extends Controller
         return [
             'priorities' => TicketPriority::query()->orderBy('sort_order')->orderBy('name')->get(),
             'categories' => TicketCategory::query()->where('is_active', true)->orderBy('name')->get(),
+            'visibilityOptions' => Ticket::visibilityOptions(),
             'pinningEnabled' => Ticket::supportsPinning(),
         ];
     }
@@ -274,6 +325,7 @@ class TicketController extends Controller
     private function ticketIndexQuery(?User $watcherUser = null): Builder
     {
         $query = Ticket::query()
+            ->visibleTo($watcherUser, $this->administrativeModeEnabled())
             ->select('tickets.*')
             ->with([
                 'status:id,name,color',
@@ -389,19 +441,26 @@ class TicketController extends Controller
             'description' => ['required', 'string'],
             'priority_id' => ['required', 'integer', 'exists:ticket_priorities,id'],
             'category_id' => ['required', 'integer', 'exists:ticket_categories,id'],
+            'visibility' => ['nullable', 'in:public,restricted'],
             'pinned' => ['nullable', 'boolean'],
         ]);
     }
 
     private function buildEditableTicketAttributes(array $validated, bool $shouldPin): array
     {
-        return [
+        $attributes = [
             'subject' => $validated['subject'],
             'description' => $validated['description'],
             'ticket_priority_id' => $validated['priority_id'],
             'ticket_category_id' => $validated['category_id'],
             ...$this->buildPinningAttributes($shouldPin),
         ];
+
+        if (array_key_exists('visibility', $validated) && $validated['visibility'] !== null) {
+            $attributes['visibility'] = $validated['visibility'];
+        }
+
+        return $attributes;
     }
 
     private function buildPinningAttributes(bool $shouldPin): array
@@ -548,18 +607,19 @@ class TicketController extends Controller
 
     private function resolveHistoryActorId(): ?int
     {
-        return $this->currentWatcherUser()?->id;
+        return $this->currentHelpdeskUser()?->id;
     }
 
-    private function currentWatcherUser(): ?User
+    private function ensureTicketCanBeViewed(Ticket $ticket): void
     {
-        $authenticatedUser = auth()->user();
+        abort_unless(
+            app(TicketPolicy::class)->view($this->currentHelpdeskUser(), $ticket),
+            403,
+        );
+    }
 
-        if ($authenticatedUser instanceof User) {
-            return $authenticatedUser;
-        }
-
-        // Temporary fallback until authentication is integrated.
-        return User::query()->orderBy('id')->first();
+    private function administrativeModeEnabled(): bool
+    {
+        return (bool) config('helpdesk.admin_mode', false);
     }
 }

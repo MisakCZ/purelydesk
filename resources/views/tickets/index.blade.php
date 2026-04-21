@@ -687,6 +687,7 @@
                             </div>
 
                             <div class="pinned-ticket-meta">
+                                <div>Visibility: {{ $visibilityOptions[$ticket->visibility] ?? ucfirst((string) $ticket->visibility) }}</div>
                                 <div>Requester: {{ $ticket->requester?->name ?? '—' }}</div>
                                 <div>Assignee: {{ $ticket->assignee?->name ?? '—' }}</div>
                                 <div class="{{ $ticket->is_watched_by_current_user ? 'watch-state watching' : 'watch-state' }}">
@@ -740,7 +741,7 @@
                                         </a>
                                     </strong>
                                     <span>
-                                        {{ $ticket->visibility === 'restricted' ? 'Restricted' : 'Public' }}
+                                        {{ $visibilityOptions[$ticket->visibility] ?? ucfirst((string) $ticket->visibility) }}
                                         @if ($pinningEnabled && $ticket->is_pinned)
                                             · Připnuto
                                         @endif

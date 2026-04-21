@@ -5,14 +5,20 @@ namespace App\Http\Controllers;
 use App\Models\Ticket;
 use App\Models\TicketComment;
 use App\Models\User;
+use App\Policies\TicketPolicy;
+use App\Support\ResolvesHelpdeskUser;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
 class TicketCommentController extends Controller
 {
+    use ResolvesHelpdeskUser;
+
     public function store(Request $request, Ticket $ticket): RedirectResponse
     {
+        $this->ensureTicketCanBeViewed($ticket);
+
         $validated = $request->validateWithBag('comment', [
             'body' => ['required', 'string'],
         ]);
@@ -26,6 +32,8 @@ class TicketCommentController extends Controller
 
     public function storeInternal(Request $request, Ticket $ticket): RedirectResponse
     {
+        $this->ensureTicketCanBeViewed($ticket);
+
         // TODO: Restrict this to internal admin users when auth/policies are integrated.
         $validated = $request->validateWithBag('internalNote', [
             'note_body' => ['required', 'string'],
@@ -50,14 +58,7 @@ class TicketCommentController extends Controller
 
     private function resolveAuthor(string $errorBag, string $errorKey): User
     {
-        $authenticatedUser = auth()->user();
-
-        if ($authenticatedUser instanceof User) {
-            return $authenticatedUser;
-        }
-
-        // Temporary fallback until authentication is integrated.
-        $fallbackUser = User::query()->orderBy('id')->first();
+        $fallbackUser = $this->currentHelpdeskUser();
 
         if ($fallbackUser instanceof User) {
             return $fallbackUser;
@@ -66,5 +67,13 @@ class TicketCommentController extends Controller
         throw ValidationException::withMessages([
             $errorKey => 'Poznámku zatím nelze uložit, protože v databázi neexistuje žádný uživatel.',
         ])->errorBag($errorBag);
+    }
+
+    private function ensureTicketCanBeViewed(Ticket $ticket): void
+    {
+        abort_unless(
+            app(TicketPolicy::class)->view($this->currentHelpdeskUser(), $ticket),
+            403,
+        );
     }
 }

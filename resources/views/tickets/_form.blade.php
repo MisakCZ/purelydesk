@@ -4,6 +4,7 @@
     $priorityValue = (string) old('priority_id', $ticket?->ticket_priority_id);
     $categoryValue = (string) old('category_id', $ticket?->ticket_category_id);
     $descriptionValue = old('description', $ticket?->description);
+    $visibilityValue = (string) old('visibility', $ticket?->visibility ?? \App\Models\Ticket::VISIBILITY_PUBLIC);
     $pinnedValue = old('pinned', $ticket?->is_pinned ? '1' : null);
 @endphp
 
@@ -54,6 +55,23 @@
             <div class="field-error">{{ $viewErrors->first('category_id') }}</div>
         @endif
     </div>
+
+    @if ($ticket)
+        <div class="field">
+            <label class="label" for="visibility">Viditelnost</label>
+            <select class="select" id="visibility" name="visibility" required>
+                @foreach ($visibilityOptions as $value => $label)
+                    <option value="{{ $value }}" @selected($visibilityValue === (string) $value)>
+                        {{ $label }}
+                    </option>
+                @endforeach
+            </select>
+            <div class="hint">Restricted ticket uvidí jen requester, assignee, sledující a administrativní režim aplikace.</div>
+            @if ($viewErrors->has('visibility'))
+                <div class="field-error">{{ $viewErrors->first('visibility') }}</div>
+            @endif
+        </div>
+    @endif
 
     <div class="field field-full">
         <label class="label" for="description">Popis</label>
