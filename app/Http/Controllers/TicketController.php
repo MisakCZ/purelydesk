@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\UpdateTicketStatusRequest;
 use App\Models\Ticket;
 use App\Models\TicketCategory;
 use App\Models\TicketPriority;
@@ -56,7 +57,19 @@ class TicketController extends Controller
 
         return view('tickets.show', [
             'ticket' => $ticket,
+            'statuses' => TicketStatus::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name']),
         ]);
+    }
+
+    public function updateStatus(UpdateTicketStatusRequest $request, Ticket $ticket): RedirectResponse
+    {
+        $ticket->update([
+            'ticket_status_id' => $request->integer('status_id'),
+        ]);
+
+        return redirect()
+            ->route('tickets.show', $ticket)
+            ->with('status', 'Stav ticketu byl úspěšně změněn.');
     }
 
     public function store(Request $request): RedirectResponse

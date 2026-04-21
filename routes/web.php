@@ -13,3 +13,4 @@ Route::get('/tickets', [TicketController::class, 'index'])->name('tickets.index'
 Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
 Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store');
 Route::post('/tickets/{ticket}/comments', [TicketCommentController::class, 'store'])->name('tickets.comments.store');
+Route::patch('/tickets/{ticket}/status', [TicketController::class, 'updateStatus'])->name('tickets.status.update');

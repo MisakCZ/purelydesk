@@ -3,7 +3,9 @@
 @section('title', $ticket->ticket_number ? 'Ticket '.$ticket->ticket_number : 'Detail ticketu')
 
 @php
-    $viewErrors = $errors ?? new \Illuminate\Support\ViewErrorBag();
+    $errorBags = $errors ?? new \Illuminate\Support\ViewErrorBag();
+    $commentErrors = $errorBags->getBag('comment');
+    $statusErrors = $errorBags->getBag('ticketStatus');
 @endphp
 
 @push('styles')
@@ -114,6 +116,29 @@
             gap: 1rem;
         }
 
+        .status-form {
+            display: grid;
+            gap: 0.75rem;
+            margin-top: 0.9rem;
+        }
+
+        .status-form-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .status-form .button {
+            min-height: 3rem;
+        }
+
+        .status-help {
+            margin: 0;
+            color: #64748b;
+            font-size: 0.92rem;
+        }
+
         .comment-empty {
             padding: 1.25rem;
             border: 1px dashed #cfd8e3;
@@ -217,6 +242,34 @@
             font-size: 0.9rem;
         }
 
+        .field {
+            display: grid;
+            gap: 0.45rem;
+        }
+
+        .label {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #13202b;
+        }
+
+        .select,
+        .textarea {
+            width: 100%;
+            padding: 0.8rem 0.95rem;
+            border: 1px solid #cfd8e3;
+            border-radius: 0.9rem;
+            background: #fff;
+            color: #13202b;
+            font: inherit;
+        }
+
+        .select:focus,
+        .textarea:focus {
+            outline: 2px solid rgba(15, 118, 110, 0.16);
+            border-color: #0f766e;
+        }
+
         @media (max-width: 720px) {
             .ticket-hero {
                 padding: 1rem;
@@ -238,6 +291,11 @@
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 0.35rem;
+            }
+
+            .status-form-row {
+                flex-direction: column;
+                align-items: stretch;
             }
         }
     </style>
@@ -286,7 +344,47 @@
 
                 <article class="detail-card">
                     <span class="detail-label">Status</span>
-                    <div class="detail-value">{{ $ticket->status?->name ?? '—' }}</div>
+                    <div class="detail-value">
+                        <span class="badge">
+                            <span class="badge-dot"></span>
+                            {{ $ticket->status?->name ?? '—' }}
+                        </span>
+                    </div>
+
+                    <form class="status-form" method="post" action="{{ route('tickets.status.update', $ticket) }}">
+                        @csrf
+                        @method('patch')
+
+                        @if ($statusErrors->any())
+                            <ul class="field-error-list">
+                                @foreach ($statusErrors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        @endif
+
+                        <div class="field">
+                            <label class="label" for="status_id">Změnit stav</label>
+                            <div class="status-form-row">
+                                <select class="select" id="status_id" name="status_id" required>
+                                    @foreach ($statuses as $status)
+                                        <option
+                                            value="{{ $status->id }}"
+                                            @selected((string) old('status_id', $ticket->ticket_status_id) === (string) $status->id)
+                                        >
+                                            {{ $status->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <button class="button button-primary" type="submit">Uložit stav</button>
+                            </div>
+                            @if ($statusErrors->has('status_id'))
+                                <div class="field-error">{{ $statusErrors->first('status_id') }}</div>
+                            @endif
+                        </div>
+
+                        <p class="status-help">Interní administrativní akce připravená pro pozdější doplnění oprávnění.</p>
+                    </form>
                 </article>
 
                 <article class="detail-card">
@@ -360,9 +458,9 @@
                         <p>Komentář bude uložen jako veřejný a zobrazí se v historii ticketu.</p>
                     </div>
 
-                    @if ($viewErrors->any())
+                    @if ($commentErrors->any())
                         <ul class="field-error-list">
-                            @foreach ($viewErrors->all() as $error)
+                            @foreach ($commentErrors->all() as $error)
                                 <li>{{ $error }}</li>
                             @endforeach
                         </ul>
@@ -370,8 +468,8 @@
 
                     <div>
                         <textarea class="textarea" name="body" required>{{ old('body') }}</textarea>
-                        @if ($viewErrors->has('body'))
-                            <div class="field-error">{{ $viewErrors->first('body') }}</div>
+                        @if ($commentErrors->has('body'))
+                            <div class="field-error">{{ $commentErrors->first('body') }}</div>
                         @endif
                     </div>
 

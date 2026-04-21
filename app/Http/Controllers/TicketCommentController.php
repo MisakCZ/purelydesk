@@ -13,7 +13,7 @@ class TicketCommentController extends Controller
 {
     public function store(Request $request, Ticket $ticket): RedirectResponse
     {
-        $validated = $request->validate([
+        $validated = $request->validateWithBag('comment', [
             'body' => ['required', 'string'],
         ]);
 
