@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\UpdateTicketAssigneeRequest;
 use App\Http\Requests\UpdateTicketStatusRequest;
 use App\Models\Ticket;
 use App\Models\TicketCategory;
@@ -58,6 +59,7 @@ class TicketController extends Controller
         return view('tickets.show', [
             'ticket' => $ticket,
             'statuses' => TicketStatus::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name']),
+            'assignees' => User::query()->orderBy('name')->get(['id', 'name']),
         ]);
     }
 
@@ -70,6 +72,19 @@ class TicketController extends Controller
         return redirect()
             ->route('tickets.show', $ticket)
             ->with('status', 'Stav ticketu byl úspěšně změněn.');
+    }
+
+    public function updateAssignee(UpdateTicketAssigneeRequest $request, Ticket $ticket): RedirectResponse
+    {
+        $ticket->update([
+            'assignee_id' => $request->filled('assignee_id')
+                ? (int) $request->input('assignee_id')
+                : null,
+        ]);
+
+        return redirect()
+            ->route('tickets.show', $ticket)
+            ->with('status', 'Řešitel ticketu byl úspěšně změněn.');
     }
 
     public function store(Request $request): RedirectResponse

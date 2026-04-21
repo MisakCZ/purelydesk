@@ -5,6 +5,7 @@
 @php
     $errorBags = $errors ?? new \Illuminate\Support\ViewErrorBag();
     $commentErrors = $errorBags->getBag('comment');
+    $assigneeErrors = $errorBags->getBag('ticketAssignee');
     $statusErrors = $errorBags->getBag('ticketStatus');
 @endphp
 
@@ -116,24 +117,24 @@
             gap: 1rem;
         }
 
-        .status-form {
+        .inline-form {
             display: grid;
             gap: 0.75rem;
             margin-top: 0.9rem;
         }
 
-        .status-form-row {
+        .inline-form-row {
             display: flex;
             align-items: flex-start;
             gap: 0.75rem;
             flex-wrap: wrap;
         }
 
-        .status-form .button {
+        .inline-form .button {
             min-height: 3rem;
         }
 
-        .status-help {
+        .inline-help {
             margin: 0;
             color: #64748b;
             font-size: 0.92rem;
@@ -293,7 +294,7 @@
                 gap: 0.35rem;
             }
 
-            .status-form-row {
+            .inline-form-row {
                 flex-direction: column;
                 align-items: stretch;
             }
@@ -351,7 +352,7 @@
                         </span>
                     </div>
 
-                    <form class="status-form" method="post" action="{{ route('tickets.status.update', $ticket) }}">
+                    <form class="inline-form" method="post" action="{{ route('tickets.status.update', $ticket) }}">
                         @csrf
                         @method('patch')
 
@@ -365,7 +366,7 @@
 
                         <div class="field">
                             <label class="label" for="status_id">Změnit stav</label>
-                            <div class="status-form-row">
+                            <div class="inline-form-row">
                                 <select class="select" id="status_id" name="status_id" required>
                                     @foreach ($statuses as $status)
                                         <option
@@ -383,7 +384,7 @@
                             @endif
                         </div>
 
-                        <p class="status-help">Interní administrativní akce připravená pro pozdější doplnění oprávnění.</p>
+                        <p class="inline-help">Interní administrativní akce připravená pro pozdější doplnění oprávnění.</p>
                     </form>
                 </article>
 
@@ -411,6 +412,42 @@
                             <span class="detail-empty">Nepřiřazeno</span>
                         @endif
                     </div>
+
+                    <form class="inline-form" method="post" action="{{ route('tickets.assignee.update', $ticket) }}">
+                        @csrf
+                        @method('patch')
+
+                        @if ($assigneeErrors->any())
+                            <ul class="field-error-list">
+                                @foreach ($assigneeErrors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        @endif
+
+                        <div class="field">
+                            <label class="label" for="assignee_id">Přiřadit řešitele</label>
+                            <div class="inline-form-row">
+                                <select class="select" id="assignee_id" name="assignee_id">
+                                    <option value="">Nepřiřazeno</option>
+                                    @foreach ($assignees as $assignee)
+                                        <option
+                                            value="{{ $assignee->id }}"
+                                            @selected((string) old('assignee_id', $ticket->assignee_id) === (string) $assignee->id)
+                                        >
+                                            {{ $assignee->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <button class="button button-primary" type="submit">Uložit řešitele</button>
+                            </div>
+                            @if ($assigneeErrors->has('assignee_id'))
+                                <div class="field-error">{{ $assigneeErrors->first('assignee_id') }}</div>
+                            @endif
+                        </div>
+
+                        <p class="inline-help">Prázdná hodnota znamená, že ticket zůstane nepřiřazený.</p>
+                    </form>
                 </article>
 
                 <article class="detail-card">
