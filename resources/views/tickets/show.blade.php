@@ -2,6 +2,10 @@
 
 @section('title', $ticket->ticket_number ? 'Ticket '.$ticket->ticket_number : 'Detail ticketu')
 
+@php
+    $viewErrors = $errors ?? new \Illuminate\Support\ViewErrorBag();
+@endphp
+
 @push('styles')
     <style>
         .ticket-detail {
@@ -97,6 +101,122 @@
             opacity: 0.7;
         }
 
+        .alert {
+            padding: 0.9rem 1rem;
+            border-radius: 0.9rem;
+            border: 1px solid #b7e4dd;
+            background: #ecfdf8;
+            color: #0f513f;
+        }
+
+        .comment-section {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .comment-empty {
+            padding: 1.25rem;
+            border: 1px dashed #cfd8e3;
+            border-radius: 1rem;
+            background: #fbfdff;
+            color: #64748b;
+        }
+
+        .comment-list {
+            display: grid;
+            gap: 0.9rem;
+        }
+
+        .comment-card {
+            padding: 1rem 1.1rem;
+            border: 1px solid #e5ebf1;
+            border-radius: 1rem;
+            background: #fff;
+        }
+
+        .comment-head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 0.65rem;
+        }
+
+        .comment-author {
+            font-weight: 700;
+            color: #13202b;
+        }
+
+        .comment-time {
+            color: #64748b;
+            font-size: 0.92rem;
+            white-space: nowrap;
+        }
+
+        .comment-body {
+            color: #334155;
+            line-height: 1.7;
+        }
+
+        .comment-form {
+            display: grid;
+            gap: 1rem;
+            padding: 1rem 1.1rem;
+            border: 1px solid #e5ebf1;
+            border-radius: 1rem;
+            background: #fff;
+        }
+
+        .comment-form-head h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            color: #13202b;
+        }
+
+        .comment-form-head p {
+            margin: 0.35rem 0 0;
+            color: #64748b;
+        }
+
+        .textarea {
+            width: 100%;
+            min-height: 9rem;
+            padding: 0.8rem 0.95rem;
+            border: 1px solid #cfd8e3;
+            border-radius: 0.9rem;
+            background: #fff;
+            color: #13202b;
+            font: inherit;
+            resize: vertical;
+        }
+
+        .textarea:focus {
+            outline: 2px solid rgba(15, 118, 110, 0.16);
+            border-color: #0f766e;
+        }
+
+        .field-error-list,
+        .field-error {
+            color: #b42318;
+        }
+
+        .field-error-list {
+            margin: 0;
+            padding: 0.9rem 1rem;
+            list-style: none;
+            border: 1px solid #f3c8c3;
+            border-radius: 0.9rem;
+            background: #fff5f4;
+        }
+
+        .field-error-list li + li {
+            margin-top: 0.35rem;
+        }
+
+        .field-error {
+            font-size: 0.9rem;
+        }
+
         @media (max-width: 720px) {
             .ticket-hero {
                 padding: 1rem;
@@ -112,6 +232,12 @@
 
             .detail-card.full {
                 grid-column: auto;
+            }
+
+            .comment-head {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.35rem;
             }
         }
     </style>
@@ -131,6 +257,10 @@
 
     <div class="page-body">
         <div class="ticket-detail">
+            @if (session('status'))
+                <div class="alert" role="status">{{ session('status') }}</div>
+            @endif
+
             <section class="ticket-hero">
                 <div class="ticket-number">{{ $ticket->ticket_number ?? 'Bez čísla ticketu' }}</div>
                 <h3 class="ticket-subject">{{ $ticket->subject }}</h3>
@@ -194,6 +324,61 @@
                     <span class="detail-label">Updated at</span>
                     <div class="detail-value">{{ $ticket->updated_at?->format('d.m.Y H:i') ?? '—' }}</div>
                 </article>
+            </section>
+
+            <section class="comment-section">
+                <div class="page-head" id="comments">
+                    <div>
+                        <h2>Komentáře</h2>
+                        <p>Veřejná komunikace k tomuto ticketu v chronologickém pořadí.</p>
+                    </div>
+                </div>
+
+                @if ($ticket->publicComments->isEmpty())
+                    <div class="comment-empty">Zatím tu nejsou žádné veřejné komentáře.</div>
+                @else
+                    <div class="comment-list">
+                        @foreach ($ticket->publicComments as $comment)
+                            <article class="comment-card">
+                                <div class="comment-head">
+                                    <div class="comment-author">{{ $comment->user?->name ?? 'Neznámý uživatel' }}</div>
+                                    <div class="comment-time">{{ $comment->created_at?->format('d.m.Y H:i') ?? '—' }}</div>
+                                </div>
+                                <div class="comment-body">
+                                    {!! nl2br(e($comment->body)) !!}
+                                </div>
+                            </article>
+                        @endforeach
+                    </div>
+                @endif
+
+                <form class="comment-form" method="post" action="{{ route('tickets.comments.store', $ticket) }}">
+                    @csrf
+
+                    <div class="comment-form-head">
+                        <h3>Přidat veřejný komentář</h3>
+                        <p>Komentář bude uložen jako veřejný a zobrazí se v historii ticketu.</p>
+                    </div>
+
+                    @if ($viewErrors->any())
+                        <ul class="field-error-list">
+                            @foreach ($viewErrors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    @endif
+
+                    <div>
+                        <textarea class="textarea" name="body" required>{{ old('body') }}</textarea>
+                        @if ($viewErrors->has('body'))
+                            <div class="field-error">{{ $viewErrors->first('body') }}</div>
+                        @endif
+                    </div>
+
+                    <div>
+                        <button class="button button-primary" type="submit">Přidat komentář</button>
+                    </div>
+                </form>
             </section>
         </div>
     </div>

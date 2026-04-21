@@ -24,6 +24,7 @@ class TicketController extends Controller
                 'requester:id,name',
                 'assignee:id,name',
             ])
+            ->withCount('publicComments')
             ->orderByDesc('updated_at')
             ->get();
 
@@ -48,6 +49,9 @@ class TicketController extends Controller
             'category:id,name',
             'requester:id,name',
             'assignee:id,name',
+            'publicComments' => fn ($query) => $query
+                ->with('user:id,name')
+                ->orderBy('created_at'),
         ]);
 
         return view('tickets.show', [

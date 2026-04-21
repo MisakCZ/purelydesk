@@ -11,7 +11,7 @@
         .ticket-table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 860px;
+            min-width: 980px;
         }
 
         .ticket-table th,
@@ -157,6 +157,7 @@
                             <th scope="col">Priority</th>
                             <th scope="col">Requester</th>
                             <th scope="col">Assignee</th>
+                            <th scope="col">Comments</th>
                             <th scope="col">Updated at</th>
                         </tr>
                     </thead>
@@ -190,6 +191,7 @@
                                 </td>
                                 <td>{{ $ticket->requester?->name ?? '—' }}</td>
                                 <td>{{ $ticket->assignee?->name ?? '—' }}</td>
+                                <td>{{ $ticket->public_comments_count }}</td>
                                 <td class="muted">{{ $ticket->updated_at?->format('d.m.Y H:i') ?? '—' }}</td>
                             </tr>
                         @endforeach
