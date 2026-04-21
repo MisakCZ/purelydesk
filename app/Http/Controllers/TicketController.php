@@ -40,6 +40,21 @@ class TicketController extends Controller
         ]);
     }
 
+    public function show(Ticket $ticket): View
+    {
+        $ticket->load([
+            'status:id,name,color',
+            'priority:id,name,color',
+            'category:id,name',
+            'requester:id,name',
+            'assignee:id,name',
+        ]);
+
+        return view('tickets.show', [
+            'ticket' => $ticket,
+        ]);
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([

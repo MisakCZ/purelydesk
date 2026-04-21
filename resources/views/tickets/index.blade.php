@@ -76,6 +76,16 @@
             opacity: 0.7;
         }
 
+        .ticket-link {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .ticket-link:hover {
+            color: #0f766e;
+            text-decoration: underline;
+        }
+
         .empty-state {
             padding: 3.5rem 1.5rem;
             text-align: center;
@@ -153,9 +163,17 @@
                     <tbody>
                         @foreach ($tickets as $ticket)
                             <tr>
-                                <td class="ticket-number">{{ $ticket->ticket_number ?? '—' }}</td>
+                                <td class="ticket-number">
+                                    <a class="ticket-link" href="{{ route('tickets.show', $ticket) }}">
+                                        {{ $ticket->ticket_number ?? '—' }}
+                                    </a>
+                                </td>
                                 <td class="subject">
-                                    <strong>{{ $ticket->subject }}</strong>
+                                    <strong>
+                                        <a class="ticket-link" href="{{ route('tickets.show', $ticket) }}">
+                                            {{ $ticket->subject }}
+                                        </a>
+                                    </strong>
                                     <span>{{ $ticket->visibility === 'restricted' ? 'Restricted' : 'Public' }}</span>
                                 </td>
                                 <td>
