@@ -21,25 +21,22 @@ use Illuminate\Validation\ValidationException;
 
 class TicketController extends Controller
 {
+    private const INDEX_FILTERS_SESSION_KEY = 'tickets.index.filters';
+
     public function index(Request $request): View
     {
-        $filters = [
-            'search' => trim((string) $request->query('search', '')),
-            'status' => (string) $request->query('status', ''),
-            'priority' => (string) $request->query('priority', ''),
-            'category' => (string) $request->query('category', ''),
-            'assignee' => (string) $request->query('assignee', ''),
-        ];
+        $filters = $this->resolveTicketIndexFilters($request);
+        $watcherUser = $this->currentWatcherUser();
 
-        $tickets = $this->applyTicketFilters($this->ticketIndexQuery(), $filters)
+        $tickets = $this->applyTicketFilters($this->ticketIndexQuery($watcherUser), $filters, $watcherUser)
             ->orderByDesc('updated_at')
             ->paginate(15)
-            ->withQueryString();
+            ->appends($this->nonEmptyTicketFilters($filters));
 
         $pinnedTickets = collect();
 
         if (Ticket::supportsPinning()) {
-            $pinnedTickets = $this->applyTicketFilters($this->ticketIndexQuery(), $filters)
+            $pinnedTickets = $this->applyTicketFilters($this->ticketIndexQuery($watcherUser), $filters, $watcherUser)
                 ->where('is_pinned', true)
                 ->orderByDesc('pinned_at')
                 ->orderByDesc('updated_at')
@@ -66,7 +63,6 @@ class TicketController extends Controller
             'statuses' => TicketStatus::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name']),
             'priorities' => TicketPriority::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name']),
             'categories' => TicketCategory::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
-            'assignees' => User::query()->orderBy('name')->get(['id', 'name']),
             'hasActiveFilters' => collect($filters)->contains(fn ($value) => $value !== ''),
         ]);
     }
@@ -92,6 +88,7 @@ class TicketController extends Controller
             'category:id,name',
             'requester:id,name',
             'assignee:id,name',
+            'watchers' => fn ($query) => $query->orderBy('users.name'),
             'internalComments' => fn ($query) => $query
                 ->with('user:id,name')
                 ->orderBy('created_at'),
@@ -103,12 +100,17 @@ class TicketController extends Controller
         $originalSnapshotEntry = $this->originalSnapshotEntry($ticket);
         $originalVersionSnapshot = $this->extractOriginalVersionSnapshot($originalSnapshotEntry?->new_value ?? []);
         $currentOriginalVersionSnapshot = $this->extractOriginalVersionSnapshot($this->captureTicketSnapshot($ticket));
+        $watcherUser = $this->currentWatcherUser();
 
         return view('tickets.show', [
             'ticket' => $ticket,
             'statuses' => TicketStatus::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name']),
             'assignees' => User::query()->orderBy('name')->get(['id', 'name']),
             'pinningEnabled' => Ticket::supportsPinning(),
+            'watcherActionEnabled' => $watcherUser instanceof User,
+            'isWatchingTicket' => $watcherUser instanceof User
+                ? $ticket->watchers->contains('id', $watcherUser->id)
+                : false,
             'originalSnapshot' => $originalVersionSnapshot,
             'originalSnapshotSource' => $originalSnapshotEntry?->meta['source'] ?? null,
             'hasOriginalVersionChanges' => $originalSnapshotEntry instanceof TicketHistory
@@ -269,9 +271,10 @@ class TicketController extends Controller
         ];
     }
 
-    private function ticketIndexQuery(): Builder
+    private function ticketIndexQuery(?User $watcherUser = null): Builder
     {
-        return Ticket::query()
+        $query = Ticket::query()
+            ->select('tickets.*')
             ->with([
                 'status:id,name,color',
                 'priority:id,name,color',
@@ -279,9 +282,19 @@ class TicketController extends Controller
                 'assignee:id,name',
             ])
             ->withCount('publicComments');
+
+        if ($watcherUser instanceof User) {
+            $query->withExists([
+                'watchers as is_watched_by_current_user' => fn (Builder $query) => $query->whereKey($watcherUser->id),
+            ]);
+        } else {
+            $query->selectRaw('0 as is_watched_by_current_user');
+        }
+
+        return $query;
     }
 
-    private function applyTicketFilters(Builder $query, array $filters): Builder
+    private function applyTicketFilters(Builder $query, array $filters, ?User $watcherUser = null): Builder
     {
         return $query
             ->when($filters['search'] !== '', function (Builder $query) use ($filters): void {
@@ -296,9 +309,66 @@ class TicketController extends Controller
             ->when($filters['category'] !== '', function (Builder $query) use ($filters): void {
                 $query->where('ticket_category_id', (int) $filters['category']);
             })
-            ->when($filters['assignee'] !== '', function (Builder $query) use ($filters): void {
-                $query->where('assignee_id', (int) $filters['assignee']);
+            ->when($filters['watched'] === '1', function (Builder $query) use ($watcherUser): void {
+                if (! $watcherUser instanceof User) {
+                    $query->whereRaw('1 = 0');
+
+                    return;
+                }
+
+                $query->whereHas('watchers', fn (Builder $query) => $query->whereKey($watcherUser->id));
             });
+    }
+
+    private function resolveTicketIndexFilters(Request $request): array
+    {
+        $filterKeys = array_keys($this->defaultTicketFilters());
+        $hasFilterQuery = false;
+
+        foreach ($filterKeys as $filterKey) {
+            if ($request->query->has($filterKey)) {
+                $hasFilterQuery = true;
+                break;
+            }
+        }
+
+        if ($hasFilterQuery) {
+            $filters = $this->normalizeTicketFilters($request->only($filterKeys));
+            $request->session()->put(self::INDEX_FILTERS_SESSION_KEY, $filters);
+
+            return $filters;
+        }
+
+        return $this->normalizeTicketFilters(
+            (array) $request->session()->get(self::INDEX_FILTERS_SESSION_KEY, $this->defaultTicketFilters()),
+        );
+    }
+
+    private function defaultTicketFilters(): array
+    {
+        return [
+            'search' => '',
+            'status' => '',
+            'priority' => '',
+            'category' => '',
+            'watched' => '',
+        ];
+    }
+
+    private function normalizeTicketFilters(array $filters): array
+    {
+        return [
+            'search' => trim((string) ($filters['search'] ?? '')),
+            'status' => (string) ($filters['status'] ?? ''),
+            'priority' => (string) ($filters['priority'] ?? ''),
+            'category' => (string) ($filters['category'] ?? ''),
+            'watched' => (string) ($filters['watched'] ?? '') === '1' ? '1' : '',
+        ];
+    }
+
+    private function nonEmptyTicketFilters(array $filters): array
+    {
+        return array_filter($filters, fn (string $value) => $value !== '');
     }
 
     private function ticketSnapshotRelations(): array
@@ -478,12 +548,18 @@ class TicketController extends Controller
 
     private function resolveHistoryActorId(): ?int
     {
+        return $this->currentWatcherUser()?->id;
+    }
+
+    private function currentWatcherUser(): ?User
+    {
         $authenticatedUser = auth()->user();
 
         if ($authenticatedUser instanceof User) {
-            return $authenticatedUser->id;
+            return $authenticatedUser;
         }
 
-        return User::query()->orderBy('id')->value('id');
+        // Temporary fallback until authentication is integrated.
+        return User::query()->orderBy('id')->first();
     }
 }

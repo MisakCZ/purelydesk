@@ -159,13 +159,14 @@
 
         .filter-form {
             display: grid;
-            gap: 1rem;
+            gap: 0.85rem;
         }
 
         .filter-grid {
             display: grid;
-            grid-template-columns: repeat(5, minmax(0, 1fr));
-            gap: 1rem;
+            grid-template-columns: minmax(14rem, 1.35fr) repeat(4, minmax(10rem, 0.9fr));
+            gap: 0.85rem;
+            align-items: end;
         }
 
         .filter-field {
@@ -173,14 +174,36 @@
             gap: 0.45rem;
         }
 
-        .filter-field.filter-search {
-            grid-column: span 2;
+        .filter-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.65rem;
         }
 
         .filter-label {
             font-size: 0.9rem;
             font-weight: 600;
             color: #13202b;
+        }
+
+        .filter-clear {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.35rem;
+            height: 1.35rem;
+            border-radius: 999px;
+            color: #b42318;
+            text-decoration: none;
+            font-size: 1rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .filter-clear:hover {
+            background: #fff1f1;
+            color: #991b1b;
         }
 
         .filter-input,
@@ -201,28 +224,18 @@
             border-color: #0f766e;
         }
 
-        .filter-actions {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            flex-wrap: wrap;
+        .badge-watching {
+            background: #dff5f2;
+            color: #0f766e;
         }
 
-        .filter-reset {
-            display: inline-flex;
-            align-items: center;
-            min-height: 2.75rem;
-            padding: 0.65rem 1rem;
-            border: 1px solid #d9e0e7;
-            border-radius: 0.9rem;
-            background: #f8fafc;
-            color: #13202b;
-            text-decoration: none;
+        .watch-state {
+            color: #5b6b79;
+        }
+
+        .watch-state.watching {
+            color: #0f766e;
             font-weight: 600;
-        }
-
-        .filter-reset:hover {
-            background: #eef2f6;
         }
 
         .table-wrap {
@@ -394,10 +407,6 @@
                 grid-template-columns: 1fr;
             }
 
-            .filter-field.filter-search {
-                grid-column: auto;
-            }
-
             .pinned-section-head {
                 flex-direction: column;
             }
@@ -414,10 +423,60 @@
                 flex-direction: column;
             }
         }
+
+        @media (max-width: 1180px) and (min-width: 721px) {
+            .filter-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
     </style>
 @endpush
 
+@push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const filterForm = document.querySelector('[data-ticket-filters]');
+
+            if (! filterForm) {
+                return;
+            }
+
+            const searchInput = filterForm.querySelector('[data-filter-search-input]');
+            const searchHidden = filterForm.querySelector('[data-filter-search-hidden]');
+
+            filterForm.querySelectorAll('[data-filter-auto-submit]').forEach((field) => {
+                field.addEventListener('change', () => {
+                    filterForm.requestSubmit();
+                });
+            });
+
+            if (! searchInput || ! searchHidden) {
+                return;
+            }
+
+            searchInput.addEventListener('keydown', (event) => {
+                if (event.key !== 'Enter') {
+                    return;
+                }
+
+                event.preventDefault();
+                searchHidden.value = searchInput.value.trim();
+                filterForm.requestSubmit();
+            });
+        });
+    </script>
+@endpush
+
 @section('content')
+    @php
+        $clearFilterQuery = static function (string $filterKey) use ($filters): array {
+            $query = array_filter($filters, fn ($value) => $value !== '');
+            $query[$filterKey] = '';
+
+            return $query;
+        };
+    @endphp
+
     <div class="page-head">
         <div class="page-head-bar">
             <div>
@@ -468,23 +527,49 @@
         @endif
 
         <section class="filter-card" aria-label="Filtrování ticketů">
-            <form class="filter-form" method="get" action="{{ route('tickets.index') }}">
+            <form class="filter-form" method="get" action="{{ route('tickets.index') }}" data-ticket-filters>
+                <input type="hidden" name="search" value="{{ $filters['search'] }}" data-filter-search-hidden>
+
                 <div class="filter-grid">
-                    <div class="filter-field filter-search">
-                        <label class="filter-label" for="search">Hledání v subjectu</label>
+                    <div class="filter-field">
+                        <div class="filter-head">
+                            <label class="filter-label" for="search_input">Hledání v subjectu</label>
+                            @if ($filters['search'] !== '')
+                                <a
+                                    class="filter-clear"
+                                    href="{{ route('tickets.index', $clearFilterQuery('search')) }}"
+                                    aria-label="Zrušit hledání v subjectu"
+                                    title="Zrušit hledání v subjectu"
+                                >
+                                    &times;
+                                </a>
+                            @endif
+                        </div>
                         <input
                             class="filter-input"
-                            id="search"
-                            name="search"
+                            id="search_input"
                             type="search"
                             value="{{ $filters['search'] }}"
-                            placeholder="Např. tiskárna, VPN, Outlook"
+                            placeholder="Např. tiskárna, VPN"
+                            data-filter-search-input
                         >
                     </div>
 
                     <div class="filter-field">
-                        <label class="filter-label" for="status">Status</label>
-                        <select class="filter-select" id="status" name="status">
+                        <div class="filter-head">
+                            <label class="filter-label" for="status">Status</label>
+                            @if ($filters['status'] !== '')
+                                <a
+                                    class="filter-clear"
+                                    href="{{ route('tickets.index', $clearFilterQuery('status')) }}"
+                                    aria-label="Zrušit filtr statusu"
+                                    title="Zrušit filtr statusu"
+                                >
+                                    &times;
+                                </a>
+                            @endif
+                        </div>
+                        <select class="filter-select" id="status" name="status" data-filter-auto-submit>
                             <option value="">Všechny</option>
                             @foreach ($statuses as $status)
                                 <option value="{{ $status->id }}" @selected($filters['status'] === (string) $status->id)>{{ $status->name }}</option>
@@ -493,8 +578,20 @@
                     </div>
 
                     <div class="filter-field">
-                        <label class="filter-label" for="priority">Priority</label>
-                        <select class="filter-select" id="priority" name="priority">
+                        <div class="filter-head">
+                            <label class="filter-label" for="priority">Priority</label>
+                            @if ($filters['priority'] !== '')
+                                <a
+                                    class="filter-clear"
+                                    href="{{ route('tickets.index', $clearFilterQuery('priority')) }}"
+                                    aria-label="Zrušit filtr priority"
+                                    title="Zrušit filtr priority"
+                                >
+                                    &times;
+                                </a>
+                            @endif
+                        </div>
+                        <select class="filter-select" id="priority" name="priority" data-filter-auto-submit>
                             <option value="">Všechny</option>
                             @foreach ($priorities as $priority)
                                 <option value="{{ $priority->id }}" @selected($filters['priority'] === (string) $priority->id)>{{ $priority->name }}</option>
@@ -503,8 +600,20 @@
                     </div>
 
                     <div class="filter-field">
-                        <label class="filter-label" for="category">Category</label>
-                        <select class="filter-select" id="category" name="category">
+                        <div class="filter-head">
+                            <label class="filter-label" for="category">Category</label>
+                            @if ($filters['category'] !== '')
+                                <a
+                                    class="filter-clear"
+                                    href="{{ route('tickets.index', $clearFilterQuery('category')) }}"
+                                    aria-label="Zrušit filtr kategorie"
+                                    title="Zrušit filtr kategorie"
+                                >
+                                    &times;
+                                </a>
+                            @endif
+                        </div>
+                        <select class="filter-select" id="category" name="category" data-filter-auto-submit>
                             <option value="">Všechny</option>
                             @foreach ($categories as $category)
                                 <option value="{{ $category->id }}" @selected($filters['category'] === (string) $category->id)>{{ $category->name }}</option>
@@ -513,19 +622,24 @@
                     </div>
 
                     <div class="filter-field">
-                        <label class="filter-label" for="assignee">Assignee</label>
-                        <select class="filter-select" id="assignee" name="assignee">
-                            <option value="">Všichni</option>
-                            @foreach ($assignees as $assignee)
-                                <option value="{{ $assignee->id }}" @selected($filters['assignee'] === (string) $assignee->id)>{{ $assignee->name }}</option>
-                            @endforeach
+                        <div class="filter-head">
+                            <label class="filter-label" for="watched">Sledování</label>
+                            @if ($filters['watched'] !== '')
+                                <a
+                                    class="filter-clear"
+                                    href="{{ route('tickets.index', $clearFilterQuery('watched')) }}"
+                                    aria-label="Zrušit filtr sledovaných ticketů"
+                                    title="Zrušit filtr sledovaných ticketů"
+                                >
+                                    &times;
+                                </a>
+                            @endif
+                        </div>
+                        <select class="filter-select" id="watched" name="watched" data-filter-auto-submit>
+                            <option value="">Všechny tickety</option>
+                            <option value="1" @selected($filters['watched'] === '1')>Jen moje sledované</option>
                         </select>
                     </div>
-                </div>
-
-                <div class="filter-actions">
-                    <button class="button button-primary" type="submit">Filtrovat</button>
-                    <a class="filter-reset" href="{{ route('tickets.index') }}">Reset</a>
                 </div>
             </form>
         </section>
@@ -567,11 +681,17 @@
                                     <span class="badge-dot"></span>
                                     {{ $ticket->priority?->name ?? '—' }}
                                 </span>
+                                @if ($ticket->is_watched_by_current_user)
+                                    <span class="badge badge-watching">Sleduji</span>
+                                @endif
                             </div>
 
                             <div class="pinned-ticket-meta">
                                 <div>Requester: {{ $ticket->requester?->name ?? '—' }}</div>
                                 <div>Assignee: {{ $ticket->assignee?->name ?? '—' }}</div>
+                                <div class="{{ $ticket->is_watched_by_current_user ? 'watch-state watching' : 'watch-state' }}">
+                                    {{ $ticket->is_watched_by_current_user ? 'Sledujete' : 'Nesledujete' }}
+                                </div>
                                 <div>Updated: {{ $ticket->updated_at?->format('d.m.Y H:i') ?? '—' }}</div>
                             </div>
                         </article>
@@ -584,7 +704,7 @@
             <section class="empty-state" aria-label="Prázdný seznam ticketů">
                 @if ($hasActiveFilters)
                     <h3>Žádné tickety neodpovídají zadaným filtrům</h3>
-                    <p>Upravte nebo resetujte aktuální filtry a zkuste hledání znovu.</p>
+                    <p>Upravte některý z aktivních filtrů nebo zrušte konkrétní omezení červeným křížkem.</p>
                 @else
                     <h3>Zatím nejsou evidované žádné tickety</h3>
                     <p>Jakmile budou v systému vytvořené první požadavky, zobrazí se zde jejich seznam včetně stavu, priority a přiřazení.</p>
@@ -624,6 +744,10 @@
                                         @if ($pinningEnabled && $ticket->is_pinned)
                                             · Připnuto
                                         @endif
+                                        ·
+                                        <span class="{{ $ticket->is_watched_by_current_user ? 'watch-state watching' : 'watch-state' }}">
+                                            {{ $ticket->is_watched_by_current_user ? 'Sleduji' : 'Nesleduji' }}
+                                        </span>
                                     </span>
                                 </td>
                                 <td>

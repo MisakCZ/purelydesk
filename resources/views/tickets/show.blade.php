@@ -9,6 +9,7 @@
     $assigneeErrors = $errorBags->getBag('ticketAssignee');
     $pinErrors = $errorBags->getBag('ticketPin');
     $statusErrors = $errorBags->getBag('ticketStatus');
+    $watcherErrors = $errorBags->getBag('ticketWatcher');
 @endphp
 
 @push('styles')
@@ -195,6 +196,11 @@
             white-space: nowrap;
         }
 
+        .badge-watching {
+            background: #dff5f2;
+            color: #0f766e;
+        }
+
         .badge-dot {
             width: 0.55rem;
             height: 0.55rem;
@@ -258,6 +264,27 @@
             margin: 0;
             color: #64748b;
             font-size: 0.92rem;
+        }
+
+        .watcher-list {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            flex-wrap: wrap;
+            margin-top: 0.9rem;
+        }
+
+        .watcher-pill {
+            display: inline-flex;
+            align-items: center;
+            min-height: 2.1rem;
+            padding: 0.45rem 0.8rem;
+            border: 1px solid #d9e0e7;
+            border-radius: 999px;
+            background: #f8fafc;
+            color: #334155;
+            font-size: 0.92rem;
+            font-weight: 600;
         }
 
         .button-compact {
@@ -554,6 +581,10 @@
                         <span class="badge-dot"></span>
                         {{ $ticket->priority?->name ?? '—' }}
                     </span>
+                    <span class="badge{{ $isWatchingTicket ? ' badge-watching' : '' }}">
+                        <span class="badge-dot"></span>
+                        {{ $isWatchingTicket ? 'Sledujete' : 'Nesledujete' }}
+                    </span>
                 </div>
             </section>
 
@@ -797,6 +828,58 @@
                         </form>
                     @else
                         <div class="detail-value detail-empty">Připnutí bude dostupné po spuštění databázové migrace.</div>
+                    @endif
+                </article>
+
+                <article class="detail-card full">
+                    <span class="detail-label">Sledující</span>
+                    <div class="detail-value">
+                        @if ($isWatchingTicket)
+                            Ticket aktuálně sledujete.
+                        @else
+                            Ticket aktuálně nesledujete.
+                        @endif
+                    </div>
+
+                    @if ($watcherErrors->any())
+                        <ul class="field-error-list">
+                            @foreach ($watcherErrors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    @endif
+
+                    @if ($watcherActionEnabled)
+                        @if ($isWatchingTicket)
+                            <form class="inline-form" method="post" action="{{ route('tickets.watchers.destroy', $ticket) }}">
+                                @csrf
+                                @method('delete')
+
+                                <div class="inline-form-actions">
+                                    <button class="button button-secondary button-compact" type="submit">Přestat sledovat</button>
+                                </div>
+                            </form>
+                        @else
+                            <form class="inline-form" method="post" action="{{ route('tickets.watchers.store', $ticket) }}">
+                                @csrf
+
+                                <div class="inline-form-actions">
+                                    <button class="button button-primary button-compact" type="submit">Začít sledovat</button>
+                                </div>
+                            </form>
+                        @endif
+                    @else
+                        <p class="inline-help">Sledování zatím nelze použít, protože v databázi neexistuje žádný uživatel.</p>
+                    @endif
+
+                    @if ($ticket->watchers->isEmpty())
+                        <div class="comment-empty">Zatím ticket nikdo nesleduje.</div>
+                    @else
+                        <div class="watcher-list" aria-label="Seznam sledujících">
+                            @foreach ($ticket->watchers as $watcher)
+                                <span class="watcher-pill">{{ $watcher->name }}</span>
+                            @endforeach
+                        </div>
                     @endif
                 </article>
             </section>
