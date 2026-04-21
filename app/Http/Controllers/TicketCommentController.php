@@ -17,19 +17,38 @@ class TicketCommentController extends Controller
             'body' => ['required', 'string'],
         ]);
 
-        TicketComment::query()->create([
-            'ticket_id' => $ticket->id,
-            'user_id' => $this->resolveAuthor()->id,
-            'visibility' => 'public',
-            'body' => $validated['body'],
-        ]);
+        $this->createComment($ticket, $validated['body'], 'public', 'comment');
 
         return redirect()
             ->route('tickets.show', $ticket)
             ->with('status', 'Komentář byl přidán.');
     }
 
-    private function resolveAuthor(): User
+    public function storeInternal(Request $request, Ticket $ticket): RedirectResponse
+    {
+        // TODO: Restrict this to internal admin users when auth/policies are integrated.
+        $validated = $request->validateWithBag('internalNote', [
+            'note_body' => ['required', 'string'],
+        ]);
+
+        $this->createComment($ticket, $validated['note_body'], 'internal', 'internalNote', 'note_body');
+
+        return redirect()
+            ->route('tickets.show', $ticket)
+            ->with('status', 'Interní poznámka byla uložena.');
+    }
+
+    private function createComment(Ticket $ticket, string $body, string $visibility, string $errorBag, string $errorKey = 'body'): void
+    {
+        TicketComment::query()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $this->resolveAuthor($errorBag, $errorKey)->id,
+            'visibility' => $visibility,
+            'body' => $body,
+        ]);
+    }
+
+    private function resolveAuthor(string $errorBag, string $errorKey): User
     {
         $authenticatedUser = auth()->user();
 
@@ -45,7 +64,7 @@ class TicketCommentController extends Controller
         }
 
         throw ValidationException::withMessages([
-            'comment' => 'Komentář zatím nelze uložit, protože v databázi neexistuje žádný uživatel.',
-        ]);
+            $errorKey => 'Poznámku zatím nelze uložit, protože v databázi neexistuje žádný uživatel.',
+        ])->errorBag($errorBag);
     }
 }

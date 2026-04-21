@@ -51,6 +51,9 @@ class TicketController extends Controller
             'category:id,name',
             'requester:id,name',
             'assignee:id,name',
+            'internalComments' => fn ($query) => $query
+                ->with('user:id,name')
+                ->orderBy('created_at'),
             'publicComments' => fn ($query) => $query
                 ->with('user:id,name')
                 ->orderBy('created_at'),

@@ -5,6 +5,7 @@
 @php
     $errorBags = $errors ?? new \Illuminate\Support\ViewErrorBag();
     $commentErrors = $errorBags->getBag('comment');
+    $internalNoteErrors = $errorBags->getBag('internalNote');
     $assigneeErrors = $errorBags->getBag('ticketAssignee');
     $statusErrors = $errorBags->getBag('ticketStatus');
 @endphp
@@ -206,6 +207,12 @@
             border-radius: 1rem;
             background: #fbfdff;
             color: #64748b;
+        }
+
+        .internal-note-card,
+        .internal-note-form {
+            border-color: #e1d7c4;
+            background: #fcfaf6;
         }
 
         .comment-list {
@@ -629,6 +636,61 @@
 
                     <div>
                         <button class="button button-primary" type="submit">Přidat komentář</button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="comment-section">
+                <div class="page-head" id="internal-notes">
+                    <div>
+                        <h2>Interní poznámky</h2>
+                        <p>Oddělený interní blok pro administrativní poznámky k ticketu.</p>
+                    </div>
+                </div>
+
+                @if ($ticket->internalComments->isEmpty())
+                    <div class="comment-empty">Zatím tu nejsou žádné interní poznámky.</div>
+                @else
+                    <div class="comment-list">
+                        @foreach ($ticket->internalComments as $note)
+                            <article class="comment-card internal-note-card">
+                                <div class="comment-head">
+                                    <div class="comment-author">{{ $note->user?->name ?? 'Neznámý uživatel' }}</div>
+                                    <div class="comment-time">{{ $note->created_at?->format('d.m.Y H:i') ?? '—' }}</div>
+                                </div>
+                                <div class="comment-body">
+                                    {!! nl2br(e($note->body)) !!}
+                                </div>
+                            </article>
+                        @endforeach
+                    </div>
+                @endif
+
+                <form class="comment-form internal-note-form" method="post" action="{{ route('tickets.internal-notes.store', $ticket) }}">
+                    @csrf
+
+                    <div class="comment-form-head">
+                        <h3>Přidat interní poznámku</h3>
+                        <p>Interní administrativní akce připravená pro pozdější doplnění oprávnění.</p>
+                    </div>
+
+                    @if ($internalNoteErrors->any())
+                        <ul class="field-error-list">
+                            @foreach ($internalNoteErrors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    @endif
+
+                    <div>
+                        <textarea class="textarea" name="note_body" required>{{ old('note_body') }}</textarea>
+                        @if ($internalNoteErrors->has('note_body'))
+                            <div class="field-error">{{ $internalNoteErrors->first('note_body') }}</div>
+                        @endif
+                    </div>
+
+                    <div>
+                        <button class="button button-primary" type="submit">Uložit interní poznámku</button>
                     </div>
                 </form>
             </section>
