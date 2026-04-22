@@ -138,7 +138,6 @@ class TicketController extends Controller
         $originalVersionSnapshot = $this->extractOriginalVersionSnapshot($originalSnapshotEntry?->new_value ?? []);
         $currentOriginalVersionSnapshot = $this->extractOriginalVersionSnapshot($this->captureTicketSnapshot($ticket));
         $watcherUser = $this->currentHelpdeskUser();
-        $closedStatus = $this->findStatusBySlugOrCode('closed');
 
         return view('tickets.show', [
             'ticket' => $ticket,
@@ -154,9 +153,6 @@ class TicketController extends Controller
                 : false,
             'commentThreadingEnabled' => TicketComment::supportsThreading(),
             'publicCommentThreads' => $publicCommentThreads,
-            'isClosedTicket' => $closedStatus instanceof TicketStatus
-                ? (int) $ticket->ticket_status_id === (int) $closedStatus->id
-                : false,
             'originalSnapshot' => $originalVersionSnapshot,
             'originalSnapshotSource' => $originalSnapshotEntry?->meta['source'] ?? null,
             'hasOriginalVersionChanges' => $originalSnapshotEntry instanceof TicketHistory
@@ -168,39 +164,17 @@ class TicketController extends Controller
     {
         $this->ensureTicketCanBeViewed($ticket);
 
+        $selectedStatusId = $request->integer('status_id');
+        $closedStatus = $this->findStatusBySlugOrCode('closed');
+        $isClosedStatus = $closedStatus instanceof TicketStatus
+            && $selectedStatusId === (int) $closedStatus->id;
+
         return $this->applyTicketUpdateWithHistory($ticket, [
-            'ticket_status_id' => $request->integer('status_id'),
+            'ticket_status_id' => $selectedStatusId,
+            'closed_at' => $isClosedStatus
+                ? ($ticket->closed_at ?? now())
+                : null,
         ], 'Stav ticketu byl úspěšně změněn.', 'status_update');
-    }
-
-    public function close(Ticket $ticket): RedirectResponse
-    {
-        $this->ensureTicketCanBeViewed($ticket);
-
-        $closedStatus = $this->resolveWorkflowStatus(
-            ['closed'],
-            'Stav "closed" v systému neexistuje. Ticket zatím nelze uzavřít.',
-        );
-
-        return $this->applyTicketUpdateWithHistory($ticket, [
-            'ticket_status_id' => $closedStatus->id,
-            'closed_at' => now(),
-        ], 'Ticket byl úspěšně uzavřen.', 'ticket_close');
-    }
-
-    public function reopen(Ticket $ticket): RedirectResponse
-    {
-        $this->ensureTicketCanBeViewed($ticket);
-
-        $reopenedStatus = $this->resolveWorkflowStatus(
-            ['in_progress', 'new'],
-            'V systému chybí stav "in_progress" i náhradní stav "new". Ticket zatím nelze znovu otevřít.',
-        );
-
-        return $this->applyTicketUpdateWithHistory($ticket, [
-            'ticket_status_id' => $reopenedStatus->id,
-            'closed_at' => null,
-        ], 'Ticket byl úspěšně znovu otevřen.', 'ticket_reopen');
     }
 
     public function updateAssignee(UpdateTicketAssigneeRequest $request, Ticket $ticket): RedirectResponse
@@ -345,21 +319,6 @@ class TicketController extends Controller
                 }
             })
             ->first();
-    }
-
-    private function resolveWorkflowStatus(array $identifiers, string $errorMessage): TicketStatus
-    {
-        foreach ($identifiers as $identifier) {
-            $status = $this->findStatusBySlugOrCode($identifier);
-
-            if ($status instanceof TicketStatus) {
-                return $status;
-            }
-        }
-
-        throw ValidationException::withMessages([
-            'workflow' => $errorMessage,
-        ])->errorBag('ticketWorkflow');
     }
 
     private function generateTicketNumber(Ticket $ticket): string

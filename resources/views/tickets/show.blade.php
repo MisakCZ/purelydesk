@@ -13,7 +13,6 @@
     $statusErrors = $errorBags->getBag('ticketStatus');
     $visibilityErrors = $errorBags->getBag('ticketVisibility');
     $watcherErrors = $errorBags->getBag('ticketWatcher');
-    $workflowErrors = $errorBags->getBag('ticketWorkflow');
     $replyParentId = (string) old('parent_id', '');
 @endphp
 
@@ -740,49 +739,6 @@
 
                         <p class="inline-help">Interní administrativní akce připravená pro pozdější doplnění oprávnění.</p>
                     </form>
-                </article>
-
-                <article class="detail-card">
-                    <span class="detail-label">Workflow</span>
-                    <div class="detail-value">
-                        @if ($isClosedTicket)
-                            Ticket je aktuálně uzavřený.
-                        @else
-                            Ticket je aktuálně otevřený.
-                        @endif
-                    </div>
-
-                    @if ($workflowErrors->any())
-                        <ul class="field-error-list">
-                            @foreach ($workflowErrors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
-                    @endif
-
-                    @if ($isClosedTicket)
-                        <form class="inline-form" method="post" action="{{ route('tickets.reopen', $ticket) }}">
-                            @csrf
-                            @method('patch')
-
-                            <div class="inline-form-actions">
-                                <button class="button button-primary button-compact" type="submit">Znovuotevřít ticket</button>
-                            </div>
-
-                            <p class="inline-help">Znovuotevření nastaví stav na in progress, případně na new jako náhradní výchozí stav.</p>
-                        </form>
-                    @else
-                        <form class="inline-form" method="post" action="{{ route('tickets.close', $ticket) }}">
-                            @csrf
-                            @method('patch')
-
-                            <div class="inline-form-actions">
-                                <button class="button button-primary button-compact" type="submit">Uzavřít ticket</button>
-                            </div>
-
-                            <p class="inline-help">Uzavření nastaví stav ticketu na closed.</p>
-                        </form>
-                    @endif
                 </article>
 
                 <article class="detail-card">
