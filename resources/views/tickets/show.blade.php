@@ -14,6 +14,43 @@
     $visibilityErrors = $errorBags->getBag('ticketVisibility');
     $watcherErrors = $errorBags->getBag('ticketWatcher');
     $replyParentId = (string) old('parent_id', '');
+    $heroAdminHasErrors = $statusErrors->any()
+        || $priorityErrors->any()
+        || $visibilityErrors->any()
+        || $assigneeErrors->any()
+        || $categoryErrors->any()
+        || $pinErrors->any()
+        || $watcherErrors->any();
+    $historyFieldLabels = [
+        'ticket_number' => 'Ticket number',
+        'subject' => 'Subject',
+        'description' => 'Description',
+        'visibility' => 'Visibility',
+        'status' => 'Status',
+        'priority' => 'Priority',
+        'category' => 'Category',
+        'requester' => 'Requester',
+        'assignee' => 'Assignee',
+        'pinned' => 'Připnutí',
+        'closed_at' => 'Uzavření',
+        'created_at' => 'Created at',
+    ];
+    $describeHistoryEntry = function ($entry) use ($historyFieldLabels) {
+        $event = (string) $entry->event;
+        $changedFields = collect($entry->meta['changed_fields'] ?? [])
+            ->map(fn ($field) => $historyFieldLabels[$field] ?? ucfirst(str_replace('_', ' ', (string) $field)))
+            ->filter()
+            ->values();
+
+        return match ($event) {
+            \App\Models\TicketHistory::EVENT_CREATED => 'Původní snapshot ticketu byl uložen při vytvoření.',
+            \App\Models\TicketHistory::EVENT_ORIGINAL_SNAPSHOT_BACKFILLED => 'Původní snapshot ticketu byl doplněn dodatečně k existujícímu ticketu.',
+            \App\Models\TicketHistory::EVENT_UPDATED => $changedFields->isNotEmpty()
+                ? 'Upraveno: '.$changedFields->implode(', ').'.'
+                : 'Byla zaznamenána změna ticketu.',
+            default => 'Byla zaznamenána změna ticketu.',
+        };
+    };
 @endphp
 
 @push('styles')
@@ -43,6 +80,24 @@
             display: flex;
             flex-wrap: wrap;
             gap: 0.75rem;
+        }
+
+        .hero-meta-actions {
+            display: grid;
+            gap: 0.85rem;
+        }
+
+        .hero-meta-help {
+            margin: 0;
+            color: #64748b;
+            font-size: 0.92rem;
+            line-height: 1.5;
+        }
+
+        .hero-admin-errors {
+            color: #b42318;
+            font-size: 0.92rem;
+            line-height: 1.5;
         }
 
         .ticket-number {
@@ -75,6 +130,107 @@
 
         .detail-card.full {
             grid-column: 1 / -1;
+        }
+
+        .section-panel {
+            display: grid;
+            gap: 1.1rem;
+            padding: 1.25rem;
+            border: 1px solid #e5ebf1;
+            border-radius: 1rem;
+            background: #fff;
+        }
+
+        .section-panel-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .section-panel-head h2 {
+            margin: 0;
+            font-size: 1.15rem;
+            color: #13202b;
+        }
+
+        .section-panel-head p {
+            margin: 0.35rem 0 0;
+            color: #64748b;
+            line-height: 1.6;
+        }
+
+        .content-meta-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1.7fr) minmax(16rem, 0.95fr);
+            gap: 1rem 1.25rem;
+            align-items: start;
+        }
+
+        .content-block {
+            display: grid;
+            gap: 0.8rem;
+        }
+
+        .content-description {
+            min-height: 100%;
+            padding: 1rem 1.05rem;
+            border: 1px solid #edf2f7;
+            border-radius: 0.95rem;
+            background: #fbfdff;
+        }
+
+        .metadata-list {
+            display: grid;
+            gap: 0.85rem;
+            padding: 1rem 1.05rem;
+            border: 1px solid #edf2f7;
+            border-radius: 0.95rem;
+            background: #f8fafc;
+        }
+
+        .metadata-item {
+            display: grid;
+            gap: 0.25rem;
+        }
+
+        .metadata-label {
+            color: #5b6b79;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .metadata-value {
+            color: #13202b;
+            line-height: 1.5;
+        }
+
+        .management-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.9rem;
+        }
+
+        .management-item {
+            display: grid;
+            gap: 0.75rem;
+            align-content: start;
+            padding: 1rem 1.05rem;
+            border: 1px solid #edf2f7;
+            border-radius: 0.95rem;
+            background: #fbfdff;
+        }
+
+        .management-item.wide {
+            grid-column: 1 / -1;
+        }
+
+        .management-note {
+            color: #64748b;
+            font-size: 0.92rem;
+            line-height: 1.5;
         }
 
         .detail-label {
@@ -200,9 +356,30 @@
             white-space: nowrap;
         }
 
+        .badge-button {
+            border: 0;
+            cursor: pointer;
+            font: inherit;
+        }
+
+        .badge-button:hover {
+            background: #e2edf6;
+            color: #0f766e;
+        }
+
+        .badge-button:focus-visible {
+            outline: 2px solid rgba(15, 118, 110, 0.2);
+            outline-offset: 2px;
+        }
+
         .badge-watching {
             background: #dff5f2;
             color: #0f766e;
+        }
+
+        .badge-button.badge-watching:hover {
+            background: #c9efe9;
+            color: #0b5e57;
         }
 
         .badge-dot {
@@ -270,25 +447,53 @@
             font-size: 0.92rem;
         }
 
+        .hero-admin-panels {
+            display: grid;
+            gap: 0.85rem;
+        }
+
+        .hero-admin-panel {
+            margin-top: 0;
+            padding: 1rem 1.05rem;
+            border: 1px solid #d9e0e7;
+            border-radius: 0.95rem;
+            background: rgba(255, 255, 255, 0.92);
+        }
+
+        .hero-admin-panel .comment-form-head h3 {
+            font-size: 1rem;
+        }
+
+        .history-panel {
+            display: grid;
+            gap: 1rem;
+        }
+
         .watcher-list {
             display: flex;
             align-items: center;
-            gap: 0.65rem;
+            gap: 0.5rem;
             flex-wrap: wrap;
-            margin-top: 0.9rem;
+            margin-top: 0;
         }
 
         .watcher-pill {
             display: inline-flex;
             align-items: center;
-            min-height: 2.1rem;
-            padding: 0.45rem 0.8rem;
+            min-height: 1.95rem;
+            padding: 0.35rem 0.75rem;
             border: 1px solid #d9e0e7;
             border-radius: 999px;
             background: #f8fafc;
             color: #334155;
-            font-size: 0.92rem;
+            font-size: 0.88rem;
             font-weight: 600;
+        }
+
+        .watcher-empty {
+            color: #64748b;
+            font-size: 0.92rem;
+            line-height: 1.5;
         }
 
         .button-compact {
@@ -530,7 +735,16 @@
                 grid-template-columns: 1fr;
             }
 
+             .content-meta-layout,
+             .management-grid {
+                grid-template-columns: 1fr;
+            }
+
             .detail-card.full {
+                grid-column: auto;
+            }
+
+            .management-item.wide {
                 grid-column: auto;
             }
 
@@ -547,7 +761,8 @@
             }
 
             .original-version-head,
-            .detail-label-row {
+            .detail-label-row,
+            .section-panel-head {
                 flex-direction: column;
                 align-items: stretch;
             }
@@ -619,533 +834,404 @@
             <section class="ticket-hero">
                 <div class="ticket-number">{{ $ticket->ticket_number ?? 'Bez čísla ticketu' }}</div>
                 <h3 class="ticket-subject">{{ $ticket->subject }}</h3>
-                <div class="ticket-meta">
-                    <span class="badge">
-                        <span class="badge-dot"></span>
-                        {{ $ticket->status?->name ?? '—' }}
-                    </span>
-                    <span class="badge">
-                        <span class="badge-dot"></span>
-                        {{ $ticket->priority?->name ?? '—' }}
-                    </span>
-                    <span class="badge">
-                        <span class="badge-dot"></span>
-                        {{ $visibilityOptions[$ticket->visibility] ?? ucfirst((string) $ticket->visibility) }}
-                    </span>
-                    <span class="badge{{ $isWatchingTicket ? ' badge-watching' : '' }}">
-                        <span class="badge-dot"></span>
-                        {{ $isWatchingTicket ? 'Sledujete' : 'Nesledujete' }}
-                    </span>
-                </div>
-            </section>
-
-            <section class="detail-grid">
-                <article class="detail-card full">
-                    <div class="detail-label-row">
-                        <span class="detail-label">Description</span>
-
-                        @if ($hasOriginalVersionChanges && $originalSnapshot)
-                            <button
-                                class="button original-indicator"
-                                type="button"
-                                data-editor-toggle="original-version-box"
-                                aria-controls="original-version-box"
-                                aria-expanded="false"
-                                title="Zobrazit původní verzi ticketu"
-                            >
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                    <path d="M3 3v5h5"/>
-                                    <path d="M3.05 13a9 9 0 1 0 2.13-5.7L3 8"/>
-                                    <path d="M12 7v5l3 2"/>
-                                </svg>
-                                Upraveno
-                            </button>
-                        @endif
-                    </div>
-
-                    <div class="detail-value">
-                        {!! nl2br(e($ticket->description ?? '—')) !!}
-                    </div>
-                </article>
-
-                <article class="detail-card">
-                    <span class="detail-label">Status</span>
-                    <div class="editable-summary">
-                        <div class="detail-value editable-value">
-                            <span class="badge">
-                                <span class="badge-dot"></span>
-                                {{ $ticket->status?->name ?? '—' }}
-                            </span>
-                        </div>
-
+                <div class="hero-meta-actions">
+                    <div class="ticket-meta">
                         <button
-                            class="button icon-button"
+                            class="badge badge-button"
                             type="button"
-                            data-editor-toggle="status-editor"
-                            aria-controls="status-editor"
+                            data-editor-toggle="hero-status-editor"
+                            aria-controls="hero-status-editor"
                             aria-expanded="false"
                             title="Upravit stav"
                         >
-                            <span class="sr-only">Upravit stav</span>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M12 20h9"/>
-                                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/>
-                            </svg>
+                            <span class="badge-dot"></span>
+                            Status: {{ $ticket->status?->name ?? '—' }}
                         </button>
-                    </div>
-
-                    <form
-                        id="status-editor"
-                        class="inline-form"
-                        data-editor-panel
-                        method="post"
-                        action="{{ route('tickets.status.update', $ticket) }}"
-                        hidden
-                    >
-                        @csrf
-                        @method('patch')
-
-                        @if ($statusErrors->any())
-                            <ul class="field-error-list">
-                                @foreach ($statusErrors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
-                            </ul>
-                        @endif
-
-                        <div class="field">
-                            <label class="label" for="status_id">Změnit stav</label>
-                            <div class="inline-form-row">
-                                <select class="select" id="status_id" name="status_id" required>
-                                    @foreach ($statuses as $status)
-                                        <option
-                                            value="{{ $status->id }}"
-                                            @selected((string) old('status_id', $ticket->ticket_status_id) === (string) $status->id)
-                                        >
-                                            {{ $status->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            @if ($statusErrors->has('status_id'))
-                                <div class="field-error">{{ $statusErrors->first('status_id') }}</div>
-                            @endif
-                        </div>
-
-                        <div class="inline-form-actions">
-                            <button class="button button-primary button-compact" type="submit">Uložit stav</button>
-                            <button class="button button-secondary button-compact" type="button" data-editor-cancel="status-editor">Zrušit</button>
-                        </div>
-
-                        <p class="inline-help">Interní administrativní akce připravená pro pozdější doplnění oprávnění.</p>
-                    </form>
-                </article>
-
-                <article class="detail-card">
-                    <span class="detail-label">Priority</span>
-                    <div class="editable-summary">
-                        <div class="detail-value editable-value">
-                            <span class="badge">
-                                <span class="badge-dot"></span>
-                                {{ $ticket->priority?->name ?? '—' }}
-                            </span>
-                        </div>
 
                         <button
-                            class="button icon-button"
+                            class="badge badge-button"
                             type="button"
-                            data-editor-toggle="priority-editor"
-                            aria-controls="priority-editor"
+                            data-editor-toggle="hero-priority-editor"
+                            aria-controls="hero-priority-editor"
                             aria-expanded="false"
                             title="Upravit prioritu"
                         >
-                            <span class="sr-only">Upravit prioritu</span>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M12 20h9"/>
-                                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/>
-                            </svg>
+                            <span class="badge-dot"></span>
+                            Priorita: {{ $ticket->priority?->name ?? '—' }}
                         </button>
-                    </div>
-
-                    <form
-                        id="priority-editor"
-                        class="inline-form"
-                        data-editor-panel
-                        method="post"
-                        action="{{ route('tickets.priority.update', $ticket) }}"
-                        hidden
-                    >
-                        @csrf
-                        @method('patch')
-
-                        @if ($priorityErrors->any())
-                            <ul class="field-error-list">
-                                @foreach ($priorityErrors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
-                            </ul>
-                        @endif
-
-                        <div class="field">
-                            <label class="label" for="priority_id">Změnit prioritu</label>
-                            <div class="inline-form-row">
-                                <select class="select" id="priority_id" name="priority_id" required>
-                                    @foreach ($priorities as $priority)
-                                        <option
-                                            value="{{ $priority->id }}"
-                                            @selected((string) old('priority_id', $ticket->ticket_priority_id) === (string) $priority->id)
-                                        >
-                                            {{ $priority->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            @if ($priorityErrors->has('priority_id'))
-                                <div class="field-error">{{ $priorityErrors->first('priority_id') }}</div>
-                            @endif
-                        </div>
-
-                        <div class="inline-form-actions">
-                            <button class="button button-primary button-compact" type="submit">Uložit prioritu</button>
-                            <button class="button button-secondary button-compact" type="button" data-editor-cancel="priority-editor">Zrušit</button>
-                        </div>
-                    </form>
-                </article>
-
-                <article class="detail-card">
-                    <span class="detail-label">Category</span>
-                    <div class="editable-summary">
-                        <div class="detail-value editable-value">
-                            {{ $ticket->category?->name ?? '—' }}
-                        </div>
 
                         <button
-                            class="button icon-button"
+                            class="badge badge-button"
                             type="button"
-                            data-editor-toggle="category-editor"
-                            aria-controls="category-editor"
-                            aria-expanded="false"
-                            title="Upravit kategorii"
-                        >
-                            <span class="sr-only">Upravit kategorii</span>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M12 20h9"/>
-                                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/>
-                            </svg>
-                        </button>
-                    </div>
-
-                    <form
-                        id="category-editor"
-                        class="inline-form"
-                        data-editor-panel
-                        method="post"
-                        action="{{ route('tickets.category.update', $ticket) }}"
-                        hidden
-                    >
-                        @csrf
-                        @method('patch')
-
-                        @if ($categoryErrors->any())
-                            <ul class="field-error-list">
-                                @foreach ($categoryErrors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
-                            </ul>
-                        @endif
-
-                        <div class="field">
-                            <label class="label" for="category_id">Změnit kategorii</label>
-                            <div class="inline-form-row">
-                                <select class="select" id="category_id" name="category_id" required>
-                                    @foreach ($categories as $category)
-                                        <option
-                                            value="{{ $category->id }}"
-                                            @selected((string) old('category_id', $ticket->ticket_category_id) === (string) $category->id)
-                                        >
-                                            {{ $category->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            @if ($categoryErrors->has('category_id'))
-                                <div class="field-error">{{ $categoryErrors->first('category_id') }}</div>
-                            @endif
-                        </div>
-
-                        <div class="inline-form-actions">
-                            <button class="button button-primary button-compact" type="submit">Uložit kategorii</button>
-                            <button class="button button-secondary button-compact" type="button" data-editor-cancel="category-editor">Zrušit</button>
-                        </div>
-                    </form>
-                </article>
-
-                <article class="detail-card">
-                    <span class="detail-label">Visibility</span>
-                    <div class="editable-summary">
-                        <div class="detail-value editable-value">
-                            {{ $visibilityOptions[$ticket->visibility] ?? ucfirst((string) $ticket->visibility) }}
-                        </div>
-
-                        <button
-                            class="button icon-button"
-                            type="button"
-                            data-editor-toggle="visibility-editor"
-                            aria-controls="visibility-editor"
+                            data-editor-toggle="hero-visibility-editor"
+                            aria-controls="hero-visibility-editor"
                             aria-expanded="false"
                             title="Upravit viditelnost"
                         >
-                            <span class="sr-only">Upravit viditelnost</span>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M12 20h9"/>
-                                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/>
-                            </svg>
+                            <span class="badge-dot"></span>
+                            Viditelnost: {{ $visibilityOptions[$ticket->visibility] ?? ucfirst((string) $ticket->visibility) }}
                         </button>
-                    </div>
-
-                    <form
-                        id="visibility-editor"
-                        class="inline-form"
-                        data-editor-panel
-                        method="post"
-                        action="{{ route('tickets.visibility.update', $ticket) }}"
-                        hidden
-                    >
-                        @csrf
-                        @method('patch')
-
-                        @if ($visibilityErrors->any())
-                            <ul class="field-error-list">
-                                @foreach ($visibilityErrors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
-                            </ul>
-                        @endif
-
-                        <div class="field">
-                            <label class="label" for="visibility">Změnit viditelnost</label>
-                            <div class="inline-form-row">
-                                <select class="select" id="visibility" name="visibility" required>
-                                    @foreach ($visibilityOptions as $value => $label)
-                                        <option
-                                            value="{{ $value }}"
-                                            @selected((string) old('visibility', $ticket->visibility) === (string) $value)
-                                        >
-                                            {{ $label }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            @if ($visibilityErrors->has('visibility'))
-                                <div class="field-error">{{ $visibilityErrors->first('visibility') }}</div>
-                            @endif
-                        </div>
-
-                        <div class="inline-form-actions">
-                            <button class="button button-primary button-compact" type="submit">Uložit viditelnost</button>
-                            <button class="button button-secondary button-compact" type="button" data-editor-cancel="visibility-editor">Zrušit</button>
-                        </div>
-                    </form>
-                </article>
-
-                <article class="detail-card">
-                    <span class="detail-label">Requester</span>
-                    <div class="detail-value">{{ $ticket->requester?->name ?? '—' }}</div>
-                </article>
-
-                <article class="detail-card">
-                    <span class="detail-label">Assignee</span>
-                    <div class="editable-summary">
-                        <div class="detail-value editable-value">
-                            @if ($ticket->assignee)
-                                {{ $ticket->assignee->name }}
-                            @else
-                                <span class="detail-empty">Nepřiřazeno</span>
-                            @endif
-                        </div>
 
                         <button
-                            class="button icon-button"
+                            class="badge badge-button"
                             type="button"
-                            data-editor-toggle="assignee-editor"
-                            aria-controls="assignee-editor"
+                            data-editor-toggle="hero-assignee-editor"
+                            aria-controls="hero-assignee-editor"
                             aria-expanded="false"
                             title="Upravit řešitele"
                         >
-                            <span class="sr-only">Upravit řešitele</span>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M12 20h9"/>
-                                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/>
-                            </svg>
+                            <span class="badge-dot"></span>
+                            Řešitel: {{ $ticket->assignee?->name ?? 'Nepřiřazeno' }}
+                        </button>
+
+                        <button
+                            class="badge badge-button"
+                            type="button"
+                            data-editor-toggle="hero-category-editor"
+                            aria-controls="hero-category-editor"
+                            aria-expanded="false"
+                            title="Upravit kategorii"
+                        >
+                            <span class="badge-dot"></span>
+                            Kategorie: {{ $ticket->category?->name ?? '—' }}
+                        </button>
+
+                        <button
+                            class="badge badge-button{{ $pinningEnabled && $ticket->is_pinned ? ' badge-watching' : '' }}"
+                            type="button"
+                            data-editor-toggle="hero-pin-editor"
+                            aria-controls="hero-pin-editor"
+                            aria-expanded="false"
+                            title="Upravit připnutí"
+                        >
+                            <span class="badge-dot"></span>
+                            Připnutí:
+                            @if (! $pinningEnabled)
+                                Nedostupné
+                            @else
+                                {{ $ticket->is_pinned ? 'Ano' : 'Ne' }}
+                            @endif
+                        </button>
+
+                        <button
+                            class="badge badge-button{{ $isWatchingTicket ? ' badge-watching' : '' }}"
+                            type="button"
+                            data-editor-toggle="hero-watcher-editor"
+                            aria-controls="hero-watcher-editor"
+                            aria-expanded="false"
+                            title="Upravit sledování"
+                        >
+                            <span class="badge-dot"></span>
+                            Sledování: {{ $isWatchingTicket ? 'Ano' : 'Ne' }}
                         </button>
                     </div>
 
-                    <form
-                        id="assignee-editor"
-                        class="inline-form"
-                        data-editor-panel
-                        method="post"
-                        action="{{ route('tickets.assignee.update', $ticket) }}"
-                        hidden
-                    >
-                        @csrf
-                        @method('patch')
+                    <p class="hero-meta-help">Kliknutím na badge rychle upravíte provozní nastavení ticketu.</p>
 
-                        @if ($assigneeErrors->any())
-                            <ul class="field-error-list">
-                                @foreach ($assigneeErrors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
-                            </ul>
-                        @endif
+                    @if ($heroAdminHasErrors)
+                        <div class="hero-admin-errors">Některý z formulářů správy ticketu obsahuje chyby. Otevřete příslušný badge.</div>
+                    @endif
 
-                        <div class="field">
-                            <label class="label" for="assignee_id">Přiřadit řešitele</label>
-                            <div class="inline-form-row">
-                                <select class="select" id="assignee_id" name="assignee_id">
-                                    <option value="">Nepřiřazeno</option>
-                                    @foreach ($assignees as $assignee)
-                                        <option
-                                            value="{{ $assignee->id }}"
-                                            @selected((string) old('assignee_id', $ticket->assignee_id) === (string) $assignee->id)
-                                        >
-                                            {{ $assignee->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            @if ($assigneeErrors->has('assignee_id'))
-                                <div class="field-error">{{ $assigneeErrors->first('assignee_id') }}</div>
-                            @endif
-                        </div>
-
-                        <div class="inline-form-actions">
-                            <button class="button button-primary button-compact" type="submit">Uložit řešitele</button>
-                            <button class="button button-secondary button-compact" type="button" data-editor-cancel="assignee-editor">Zrušit</button>
-                        </div>
-
-                        <p class="inline-help">Prázdná hodnota znamená, že ticket zůstane nepřiřazený.</p>
-                    </form>
-                </article>
-
-                <article class="detail-card">
-                    <span class="detail-label">Created at</span>
-                    <div class="detail-value">{{ $ticket->created_at?->format('d.m.Y H:i') ?? '—' }}</div>
-                </article>
-
-                <article class="detail-card">
-                    <span class="detail-label">Updated at</span>
-                    <div class="detail-value">{{ $ticket->updated_at?->format('d.m.Y H:i') ?? '—' }}</div>
-                </article>
-
-                <article class="detail-card">
-                    <span class="detail-label">Připnutí</span>
-                    @if ($pinningEnabled)
-                        <div class="editable-summary">
-                            <div class="detail-value editable-value">
-                                @if ($ticket->is_pinned)
-                                    <span class="detail-flag">Připnuto</span>
-                                @else
-                                    <span class="detail-empty">Nepřipnuto</span>
-                                @endif
-                            </div>
-
-                            <button
-                                class="button icon-button"
-                                type="button"
-                                data-editor-toggle="pin-editor"
-                                aria-controls="pin-editor"
-                                aria-expanded="false"
-                                title="Upravit připnutí"
-                            >
-                                <span class="sr-only">Upravit připnutí</span>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                    <path d="M12 20h9"/>
-                                    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/>
-                                </svg>
-                            </button>
-                        </div>
-
+                    <div class="hero-admin-panels">
                         <form
-                            id="pin-editor"
-                            class="inline-form"
+                            id="hero-status-editor"
+                            class="inline-form hero-admin-panel"
                             data-editor-panel
                             method="post"
-                            action="{{ route('tickets.pin.update', $ticket) }}"
+                            action="{{ route('tickets.status.update', $ticket) }}"
                             hidden
                         >
                             @csrf
                             @method('patch')
-                            <input type="hidden" name="pinned" value="{{ $ticket->is_pinned ? '0' : '1' }}">
 
-                            @if ($pinErrors->any())
+                            <div class="comment-form-head">
+                                <h3>Změnit stav ticketu</h3>
+                            </div>
+
+                            @if ($statusErrors->any())
                                 <ul class="field-error-list">
-                                    @foreach ($pinErrors->all() as $error)
+                                    @foreach ($statusErrors->all() as $error)
                                         <li>{{ $error }}</li>
                                     @endforeach
                                 </ul>
                             @endif
 
-                            @if ($pinErrors->has('pinned'))
-                                <div class="field-error">{{ $pinErrors->first('pinned') }}</div>
-                            @endif
-
-                            <div class="inline-form-actions">
-                                <button class="button button-primary button-compact" type="submit">
-                                    {{ $ticket->is_pinned ? 'Odepnout ticket' : 'Připnout ticket' }}
-                                </button>
-                                <button class="button button-secondary button-compact" type="button" data-editor-cancel="pin-editor">Zrušit</button>
+                            <div class="field">
+                                <label class="label" for="hero_status_id">Stav</label>
+                                <div class="inline-form-row">
+                                    <select class="select" id="hero_status_id" name="status_id" required>
+                                        @foreach ($statuses as $status)
+                                            <option
+                                                value="{{ $status->id }}"
+                                                @selected((string) old('status_id', $ticket->ticket_status_id) === (string) $status->id)
+                                            >
+                                                {{ $status->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                @if ($statusErrors->has('status_id'))
+                                    <div class="field-error">{{ $statusErrors->first('status_id') }}</div>
+                                @endif
                             </div>
 
-                            <p class="inline-help">Interní administrativní akce připravená pro pozdější doplnění oprávnění.</p>
+                            <div class="inline-form-actions">
+                                <button class="button button-primary button-compact" type="submit">Uložit stav</button>
+                                <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-status-editor">Zrušit</button>
+                            </div>
                         </form>
-                    @else
-                        <div class="detail-value detail-empty">Připnutí bude dostupné po spuštění databázové migrace.</div>
-                    @endif
-                </article>
 
-                <article class="detail-card full">
-                    <span class="detail-label">Sledující</span>
-                    <div class="editable-summary">
-                        <div class="detail-value editable-value">
-                            @if ($isWatchingTicket)
-                                Ticket aktuálně sledujete.
-                            @else
-                                Ticket aktuálně nesledujete.
+                        <form
+                            id="hero-priority-editor"
+                            class="inline-form hero-admin-panel"
+                            data-editor-panel
+                            method="post"
+                            action="{{ route('tickets.priority.update', $ticket) }}"
+                            hidden
+                        >
+                            @csrf
+                            @method('patch')
+
+                            <div class="comment-form-head">
+                                <h3>Změnit prioritu ticketu</h3>
+                            </div>
+
+                            @if ($priorityErrors->any())
+                                <ul class="field-error-list">
+                                    @foreach ($priorityErrors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
                             @endif
-                        </div>
 
-                        @if ($watcherActionEnabled)
-                            <button
-                                class="button icon-button"
-                                type="button"
-                                data-editor-toggle="watcher-editor"
-                                aria-controls="watcher-editor"
-                                aria-expanded="false"
-                                title="Upravit sledování"
+                            <div class="field">
+                                <label class="label" for="hero_priority_id">Priorita</label>
+                                <div class="inline-form-row">
+                                    <select class="select" id="hero_priority_id" name="priority_id" required>
+                                        @foreach ($priorities as $priority)
+                                            <option
+                                                value="{{ $priority->id }}"
+                                                @selected((string) old('priority_id', $ticket->ticket_priority_id) === (string) $priority->id)
+                                            >
+                                                {{ $priority->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                @if ($priorityErrors->has('priority_id'))
+                                    <div class="field-error">{{ $priorityErrors->first('priority_id') }}</div>
+                                @endif
+                            </div>
+
+                            <div class="inline-form-actions">
+                                <button class="button button-primary button-compact" type="submit">Uložit prioritu</button>
+                                <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-priority-editor">Zrušit</button>
+                            </div>
+                        </form>
+
+                        <form
+                            id="hero-visibility-editor"
+                            class="inline-form hero-admin-panel"
+                            data-editor-panel
+                            method="post"
+                            action="{{ route('tickets.visibility.update', $ticket) }}"
+                            hidden
+                        >
+                            @csrf
+                            @method('patch')
+
+                            <div class="comment-form-head">
+                                <h3>Změnit viditelnost ticketu</h3>
+                            </div>
+
+                            @if ($visibilityErrors->any())
+                                <ul class="field-error-list">
+                                    @foreach ($visibilityErrors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            @endif
+
+                            <div class="field">
+                                <label class="label" for="hero_visibility">Viditelnost</label>
+                                <div class="inline-form-row">
+                                    <select class="select" id="hero_visibility" name="visibility" required>
+                                        @foreach ($visibilityOptions as $value => $label)
+                                            <option
+                                                value="{{ $value }}"
+                                                @selected((string) old('visibility', $ticket->visibility) === (string) $value)
+                                            >
+                                                {{ $label }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                @if ($visibilityErrors->has('visibility'))
+                                    <div class="field-error">{{ $visibilityErrors->first('visibility') }}</div>
+                                @endif
+                            </div>
+
+                            <div class="inline-form-actions">
+                                <button class="button button-primary button-compact" type="submit">Uložit viditelnost</button>
+                                <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-visibility-editor">Zrušit</button>
+                            </div>
+                        </form>
+
+                        <form
+                            id="hero-assignee-editor"
+                            class="inline-form hero-admin-panel"
+                            data-editor-panel
+                            method="post"
+                            action="{{ route('tickets.assignee.update', $ticket) }}"
+                            hidden
+                        >
+                            @csrf
+                            @method('patch')
+
+                            <div class="comment-form-head">
+                                <h3>Změnit řešitele ticketu</h3>
+                            </div>
+
+                            @if ($assigneeErrors->any())
+                                <ul class="field-error-list">
+                                    @foreach ($assigneeErrors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            @endif
+
+                            <div class="field">
+                                <label class="label" for="hero_assignee_id">Řešitel</label>
+                                <div class="inline-form-row">
+                                    <select class="select" id="hero_assignee_id" name="assignee_id">
+                                        <option value="">Nepřiřazeno</option>
+                                        @foreach ($assignees as $assignee)
+                                            <option
+                                                value="{{ $assignee->id }}"
+                                                @selected((string) old('assignee_id', $ticket->assignee_id) === (string) $assignee->id)
+                                            >
+                                                {{ $assignee->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                @if ($assigneeErrors->has('assignee_id'))
+                                    <div class="field-error">{{ $assigneeErrors->first('assignee_id') }}</div>
+                                @endif
+                            </div>
+
+                            <div class="inline-form-actions">
+                                <button class="button button-primary button-compact" type="submit">Uložit řešitele</button>
+                                <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-assignee-editor">Zrušit</button>
+                            </div>
+                        </form>
+
+                        <form
+                            id="hero-category-editor"
+                            class="inline-form hero-admin-panel"
+                            data-editor-panel
+                            method="post"
+                            action="{{ route('tickets.category.update', $ticket) }}"
+                            hidden
+                        >
+                            @csrf
+                            @method('patch')
+
+                            <div class="comment-form-head">
+                                <h3>Změnit kategorii ticketu</h3>
+                            </div>
+
+                            @if ($categoryErrors->any())
+                                <ul class="field-error-list">
+                                    @foreach ($categoryErrors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            @endif
+
+                            <div class="field">
+                                <label class="label" for="hero_category_id">Kategorie</label>
+                                <div class="inline-form-row">
+                                    <select class="select" id="hero_category_id" name="category_id" required>
+                                        @foreach ($categories as $category)
+                                            <option
+                                                value="{{ $category->id }}"
+                                                @selected((string) old('category_id', $ticket->ticket_category_id) === (string) $category->id)
+                                            >
+                                                {{ $category->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                @if ($categoryErrors->has('category_id'))
+                                    <div class="field-error">{{ $categoryErrors->first('category_id') }}</div>
+                                @endif
+                            </div>
+
+                            <div class="inline-form-actions">
+                                <button class="button button-primary button-compact" type="submit">Uložit kategorii</button>
+                                <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-category-editor">Zrušit</button>
+                            </div>
+                        </form>
+
+                        @if ($pinningEnabled)
+                            <form
+                                id="hero-pin-editor"
+                                class="inline-form hero-admin-panel"
+                                data-editor-panel
+                                method="post"
+                                action="{{ route('tickets.pin.update', $ticket) }}"
+                                hidden
                             >
-                                <span class="sr-only">Upravit sledování</span>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                    <path d="M12 20h9"/>
-                                    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/>
-                                </svg>
-                            </button>
+                                @csrf
+                                @method('patch')
+                                <input type="hidden" name="pinned" value="{{ $ticket->is_pinned ? '0' : '1' }}">
+
+                                <div class="comment-form-head">
+                                    <h3>Změnit připnutí ticketu</h3>
+                                </div>
+
+                                @if ($pinErrors->any())
+                                    <ul class="field-error-list">
+                                        @foreach ($pinErrors->all() as $error)
+                                            <li>{{ $error }}</li>
+                                        @endforeach
+                                    </ul>
+                                @endif
+
+                                @if ($pinErrors->has('pinned'))
+                                    <div class="field-error">{{ $pinErrors->first('pinned') }}</div>
+                                @endif
+
+                                <div class="inline-form-actions">
+                                    <button class="button button-primary button-compact" type="submit">
+                                        {{ $ticket->is_pinned ? 'Odepnout ticket' : 'Připnout ticket' }}
+                                    </button>
+                                    <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-pin-editor">Zrušit</button>
+                                </div>
+                            </form>
+                        @else
+                            <div
+                                id="hero-pin-editor"
+                                class="inline-form hero-admin-panel"
+                                data-editor-panel
+                                hidden
+                            >
+                                <div class="comment-form-head">
+                                    <h3>Připnutí ticketu</h3>
+                                    <p>Připnutí bude dostupné po spuštění databázové migrace.</p>
+                                </div>
+
+                                <div class="inline-form-actions">
+                                    <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-pin-editor">Zavřít</button>
+                                </div>
+                            </div>
                         @endif
-                    </div>
 
-                    @if ($watcherErrors->any())
-                        <ul class="field-error-list">
-                            @foreach ($watcherErrors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
-                    @endif
-
-                    @if ($watcherActionEnabled)
                         @if ($isWatchingTicket)
                             <form
-                                id="watcher-editor"
-                                class="inline-form"
+                                id="hero-watcher-editor"
+                                class="inline-form hero-admin-panel"
                                 data-editor-panel
                                 method="post"
                                 action="{{ route('tickets.watchers.destroy', $ticket) }}"
@@ -1154,15 +1240,42 @@
                                 @csrf
                                 @method('delete')
 
-                                <div class="inline-form-actions">
-                                    <button class="button button-secondary button-compact" type="submit">Přestat sledovat</button>
-                                    <button class="button button-secondary button-compact" type="button" data-editor-cancel="watcher-editor">Zrušit</button>
+                                <div class="comment-form-head">
+                                    <h3>Sledování ticketu</h3>
+                                    <p>Počet sledujících: {{ $ticket->watchers->count() }}</p>
                                 </div>
+
+                                @if ($watcherErrors->any())
+                                    <ul class="field-error-list">
+                                        @foreach ($watcherErrors->all() as $error)
+                                            <li>{{ $error }}</li>
+                                        @endforeach
+                                    </ul>
+                                @endif
+
+                                @if ($watcherActionEnabled)
+                                    <div class="inline-form-actions">
+                                        <button class="button button-secondary button-compact" type="submit">Přestat sledovat</button>
+                                        <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-watcher-editor">Zrušit</button>
+                                    </div>
+                                @else
+                                    <p class="inline-help">Sledování zatím nelze použít, protože v databázi neexistuje žádný uživatel.</p>
+                                @endif
+
+                                @if ($ticket->watchers->isEmpty())
+                                    <div class="watcher-empty">Zatím ticket nikdo nesleduje.</div>
+                                @else
+                                    <div class="watcher-list" aria-label="Seznam sledujících">
+                                        @foreach ($ticket->watchers as $watcher)
+                                            <span class="watcher-pill">{{ $watcher->name }}</span>
+                                        @endforeach
+                                    </div>
+                                @endif
                             </form>
                         @else
                             <form
-                                id="watcher-editor"
-                                class="inline-form"
+                                id="hero-watcher-editor"
+                                class="inline-form hero-admin-panel"
                                 data-editor-panel
                                 method="post"
                                 action="{{ route('tickets.watchers.store', $ticket) }}"
@@ -1170,26 +1283,97 @@
                             >
                                 @csrf
 
-                                <div class="inline-form-actions">
-                                    <button class="button button-primary button-compact" type="submit">Začít sledovat</button>
-                                    <button class="button button-secondary button-compact" type="button" data-editor-cancel="watcher-editor">Zrušit</button>
+                                <div class="comment-form-head">
+                                    <h3>Sledování ticketu</h3>
+                                    <p>Počet sledujících: {{ $ticket->watchers->count() }}</p>
                                 </div>
+
+                                @if ($watcherErrors->any())
+                                    <ul class="field-error-list">
+                                        @foreach ($watcherErrors->all() as $error)
+                                            <li>{{ $error }}</li>
+                                        @endforeach
+                                    </ul>
+                                @endif
+
+                                @if ($watcherActionEnabled)
+                                    <div class="inline-form-actions">
+                                        <button class="button button-primary button-compact" type="submit">Začít sledovat</button>
+                                        <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-watcher-editor">Zrušit</button>
+                                    </div>
+                                @else
+                                    <p class="inline-help">Sledování zatím nelze použít, protože v databázi neexistuje žádný uživatel.</p>
+                                @endif
+
+                                @if ($ticket->watchers->isEmpty())
+                                    <div class="watcher-empty">Zatím ticket nikdo nesleduje.</div>
+                                @else
+                                    <div class="watcher-list" aria-label="Seznam sledujících">
+                                        @foreach ($ticket->watchers as $watcher)
+                                            <span class="watcher-pill">{{ $watcher->name }}</span>
+                                        @endforeach
+                                    </div>
+                                @endif
                             </form>
                         @endif
-                    @else
-                        <p class="inline-help">Sledování zatím nelze použít, protože v databázi neexistuje žádný uživatel.</p>
-                    @endif
+                    </div>
+                </div>
+            </section>
 
-                    @if ($ticket->watchers->isEmpty())
-                        <div class="comment-empty">Zatím ticket nikdo nesleduje.</div>
-                    @else
-                        <div class="watcher-list" aria-label="Seznam sledujících">
-                            @foreach ($ticket->watchers as $watcher)
-                                <span class="watcher-pill">{{ $watcher->name }}</span>
-                            @endforeach
+            <section class="section-panel">
+                <div class="section-panel-head">
+                    <div>
+                        <h2>Obsah a metadata</h2>
+                        <p>Popis požadavku a základní informace o založení a poslední úpravě ticketu.</p>
+                    </div>
+                </div>
+
+                <div class="content-meta-layout">
+                    <article class="content-block">
+                        <div class="detail-label-row">
+                            <span class="detail-label">Description</span>
+
+                            @if ($hasOriginalVersionChanges && $originalSnapshot)
+                                <button
+                                    class="button original-indicator"
+                                    type="button"
+                                    data-editor-toggle="original-version-box"
+                                    aria-controls="original-version-box"
+                                    aria-expanded="false"
+                                    title="Zobrazit původní verzi ticketu"
+                                >
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M3 3v5h5"/>
+                                        <path d="M3.05 13a9 9 0 1 0 2.13-5.7L3 8"/>
+                                        <path d="M12 7v5l3 2"/>
+                                    </svg>
+                                    Upraveno
+                                </button>
+                            @endif
                         </div>
-                    @endif
-                </article>
+
+                        <div class="detail-value content-description">
+                            {!! nl2br(e($ticket->description ?? '—')) !!}
+                        </div>
+                    </article>
+
+                    <aside class="metadata-list" aria-label="Metadata ticketu">
+                        <div class="metadata-item">
+                            <span class="metadata-label">Requester</span>
+                            <div class="metadata-value">{{ $ticket->requester?->name ?? '—' }}</div>
+                        </div>
+
+                        <div class="metadata-item">
+                            <span class="metadata-label">Created at</span>
+                            <div class="metadata-value">{{ $ticket->created_at?->format('d.m.Y H:i') ?? '—' }}</div>
+                        </div>
+
+                        <div class="metadata-item">
+                            <span class="metadata-label">Updated at</span>
+                            <div class="metadata-value">{{ $ticket->updated_at?->format('d.m.Y H:i') ?? '—' }}</div>
+                        </div>
+                    </aside>
+                </div>
             </section>
 
             <section class="comment-section">
@@ -1438,6 +1622,45 @@
                         <button class="button button-secondary" type="button" data-editor-cancel="internal-note-editor">Zrušit</button>
                     </div>
                 </form>
+            </section>
+
+            <section class="section-panel">
+                <div class="section-panel-head" id="history">
+                    <div>
+                        <h2>Historie změn</h2>
+                        <p>Auditní záznamy změn ticketu uložené v systému.</p>
+                    </div>
+
+                    <button
+                        class="button button-secondary button-compact"
+                        type="button"
+                        data-editor-toggle="history-panel"
+                        aria-controls="history-panel"
+                        aria-expanded="false"
+                    >
+                        Zobrazit historii změn
+                    </button>
+                </div>
+
+                <div id="history-panel" class="history-panel" data-editor-panel hidden>
+                    @if ($ticket->history->isEmpty())
+                        <div class="comment-empty">Zatím tu nejsou žádné záznamy historie změn.</div>
+                    @else
+                        <div class="comment-list">
+                            @foreach ($ticket->history as $historyEntry)
+                                <article class="comment-card">
+                                    <div class="comment-head">
+                                        <div class="comment-author">{{ $historyEntry->user?->name ?? 'Systém' }}</div>
+                                        <div class="comment-time">{{ $historyEntry->created_at?->format('d.m.Y H:i') ?? '—' }}</div>
+                                    </div>
+                                    <div class="comment-body">
+                                        {{ $describeHistoryEntry($historyEntry) }}
+                                    </div>
+                                </article>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
             </section>
         </div>
     </div>

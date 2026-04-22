@@ -102,6 +102,9 @@ class TicketController extends Controller
             'requester:id,name',
             'assignee:id,name',
             'watchers' => fn ($query) => $query->orderBy('users.name'),
+            'history' => fn ($query) => $query
+                ->with('user:id,name')
+                ->latest('id'),
             'internalComments' => fn ($query) => $query
                 ->with('user:id,name')
                 ->orderBy('created_at'),
