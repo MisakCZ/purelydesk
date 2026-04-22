@@ -14,6 +14,7 @@
     $visibilityErrors = $errorBags->getBag('ticketVisibility');
     $watcherErrors = $errorBags->getBag('ticketWatcher');
     $workflowErrors = $errorBags->getBag('ticketWorkflow');
+    $replyParentId = (string) old('parent_id', '');
 @endphp
 
 @push('styles')
@@ -380,6 +381,43 @@
             line-height: 1.7;
         }
 
+        .comment-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-top: 0.8rem;
+        }
+
+        .comment-link {
+            padding: 0;
+            border: 0;
+            background: transparent;
+            color: #0f766e;
+            font: inherit;
+            font-size: 0.92rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .comment-link:hover {
+            color: #0b5e57;
+            text-decoration: underline;
+        }
+
+        .comment-children {
+            display: grid;
+            gap: 0.75rem;
+            margin-top: 0.95rem;
+            margin-left: 1.35rem;
+            padding-left: 1rem;
+            border-left: 2px solid #d9e7e4;
+        }
+
+        .comment-card.reply-card {
+            padding: 0.9rem 1rem;
+            background: #f8fbfc;
+        }
+
         .comment-form {
             display: grid;
             gap: 1rem;
@@ -387,6 +425,12 @@
             border: 1px solid #e5ebf1;
             border-radius: 1rem;
             background: #fff;
+        }
+
+        .comment-form.reply-form {
+            margin-top: 0.9rem;
+            padding: 0.95rem 1rem;
+            background: #f8fbfc;
         }
 
         .comment-form-actions {
@@ -1217,15 +1261,25 @@
                     </div>
 
                     @if ($commentErrors->any())
-                        <div class="field-error">Formulář veřejného komentáře obsahuje chyby. Otevřete editor tlačítkem s tužkou.</div>
+                        @if ($replyParentId !== '')
+                            <div class="field-error">
+                                @if ($commentThreadingEnabled)
+                                    Formulář odpovědi obsahuje chyby. Otevřete ho odkazem Odpovědět u příslušného komentáře.
+                                @else
+                                    Odpověď na komentář bude dostupná po spuštění databázové migrace aplikace.
+                                @endif
+                            </div>
+                        @else
+                            <div class="field-error">Formulář veřejného komentáře obsahuje chyby. Otevřete editor tlačítkem s tužkou.</div>
+                        @endif
                     @endif
                 </div>
 
-                @if ($ticket->publicComments->isEmpty())
+                @if ($publicCommentThreads->isEmpty())
                     <div class="comment-empty">Zatím tu nejsou žádné veřejné komentáře.</div>
                 @else
                     <div class="comment-list">
-                        @foreach ($ticket->publicComments as $comment)
+                        @foreach ($publicCommentThreads as $comment)
                             <article class="comment-card">
                                 <div class="comment-head">
                                     <div class="comment-author">{{ $comment->user?->name ?? 'Neznámý uživatel' }}</div>
@@ -1234,6 +1288,76 @@
                                 <div class="comment-body">
                                     {!! nl2br(e($comment->body)) !!}
                                 </div>
+
+                                @if ($commentThreadingEnabled)
+                                    <div class="comment-actions">
+                                        <button
+                                            class="comment-link"
+                                            type="button"
+                                            data-editor-toggle="reply-editor-{{ $comment->id }}"
+                                            aria-controls="reply-editor-{{ $comment->id }}"
+                                            aria-expanded="false"
+                                        >
+                                            Odpovědět
+                                        </button>
+                                    </div>
+
+                                    <form
+                                        id="reply-editor-{{ $comment->id }}"
+                                        class="comment-form reply-form"
+                                        data-editor-panel
+                                        method="post"
+                                        action="{{ route('tickets.comments.store', $ticket) }}"
+                                        hidden
+                                    >
+                                        @csrf
+                                        <input type="hidden" name="parent_id" value="{{ $comment->id }}">
+
+                                        <div class="comment-form-head">
+                                            <h3>Odpovědět na komentář</h3>
+                                            <p>Odpověď se uloží jako veřejný komentář pod tímto vláknem.</p>
+                                        </div>
+
+                                        @if ($replyParentId === (string) $comment->id && $commentErrors->any())
+                                            <ul class="field-error-list">
+                                                @foreach ($commentErrors->all() as $error)
+                                                    <li>{{ $error }}</li>
+                                                @endforeach
+                                            </ul>
+                                        @endif
+
+                                        <div>
+                                            <textarea class="textarea" name="body" required>{{ $replyParentId === (string) $comment->id ? old('body') : '' }}</textarea>
+                                            @if ($replyParentId === (string) $comment->id && $commentErrors->has('body'))
+                                                <div class="field-error">{{ $commentErrors->first('body') }}</div>
+                                            @endif
+                                            @if ($replyParentId === (string) $comment->id && $commentErrors->has('parent_id'))
+                                                <div class="field-error">{{ $commentErrors->first('parent_id') }}</div>
+                                            @endif
+                                        </div>
+
+                                        <div class="comment-form-actions">
+                                            <button class="button button-primary" type="submit">Odeslat odpověď</button>
+                                            <button class="button button-secondary" type="button" data-editor-cancel="reply-editor-{{ $comment->id }}">Zrušit</button>
+                                        </div>
+                                    </form>
+                                @endif
+
+                                @if ($comment->publicReplies->isNotEmpty())
+                                    <div class="comment-children" aria-label="Odpovědi na komentář">
+                                        @foreach ($comment->publicReplies as $reply)
+                                            <article class="comment-card reply-card">
+                                                <div class="comment-head">
+                                                    <div class="comment-author">{{ $reply->user?->name ?? 'Neznámý uživatel' }}</div>
+                                                    <div class="comment-time">{{ $reply->created_at?->format('d.m.Y H:i') ?? '—' }}</div>
+                                                </div>
+                                                <div class="comment-body">
+                                                    {!! nl2br(e($reply->body)) !!}
+                                                </div>
+                                            </article>
+                                        @endforeach
+                                    </div>
+                                @endif
                             </article>
                         @endforeach
                     </div>
@@ -1263,7 +1387,7 @@
                     @endif
 
                     <div>
-                        <textarea class="textarea" name="body" required>{{ old('body') }}</textarea>
+                        <textarea class="textarea" name="body" required>{{ $replyParentId === '' ? old('body') : '' }}</textarea>
                         @if ($commentErrors->has('body'))
                             <div class="field-error">{{ $commentErrors->first('body') }}</div>
                         @endif

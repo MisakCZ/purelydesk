@@ -11,6 +11,7 @@ use App\Http\Requests\UpdateTicketVisibilityRequest;
 use App\Models\Announcement;
 use App\Models\Ticket;
 use App\Models\TicketCategory;
+use App\Models\TicketComment;
 use App\Models\TicketHistory;
 use App\Models\TicketPriority;
 use App\Models\TicketStatus;
@@ -104,10 +105,34 @@ class TicketController extends Controller
             'internalComments' => fn ($query) => $query
                 ->with('user:id,name')
                 ->orderBy('created_at'),
-            'publicComments' => fn ($query) => $query
-                ->with('user:id,name')
-                ->orderBy('created_at'),
         ]);
+
+        if (TicketComment::supportsThreading()) {
+            $ticket->load([
+                'publicRootComments' => fn ($query) => $query
+                    ->with([
+                        'user:id,name',
+                        'publicReplies' => fn ($replyQuery) => $replyQuery
+                            ->with('user:id,name')
+                            ->orderBy('created_at'),
+                    ])
+                    ->orderBy('created_at'),
+            ]);
+
+            $publicCommentThreads = $ticket->publicRootComments;
+        } else {
+            $ticket->load([
+                'publicComments' => fn ($query) => $query
+                    ->with('user:id,name')
+                    ->orderBy('created_at'),
+            ]);
+
+            $publicCommentThreads = $ticket->publicComments->map(function (TicketComment $comment) {
+                $comment->setRelation('publicReplies', collect());
+
+                return $comment;
+            });
+        }
 
         $originalSnapshotEntry = $this->originalSnapshotEntry($ticket);
         $originalVersionSnapshot = $this->extractOriginalVersionSnapshot($originalSnapshotEntry?->new_value ?? []);
@@ -127,6 +152,8 @@ class TicketController extends Controller
             'isWatchingTicket' => $watcherUser instanceof User
                 ? $ticket->watchers->contains('id', $watcherUser->id)
                 : false,
+            'commentThreadingEnabled' => TicketComment::supportsThreading(),
+            'publicCommentThreads' => $publicCommentThreads,
             'isClosedTicket' => $closedStatus instanceof TicketStatus
                 ? (int) $ticket->ticket_status_id === (int) $closedStatus->id
                 : false,

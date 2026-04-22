@@ -154,6 +154,13 @@ class Ticket extends Model
         return $this->comments()->where('visibility', 'public');
     }
 
+    public function publicRootComments(): HasMany
+    {
+        return $this->comments()
+            ->where('visibility', 'public')
+            ->whereNull('parent_id');
+    }
+
     public function internalComments(): HasMany
     {
         return $this->comments()->where('visibility', 'internal');

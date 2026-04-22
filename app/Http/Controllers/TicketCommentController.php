@@ -21,13 +21,23 @@ class TicketCommentController extends Controller
 
         $validated = $request->validateWithBag('comment', [
             'body' => ['required', 'string'],
+            'parent_id' => ['nullable', 'integer'],
         ]);
 
-        $this->createComment($ticket, $validated['body'], 'public', 'comment');
+        $parentComment = $this->resolveReplyParent($ticket, $validated['parent_id'] ?? null);
+
+        $this->createComment(
+            $ticket,
+            $validated['body'],
+            'public',
+            'comment',
+            'body',
+            $parentComment?->id,
+        );
 
         return redirect()
             ->route('tickets.show', $ticket)
-            ->with('status', 'Komentář byl přidán.');
+            ->with('status', $parentComment instanceof TicketComment ? 'Odpověď byla přidána.' : 'Komentář byl přidán.');
     }
 
     public function storeInternal(Request $request, Ticket $ticket): RedirectResponse
@@ -46,14 +56,55 @@ class TicketCommentController extends Controller
             ->with('status', 'Interní poznámka byla uložena.');
     }
 
-    private function createComment(Ticket $ticket, string $body, string $visibility, string $errorBag, string $errorKey = 'body'): void
+    private function createComment(
+        Ticket $ticket,
+        string $body,
+        string $visibility,
+        string $errorBag,
+        string $errorKey = 'body',
+        ?int $parentId = null,
+    ): void
     {
-        TicketComment::query()->create([
+        $attributes = [
             'ticket_id' => $ticket->id,
             'user_id' => $this->resolveAuthor($errorBag, $errorKey)->id,
             'visibility' => $visibility,
             'body' => $body,
-        ]);
+        ];
+
+        if (TicketComment::supportsThreading()) {
+            $attributes['parent_id'] = $parentId;
+        }
+
+        TicketComment::query()->create($attributes);
+    }
+
+    private function resolveReplyParent(Ticket $ticket, mixed $parentId): ?TicketComment
+    {
+        if ($parentId === null || $parentId === '') {
+            return null;
+        }
+
+        if (! TicketComment::supportsThreading()) {
+            throw ValidationException::withMessages([
+                'parent_id' => 'Odpovědi na komentáře budou dostupné po spuštění databázové migrace aplikace.',
+            ])->errorBag('comment');
+        }
+
+        $parentComment = TicketComment::query()
+            ->whereKey((int) $parentId)
+            ->where('ticket_id', $ticket->id)
+            ->publicVisible()
+            ->rootComments()
+            ->first();
+
+        if ($parentComment instanceof TicketComment) {
+            return $parentComment;
+        }
+
+        throw ValidationException::withMessages([
+            'parent_id' => 'Odpověď lze přidat jen k existujícímu veřejnému hlavnímu komentáři tohoto ticketu.',
+        ])->errorBag('comment');
     }
 
     private function resolveAuthor(string $errorBag, string $errorKey): User
