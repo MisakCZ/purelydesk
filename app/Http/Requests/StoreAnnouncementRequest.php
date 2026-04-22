@@ -3,6 +3,8 @@
 namespace App\Http\Requests;
 
 use App\Models\Announcement;
+use App\Policies\AnnouncementPolicy;
+use App\Support\HelpdeskAuth;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -10,8 +12,7 @@ class StoreAnnouncementRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // TODO: Restrict announcement management to internal administrators.
-        return true;
+        return app(AnnouncementPolicy::class)->manage(app(HelpdeskAuth::class)->user());
     }
 
     public function rules(): array

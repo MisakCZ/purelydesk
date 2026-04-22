@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -23,7 +24,7 @@ class DatabaseSeeder extends Seeder
             TicketCategorySeeder::class,
         ]);
 
-        User::query()->firstOrCreate([
+        $testUser = User::query()->firstOrCreate([
             'email' => 'test@example.com',
         ], [
             'name' => 'Test User',
@@ -31,5 +32,13 @@ class DatabaseSeeder extends Seeder
             'password' => 'password',
             'remember_token' => Str::random(10),
         ]);
+
+        $adminRole = Role::query()
+            ->where('slug', Role::SLUG_ADMIN)
+            ->first();
+
+        if ($adminRole instanceof Role) {
+            $testUser->roles()->syncWithoutDetaching([$adminRole->id]);
+        }
     }
 }

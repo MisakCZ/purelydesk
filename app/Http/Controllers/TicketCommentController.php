@@ -17,7 +17,7 @@ class TicketCommentController extends Controller
 
     public function store(Request $request, Ticket $ticket): RedirectResponse
     {
-        $this->ensureTicketCanBeViewed($ticket);
+        $this->authorizeTicketAbility('commentPublic', $ticket);
 
         $validated = $request->validateWithBag('comment', [
             'body' => ['required', 'string'],
@@ -42,9 +42,8 @@ class TicketCommentController extends Controller
 
     public function storeInternal(Request $request, Ticket $ticket): RedirectResponse
     {
-        $this->ensureTicketCanBeViewed($ticket);
+        $this->authorizeTicketAbility('commentInternal', $ticket);
 
-        // TODO: Restrict this to internal admin users when auth/policies are integrated.
         $validated = $request->validateWithBag('internalNote', [
             'note_body' => ['required', 'string'],
         ]);
@@ -109,21 +108,17 @@ class TicketCommentController extends Controller
 
     private function resolveAuthor(string $errorBag, string $errorKey): User
     {
-        $fallbackUser = $this->currentHelpdeskUser();
-
-        if ($fallbackUser instanceof User) {
-            return $fallbackUser;
-        }
-
-        throw ValidationException::withMessages([
-            $errorKey => 'Poznámku zatím nelze uložit, protože v databázi neexistuje žádný uživatel.',
-        ])->errorBag($errorBag);
+        return $this->requireHelpdeskUser(
+            'Poznámku zatím nelze uložit, protože v databázi neexistuje žádný uživatel.',
+            $errorKey,
+            $errorBag,
+        );
     }
 
-    private function ensureTicketCanBeViewed(Ticket $ticket): void
+    private function authorizeTicketAbility(string $ability, Ticket $ticket): void
     {
         abort_unless(
-            app(TicketPolicy::class)->view($this->currentHelpdeskUser(), $ticket),
+            app(TicketPolicy::class)->{$ability}($this->currentHelpdeskUser(), $ticket),
             403,
         );
     }

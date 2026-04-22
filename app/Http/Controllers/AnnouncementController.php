@@ -5,15 +5,20 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreAnnouncementRequest;
 use App\Models\Announcement;
 use App\Models\User;
+use App\Policies\AnnouncementPolicy;
+use App\Support\ResolvesHelpdeskUser;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Carbon;
-use Illuminate\Validation\ValidationException;
 
 class AnnouncementController extends Controller
 {
+    use ResolvesHelpdeskUser;
+
     public function index(): View
     {
+        $this->authorizeAnnouncementManagement();
+
         return view('announcements.index', [
             'announcements' => Announcement::query()
                 ->with('author:id,name')
@@ -25,6 +30,8 @@ class AnnouncementController extends Controller
 
     public function edit(Announcement $announcement): View
     {
+        $this->authorizeAnnouncementManagement();
+
         return view('announcements.edit', [
             'announcement' => $announcement,
             'announcementTypes' => Announcement::typeOptions(),
@@ -57,6 +64,8 @@ class AnnouncementController extends Controller
 
     public function destroy(Announcement $announcement): RedirectResponse
     {
+        $this->authorizeAnnouncementManagement();
+
         $announcement->delete();
 
         return redirect()
@@ -66,22 +75,18 @@ class AnnouncementController extends Controller
 
     private function resolveAuthor(): User
     {
-        $authenticatedUser = auth()->user();
+        return $this->requireHelpdeskUser(
+            'Oznámení zatím nelze uložit, protože v databázi neexistuje žádný uživatel.',
+            'author',
+        );
+    }
 
-        if ($authenticatedUser instanceof User) {
-            return $authenticatedUser;
-        }
-
-        // Temporary fallback until authentication is integrated.
-        $fallbackUser = User::query()->orderBy('id')->first();
-
-        if ($fallbackUser instanceof User) {
-            return $fallbackUser;
-        }
-
-        throw ValidationException::withMessages([
-            'author' => 'Oznámení zatím nelze uložit, protože v databázi neexistuje žádný uživatel.',
-        ]);
+    private function authorizeAnnouncementManagement(): void
+    {
+        abort_unless(
+            app(AnnouncementPolicy::class)->manage($this->currentHelpdeskUser()),
+            403,
+        );
     }
 
     private function parseDateTime(?string $value): ?Carbon

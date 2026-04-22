@@ -2,6 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Ticket;
+use App\Policies\TicketPolicy;
+use App\Support\HelpdeskAuth;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateTicketPinRequest extends FormRequest
@@ -10,8 +13,10 @@ class UpdateTicketPinRequest extends FormRequest
 
     public function authorize(): bool
     {
-        // TODO: Restrict pinning actions to internal administrators.
-        return true;
+        $ticket = $this->route('ticket');
+
+        return $ticket instanceof Ticket
+            && app(TicketPolicy::class)->updatePin(app(HelpdeskAuth::class)->user(), $ticket);
     }
 
     public function rules(): array

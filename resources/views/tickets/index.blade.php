@@ -484,7 +484,9 @@
                 <p>Přehled aktuálních helpdesk požadavků v systému.</p>
             </div>
 
-            <a class="button button-primary" href="{{ route('tickets.create') }}">Nový ticket</a>
+            @if ($canCreateTickets)
+                <a class="button button-primary" href="{{ route('tickets.create') }}">Nový ticket</a>
+            @endif
         </div>
     </div>
 
@@ -687,7 +689,7 @@
                             </div>
 
                             <div class="pinned-ticket-meta">
-                                <div>Visibility: {{ $visibilityOptions[$ticket->visibility] ?? ucfirst((string) $ticket->visibility) }}</div>
+                                <div>Visibility: {{ $visibilityOptions[$ticket->normalizedVisibility()] ?? ucfirst((string) $ticket->normalizedVisibility()) }}</div>
                                 <div>Requester: {{ $ticket->requester?->name ?? '—' }}</div>
                                 <div>Assignee: {{ $ticket->assignee?->name ?? '—' }}</div>
                                 <div class="{{ $ticket->is_watched_by_current_user ? 'watch-state watching' : 'watch-state' }}">
@@ -741,7 +743,7 @@
                                         </a>
                                     </strong>
                                     <span>
-                                        {{ $visibilityOptions[$ticket->visibility] ?? ucfirst((string) $ticket->visibility) }}
+                                        {{ $visibilityOptions[$ticket->normalizedVisibility()] ?? ucfirst((string) $ticket->normalizedVisibility()) }}
                                         @if ($pinningEnabled && $ticket->is_pinned)
                                             · Připnuto
                                         @endif

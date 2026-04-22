@@ -19,6 +19,27 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    public function hasRole(string $roleSlug): bool
+    {
+        if ($this->relationLoaded('roles')) {
+            return $this->roles->contains('slug', $roleSlug);
+        }
+
+        return $this->roles()
+            ->where('slug', $roleSlug)
+            ->exists();
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->hasRole(Role::SLUG_ADMIN);
+    }
+
+    public function isSolver(): bool
+    {
+        return $this->hasRole(Role::SLUG_SOLVER);
+    }
+
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(Role::class)->withTimestamps();

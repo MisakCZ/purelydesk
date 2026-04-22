@@ -56,7 +56,7 @@
         @endif
     </div>
 
-    @if ($ticket)
+    @if ($ticket && $canManageVisibility)
         <div class="field">
             <label class="label" for="visibility">Viditelnost</label>
             <select class="select" id="visibility" name="visibility" required>
@@ -66,7 +66,7 @@
                     </option>
                 @endforeach
             </select>
-            <div class="hint">Restricted ticket uvidí jen requester, assignee a administrativní režim aplikace.</div>
+            <div class="hint">Internal ticket vidí requester, solveři a admin. Private ticket vidí requester, assignee a admin.</div>
             @if ($viewErrors->has('visibility'))
                 <div class="field-error">{{ $viewErrors->first('visibility') }}</div>
             @endif
@@ -82,18 +82,20 @@
         @endif
     </div>
 
-    <div class="field field-full">
-        <label class="checkbox-field" for="pinned">
-            <input id="pinned" name="pinned" type="checkbox" value="1" @checked((string) $pinnedValue === '1')>
-            Připnout ticket
-        </label>
-        @if ($pinningEnabled)
-            <div class="hint">Připnutý ticket se zobrazí i v horním bloku připnutých ticketů.</div>
-        @else
-            <div class="hint">Připnutí bude funkční po spuštění databázové migrace pro pinning ticketů.</div>
-        @endif
-        @if ($viewErrors->has('pinned'))
-            <div class="field-error">{{ $viewErrors->first('pinned') }}</div>
-        @endif
-    </div>
+    @if ($canManagePin)
+        <div class="field field-full">
+            <label class="checkbox-field" for="pinned">
+                <input id="pinned" name="pinned" type="checkbox" value="1" @checked((string) $pinnedValue === '1')>
+                Připnout ticket
+            </label>
+            @if ($pinningEnabled)
+                <div class="hint">Připnutý ticket se zobrazí i v horním bloku připnutých ticketů.</div>
+            @else
+                <div class="hint">Připnutí bude funkční po spuštění databázové migrace pro pinning ticketů.</div>
+            @endif
+            @if ($viewErrors->has('pinned'))
+                <div class="field-error">{{ $viewErrors->first('pinned') }}</div>
+            @endif
+        </div>
+    @endif
 </div>

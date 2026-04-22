@@ -26,8 +26,10 @@ Route::post('/tickets/{ticket}/watchers', [TicketWatcherController::class, 'stor
 Route::patch('/tickets/{ticket}', [TicketController::class, 'update'])->name('tickets.update');
 Route::patch('/tickets/{ticket}/assignee', [TicketController::class, 'updateAssignee'])->name('tickets.assignee.update');
 Route::patch('/tickets/{ticket}/category', [TicketController::class, 'updateCategory'])->name('tickets.category.update');
+Route::patch('/tickets/{ticket}/confirm-resolution', [TicketController::class, 'confirmResolution'])->name('tickets.confirm-resolution');
 Route::patch('/tickets/{ticket}/pin', [TicketController::class, 'updatePin'])->name('tickets.pin.update');
 Route::patch('/tickets/{ticket}/priority', [TicketController::class, 'updatePriority'])->name('tickets.priority.update');
+Route::patch('/tickets/{ticket}/report-problem-persists', [TicketController::class, 'reportProblemPersists'])->name('tickets.report-problem-persists');
 Route::patch('/tickets/{ticket}/status', [TicketController::class, 'updateStatus'])->name('tickets.status.update');
 Route::patch('/tickets/{ticket}/visibility', [TicketController::class, 'updateVisibility'])->name('tickets.visibility.update');
 Route::delete('/tickets/{ticket}/watchers', [TicketWatcherController::class, 'destroy'])->name('tickets.watchers.destroy');

@@ -14,8 +14,10 @@ class Ticket extends Model
 {
     use HasFactory;
 
+    public const LEGACY_VISIBILITY_RESTRICTED = 'restricted';
     public const VISIBILITY_PUBLIC = 'public';
-    public const VISIBILITY_RESTRICTED = 'restricted';
+    public const VISIBILITY_INTERNAL = 'internal';
+    public const VISIBILITY_PRIVATE = 'private';
 
     protected $fillable = [
         'ticket_number',
@@ -62,28 +64,52 @@ class Ticket extends Model
     {
         return [
             self::VISIBILITY_PUBLIC => 'Public',
-            self::VISIBILITY_RESTRICTED => 'Restricted',
+            self::VISIBILITY_INTERNAL => 'Internal',
+            self::VISIBILITY_PRIVATE => 'Private',
         ];
     }
 
-    public function scopeVisibleTo(Builder $query, ?User $user, bool $administrativeMode = false): Builder
+    public function scopeVisibleTo(Builder $query, ?User $user): Builder
     {
-        return $query->where(function (Builder $query) use ($user, $administrativeMode): void {
+        if (! $user instanceof User) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->where(function (Builder $query) use ($user): void {
             $query->where('visibility', self::VISIBILITY_PUBLIC);
 
-            if ($administrativeMode) {
-                $query->orWhere('visibility', self::VISIBILITY_RESTRICTED);
+            if ($user->isAdmin()) {
+                $query->orWhereIn('visibility', [
+                    self::VISIBILITY_INTERNAL,
+                    self::VISIBILITY_PRIVATE,
+                    self::LEGACY_VISIBILITY_RESTRICTED,
+                ]);
 
                 return;
             }
 
-            if (! $user instanceof User) {
+            if ($user->isSolver()) {
+                $query->orWhere('visibility', self::VISIBILITY_INTERNAL)
+                    ->orWhere(function (Builder $query) use ($user): void {
+                        $query
+                            ->whereIn('visibility', $this->privateVisibilityValues())
+                            ->where(function (Builder $query) use ($user): void {
+                                $query
+                                    ->where('requester_id', $user->id)
+                                    ->orWhere('assignee_id', $user->id);
+                            });
+                    });
+
                 return;
             }
 
             $query->orWhere(function (Builder $query) use ($user): void {
                 $query
-                    ->where('visibility', self::VISIBILITY_RESTRICTED)
+                    ->where('visibility', self::VISIBILITY_INTERNAL)
+                    ->where('requester_id', $user->id);
+            })->orWhere(function (Builder $query) use ($user): void {
+                $query
+                    ->whereIn('visibility', $this->privateVisibilityValues())
                     ->where(function (Builder $query) use ($user): void {
                         $query
                             ->where('requester_id', $user->id)
@@ -93,17 +119,31 @@ class Ticket extends Model
         });
     }
 
-    public function isVisibleTo(?User $user, bool $administrativeMode = false): bool
+    public function isVisibleTo(?User $user): bool
     {
-        if ($this->visibility !== self::VISIBILITY_RESTRICTED) {
-            return true;
-        }
-
-        if ($administrativeMode) {
-            return true;
-        }
-
         if (! $user instanceof User) {
+            return false;
+        }
+
+        $visibility = $this->normalizedVisibility();
+
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        if ($visibility === self::VISIBILITY_PUBLIC) {
+            return true;
+        }
+
+        if ($visibility === self::VISIBILITY_INTERNAL) {
+            if ($user->isSolver()) {
+                return true;
+            }
+
+            return (int) $this->requester_id === (int) $user->id;
+        }
+
+        if ($visibility !== self::VISIBILITY_PRIVATE) {
             return false;
         }
 
@@ -112,6 +152,71 @@ class Ticket extends Model
         }
 
         return false;
+    }
+
+    public function normalizedVisibility(): string
+    {
+        if ($this->visibility === self::LEGACY_VISIBILITY_RESTRICTED) {
+            return self::VISIBILITY_PRIVATE;
+        }
+
+        return (string) $this->visibility;
+    }
+
+    public function statusSlug(): ?string
+    {
+        if ($this->relationLoaded('status') && $this->status !== null) {
+            $statusAttributes = $this->status->getAttributes();
+
+            if (array_key_exists('slug', $statusAttributes)) {
+                return $statusAttributes['slug'];
+            }
+        }
+
+        return $this->status()
+            ->value('slug');
+    }
+
+    public function statusIsClosed(): bool
+    {
+        if ($this->relationLoaded('status') && $this->status !== null) {
+            $statusAttributes = $this->status->getAttributes();
+
+            if (array_key_exists('is_closed', $statusAttributes)) {
+                return (bool) $statusAttributes['is_closed'];
+            }
+        }
+
+        return (bool) $this->status()
+            ->value('is_closed');
+    }
+
+    public function hasStatusSlug(string|array $slugs): bool
+    {
+        $slug = $this->statusSlug();
+
+        if ($slug === null) {
+            return false;
+        }
+
+        return in_array($slug, (array) $slugs, true);
+    }
+
+    public function isRequesterEditLocked(): bool
+    {
+        return $this->hasStatusSlug([
+            'resolved',
+            'closed',
+            'cancelled',
+        ]);
+    }
+
+    private function privateVisibilityValues(): array
+    {
+        return [
+            self::VISIBILITY_PRIVATE,
+            self::LEGACY_VISIBILITY_RESTRICTED,
+        ];
     }
 
     public function department(): BelongsTo

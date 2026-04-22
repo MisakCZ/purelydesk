@@ -10,6 +10,10 @@ class Role extends Model
 {
     use HasFactory;
 
+    public const SLUG_ADMIN = 'admin';
+    public const SLUG_SOLVER = 'solver';
+    public const SLUG_USER = 'user';
+
     protected $fillable = [
         'name',
         'slug',

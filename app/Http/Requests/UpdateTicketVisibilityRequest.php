@@ -2,6 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Ticket;
+use App\Policies\TicketPolicy;
+use App\Support\HelpdeskAuth;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateTicketVisibilityRequest extends FormRequest
@@ -10,14 +13,16 @@ class UpdateTicketVisibilityRequest extends FormRequest
 
     public function authorize(): bool
     {
-        // TODO: Replace with policy or role-based internal admin check when auth is integrated.
-        return true;
+        $ticket = $this->route('ticket');
+
+        return $ticket instanceof Ticket
+            && app(TicketPolicy::class)->updateVisibility(app(HelpdeskAuth::class)->user(), $ticket);
     }
 
     public function rules(): array
     {
         return [
-            'visibility' => ['required', 'in:public,restricted'],
+            'visibility' => ['required', 'in:public,internal,private'],
         ];
     }
 }

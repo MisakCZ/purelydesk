@@ -15,7 +15,7 @@ class TicketWatcherController extends Controller
 
     public function store(Ticket $ticket): RedirectResponse
     {
-        $this->ensureTicketCanBeViewed($ticket);
+        $this->authorizeTicketAbility('watch', $ticket);
 
         $user = $this->resolveWatcher();
 
@@ -28,7 +28,7 @@ class TicketWatcherController extends Controller
 
     public function destroy(Ticket $ticket): RedirectResponse
     {
-        $this->ensureTicketCanBeViewed($ticket);
+        $this->authorizeTicketAbility('watch', $ticket);
 
         $user = $this->resolveWatcher();
 
@@ -41,21 +41,17 @@ class TicketWatcherController extends Controller
 
     private function resolveWatcher(): User
     {
-        $fallbackUser = $this->currentHelpdeskUser();
-
-        if ($fallbackUser instanceof User) {
-            return $fallbackUser;
-        }
-
-        throw ValidationException::withMessages([
-            'watcher' => 'Sledování ticketu zatím nelze změnit, protože v databázi neexistuje žádný uživatel.',
-        ])->errorBag('ticketWatcher');
+        return $this->requireHelpdeskUser(
+            'Sledování ticketu zatím nelze změnit, protože v databázi neexistuje žádný uživatel.',
+            'watcher',
+            'ticketWatcher',
+        );
     }
 
-    private function ensureTicketCanBeViewed(Ticket $ticket): void
+    private function authorizeTicketAbility(string $ability, Ticket $ticket): void
     {
         abort_unless(
-            app(TicketPolicy::class)->view($this->currentHelpdeskUser(), $ticket),
+            app(TicketPolicy::class)->{$ability}($this->currentHelpdeskUser(), $ticket),
             403,
         );
     }

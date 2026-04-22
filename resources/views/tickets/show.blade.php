@@ -21,6 +21,13 @@
         || $categoryErrors->any()
         || $pinErrors->any()
         || $watcherErrors->any();
+    $hasHeroQuickActions = $canUpdateStatus
+        || $canUpdatePriority
+        || $canUpdateVisibility
+        || $canUpdateAssignee
+        || $canUpdateCategory
+        || $canUpdatePin
+        || $watcherActionEnabled;
     $historyFieldLabels = [
         'ticket_number' => 'Ticket number',
         'subject' => 'Subject',
@@ -205,6 +212,23 @@
         .metadata-value {
             color: #13202b;
             line-height: 1.5;
+        }
+
+        .metadata-actions {
+            margin-top: 0.2rem;
+            padding-top: 0.95rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .metadata-action-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.65rem;
+            margin-top: 0.5rem;
+        }
+
+        .metadata-action-form {
+            display: inline-flex;
         }
 
         .management-grid {
@@ -779,7 +803,9 @@
                 </div>
 
             <div class="page-head-actions">
-                <a class="button button-secondary" href="{{ route('tickets.edit', $ticket) }}">Upravit ticket</a>
+                @if ($canEditTicket)
+                    <a class="button button-secondary" href="{{ route('tickets.edit', $ticket) }}">Upravit ticket</a>
+                @endif
                 <a class="button button-secondary" href="{{ route('tickets.index') }}">Zpět na seznam</a>
             </div>
         </div>
@@ -836,161 +862,220 @@
                 <h3 class="ticket-subject">{{ $ticket->subject }}</h3>
                 <div class="hero-meta-actions">
                     <div class="ticket-meta">
-                        <button
-                            class="badge badge-button"
-                            type="button"
-                            data-editor-toggle="hero-status-editor"
-                            aria-controls="hero-status-editor"
-                            aria-expanded="false"
-                            title="Upravit stav"
-                        >
-                            <span class="badge-dot"></span>
-                            Status: {{ $ticket->status?->name ?? '—' }}
-                        </button>
+                        @if ($canUpdateStatus)
+                            <button
+                                class="badge badge-button"
+                                type="button"
+                                data-editor-toggle="hero-status-editor"
+                                aria-controls="hero-status-editor"
+                                aria-expanded="false"
+                                title="Upravit stav"
+                            >
+                                <span class="badge-dot"></span>
+                                Status: {{ $ticket->status?->name ?? '—' }}
+                            </button>
+                        @else
+                            <span class="badge">
+                                <span class="badge-dot"></span>
+                                Status: {{ $ticket->status?->name ?? '—' }}
+                            </span>
+                        @endif
 
-                        <button
-                            class="badge badge-button"
-                            type="button"
-                            data-editor-toggle="hero-priority-editor"
-                            aria-controls="hero-priority-editor"
-                            aria-expanded="false"
-                            title="Upravit prioritu"
-                        >
-                            <span class="badge-dot"></span>
-                            Priorita: {{ $ticket->priority?->name ?? '—' }}
-                        </button>
+                        @if ($canUpdatePriority)
+                            <button
+                                class="badge badge-button"
+                                type="button"
+                                data-editor-toggle="hero-priority-editor"
+                                aria-controls="hero-priority-editor"
+                                aria-expanded="false"
+                                title="Upravit prioritu"
+                            >
+                                <span class="badge-dot"></span>
+                                Priorita: {{ $ticket->priority?->name ?? '—' }}
+                            </button>
+                        @else
+                            <span class="badge">
+                                <span class="badge-dot"></span>
+                                Priorita: {{ $ticket->priority?->name ?? '—' }}
+                            </span>
+                        @endif
 
-                        <button
-                            class="badge badge-button"
-                            type="button"
-                            data-editor-toggle="hero-visibility-editor"
-                            aria-controls="hero-visibility-editor"
-                            aria-expanded="false"
-                            title="Upravit viditelnost"
-                        >
-                            <span class="badge-dot"></span>
-                            Viditelnost: {{ $visibilityOptions[$ticket->visibility] ?? ucfirst((string) $ticket->visibility) }}
-                        </button>
+                        @if ($canUpdateVisibility)
+                            <button
+                                class="badge badge-button"
+                                type="button"
+                                data-editor-toggle="hero-visibility-editor"
+                                aria-controls="hero-visibility-editor"
+                                aria-expanded="false"
+                                title="Upravit viditelnost"
+                            >
+                                <span class="badge-dot"></span>
+                                Viditelnost: {{ $visibilityOptions[$ticket->normalizedVisibility()] ?? ucfirst((string) $ticket->normalizedVisibility()) }}
+                            </button>
+                        @else
+                            <span class="badge">
+                                <span class="badge-dot"></span>
+                                Viditelnost: {{ $visibilityOptions[$ticket->normalizedVisibility()] ?? ucfirst((string) $ticket->normalizedVisibility()) }}
+                            </span>
+                        @endif
 
-                        <button
-                            class="badge badge-button"
-                            type="button"
-                            data-editor-toggle="hero-assignee-editor"
-                            aria-controls="hero-assignee-editor"
-                            aria-expanded="false"
-                            title="Upravit řešitele"
-                        >
-                            <span class="badge-dot"></span>
-                            Řešitel: {{ $ticket->assignee?->name ?? 'Nepřiřazeno' }}
-                        </button>
+                        @if ($canUpdateAssignee)
+                            <button
+                                class="badge badge-button"
+                                type="button"
+                                data-editor-toggle="hero-assignee-editor"
+                                aria-controls="hero-assignee-editor"
+                                aria-expanded="false"
+                                title="Upravit řešitele"
+                            >
+                                <span class="badge-dot"></span>
+                                Řešitel: {{ $ticket->assignee?->name ?? 'Nepřiřazeno' }}
+                            </button>
+                        @else
+                            <span class="badge">
+                                <span class="badge-dot"></span>
+                                Řešitel: {{ $ticket->assignee?->name ?? 'Nepřiřazeno' }}
+                            </span>
+                        @endif
 
-                        <button
-                            class="badge badge-button"
-                            type="button"
-                            data-editor-toggle="hero-category-editor"
-                            aria-controls="hero-category-editor"
-                            aria-expanded="false"
-                            title="Upravit kategorii"
-                        >
-                            <span class="badge-dot"></span>
-                            Kategorie: {{ $ticket->category?->name ?? '—' }}
-                        </button>
+                        @if ($canUpdateCategory)
+                            <button
+                                class="badge badge-button"
+                                type="button"
+                                data-editor-toggle="hero-category-editor"
+                                aria-controls="hero-category-editor"
+                                aria-expanded="false"
+                                title="Upravit kategorii"
+                            >
+                                <span class="badge-dot"></span>
+                                Kategorie: {{ $ticket->category?->name ?? '—' }}
+                            </button>
+                        @else
+                            <span class="badge">
+                                <span class="badge-dot"></span>
+                                Kategorie: {{ $ticket->category?->name ?? '—' }}
+                            </span>
+                        @endif
 
-                        <button
-                            class="badge badge-button{{ $pinningEnabled && $ticket->is_pinned ? ' badge-watching' : '' }}"
-                            type="button"
-                            data-editor-toggle="hero-pin-editor"
-                            aria-controls="hero-pin-editor"
-                            aria-expanded="false"
-                            title="Upravit připnutí"
-                        >
-                            <span class="badge-dot"></span>
-                            Připnutí:
-                            @if (! $pinningEnabled)
-                                Nedostupné
-                            @else
-                                {{ $ticket->is_pinned ? 'Ano' : 'Ne' }}
-                            @endif
-                        </button>
+                        @if ($canUpdatePin)
+                            <button
+                                class="badge badge-button{{ $pinningEnabled && $ticket->is_pinned ? ' badge-watching' : '' }}"
+                                type="button"
+                                data-editor-toggle="hero-pin-editor"
+                                aria-controls="hero-pin-editor"
+                                aria-expanded="false"
+                                title="Upravit připnutí"
+                            >
+                                <span class="badge-dot"></span>
+                                Připnutí:
+                                @if (! $pinningEnabled)
+                                    Nedostupné
+                                @else
+                                    {{ $ticket->is_pinned ? 'Ano' : 'Ne' }}
+                                @endif
+                            </button>
+                        @else
+                            <span class="badge{{ $pinningEnabled && $ticket->is_pinned ? ' badge-watching' : '' }}">
+                                <span class="badge-dot"></span>
+                                Připnutí:
+                                @if (! $pinningEnabled)
+                                    Nedostupné
+                                @else
+                                    {{ $ticket->is_pinned ? 'Ano' : 'Ne' }}
+                                @endif
+                            </span>
+                        @endif
 
-                        <button
-                            class="badge badge-button{{ $isWatchingTicket ? ' badge-watching' : '' }}"
-                            type="button"
-                            data-editor-toggle="hero-watcher-editor"
-                            aria-controls="hero-watcher-editor"
-                            aria-expanded="false"
-                            title="Upravit sledování"
-                        >
-                            <span class="badge-dot"></span>
-                            Sledování: {{ $isWatchingTicket ? 'Ano' : 'Ne' }}
-                        </button>
+                        @if ($watcherActionEnabled)
+                            <button
+                                class="badge badge-button{{ $isWatchingTicket ? ' badge-watching' : '' }}"
+                                type="button"
+                                data-editor-toggle="hero-watcher-editor"
+                                aria-controls="hero-watcher-editor"
+                                aria-expanded="false"
+                                title="Upravit sledování"
+                            >
+                                <span class="badge-dot"></span>
+                                Sledování: {{ $isWatchingTicket ? 'Ano' : 'Ne' }}
+                            </button>
+                        @else
+                            <span class="badge{{ $isWatchingTicket ? ' badge-watching' : '' }}">
+                                <span class="badge-dot"></span>
+                                Sledování: {{ $isWatchingTicket ? 'Ano' : 'Ne' }}
+                            </span>
+                        @endif
                     </div>
 
-                    <p class="hero-meta-help">Kliknutím na badge rychle upravíte provozní nastavení ticketu.</p>
+                    @if ($hasHeroQuickActions)
+                        <p class="hero-meta-help">Kliknutím na badge rychle upravíte provozní nastavení ticketu.</p>
+                    @endif
 
                     @if ($heroAdminHasErrors)
                         <div class="hero-admin-errors">Některý z formulářů správy ticketu obsahuje chyby. Otevřete příslušný badge.</div>
                     @endif
 
                     <div class="hero-admin-panels">
-                        <form
-                            id="hero-status-editor"
-                            class="inline-form hero-admin-panel"
-                            data-editor-panel
-                            method="post"
-                            action="{{ route('tickets.status.update', $ticket) }}"
-                            hidden
-                        >
-                            @csrf
-                            @method('patch')
+                        @if ($canUpdateStatus)
+                            <form
+                                id="hero-status-editor"
+                                class="inline-form hero-admin-panel"
+                                data-editor-panel
+                                method="post"
+                                action="{{ route('tickets.status.update', $ticket) }}"
+                                hidden
+                            >
+                                @csrf
+                                @method('patch')
 
-                            <div class="comment-form-head">
-                                <h3>Změnit stav ticketu</h3>
-                            </div>
-
-                            @if ($statusErrors->any())
-                                <ul class="field-error-list">
-                                    @foreach ($statusErrors->all() as $error)
-                                        <li>{{ $error }}</li>
-                                    @endforeach
-                                </ul>
-                            @endif
-
-                            <div class="field">
-                                <label class="label" for="hero_status_id">Stav</label>
-                                <div class="inline-form-row">
-                                    <select class="select" id="hero_status_id" name="status_id" required>
-                                        @foreach ($statuses as $status)
-                                            <option
-                                                value="{{ $status->id }}"
-                                                @selected((string) old('status_id', $ticket->ticket_status_id) === (string) $status->id)
-                                            >
-                                                {{ $status->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                <div class="comment-form-head">
+                                    <h3>Změnit stav ticketu</h3>
                                 </div>
-                                @if ($statusErrors->has('status_id'))
-                                    <div class="field-error">{{ $statusErrors->first('status_id') }}</div>
+
+                                @if ($statusErrors->any())
+                                    <ul class="field-error-list">
+                                        @foreach ($statusErrors->all() as $error)
+                                            <li>{{ $error }}</li>
+                                        @endforeach
+                                    </ul>
                                 @endif
-                            </div>
 
-                            <div class="inline-form-actions">
-                                <button class="button button-primary button-compact" type="submit">Uložit stav</button>
-                                <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-status-editor">Zrušit</button>
-                            </div>
-                        </form>
+                                <div class="field">
+                                    <label class="label" for="hero_status_id">Stav</label>
+                                    <div class="inline-form-row">
+                                        <select class="select" id="hero_status_id" name="status_id" required>
+                                            @foreach ($statuses as $status)
+                                                <option
+                                                    value="{{ $status->id }}"
+                                                    @selected((string) old('status_id', $ticket->ticket_status_id) === (string) $status->id)
+                                                >
+                                                    {{ $status->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    @if ($statusErrors->has('status_id'))
+                                        <div class="field-error">{{ $statusErrors->first('status_id') }}</div>
+                                    @endif
+                                </div>
 
-                        <form
-                            id="hero-priority-editor"
-                            class="inline-form hero-admin-panel"
-                            data-editor-panel
-                            method="post"
-                            action="{{ route('tickets.priority.update', $ticket) }}"
-                            hidden
-                        >
-                            @csrf
-                            @method('patch')
+                                <div class="inline-form-actions">
+                                    <button class="button button-primary button-compact" type="submit">Uložit stav</button>
+                                    <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-status-editor">Zrušit</button>
+                                </div>
+                            </form>
+                        @endif
+
+                        @if ($canUpdatePriority)
+                            <form
+                                id="hero-priority-editor"
+                                class="inline-form hero-admin-panel"
+                                data-editor-panel
+                                method="post"
+                                action="{{ route('tickets.priority.update', $ticket) }}"
+                                hidden
+                            >
+                                @csrf
+                                @method('patch')
 
                             <div class="comment-form-head">
                                 <h3>Změnit prioritu ticketu</h3>
@@ -1023,22 +1108,24 @@
                                 @endif
                             </div>
 
-                            <div class="inline-form-actions">
-                                <button class="button button-primary button-compact" type="submit">Uložit prioritu</button>
-                                <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-priority-editor">Zrušit</button>
-                            </div>
-                        </form>
+                                <div class="inline-form-actions">
+                                    <button class="button button-primary button-compact" type="submit">Uložit prioritu</button>
+                                    <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-priority-editor">Zrušit</button>
+                                </div>
+                            </form>
+                        @endif
 
-                        <form
-                            id="hero-visibility-editor"
-                            class="inline-form hero-admin-panel"
-                            data-editor-panel
-                            method="post"
-                            action="{{ route('tickets.visibility.update', $ticket) }}"
-                            hidden
-                        >
-                            @csrf
-                            @method('patch')
+                        @if ($canUpdateVisibility)
+                            <form
+                                id="hero-visibility-editor"
+                                class="inline-form hero-admin-panel"
+                                data-editor-panel
+                                method="post"
+                                action="{{ route('tickets.visibility.update', $ticket) }}"
+                                hidden
+                            >
+                                @csrf
+                                @method('patch')
 
                             <div class="comment-form-head">
                                 <h3>Změnit viditelnost ticketu</h3>
@@ -1059,7 +1146,7 @@
                                         @foreach ($visibilityOptions as $value => $label)
                                             <option
                                                 value="{{ $value }}"
-                                                @selected((string) old('visibility', $ticket->visibility) === (string) $value)
+                                                @selected((string) old('visibility', $ticket->normalizedVisibility()) === (string) $value)
                                             >
                                                 {{ $label }}
                                             </option>
@@ -1071,22 +1158,24 @@
                                 @endif
                             </div>
 
-                            <div class="inline-form-actions">
-                                <button class="button button-primary button-compact" type="submit">Uložit viditelnost</button>
-                                <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-visibility-editor">Zrušit</button>
-                            </div>
-                        </form>
+                                <div class="inline-form-actions">
+                                    <button class="button button-primary button-compact" type="submit">Uložit viditelnost</button>
+                                    <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-visibility-editor">Zrušit</button>
+                                </div>
+                            </form>
+                        @endif
 
-                        <form
-                            id="hero-assignee-editor"
-                            class="inline-form hero-admin-panel"
-                            data-editor-panel
-                            method="post"
-                            action="{{ route('tickets.assignee.update', $ticket) }}"
-                            hidden
-                        >
-                            @csrf
-                            @method('patch')
+                        @if ($canUpdateAssignee)
+                            <form
+                                id="hero-assignee-editor"
+                                class="inline-form hero-admin-panel"
+                                data-editor-panel
+                                method="post"
+                                action="{{ route('tickets.assignee.update', $ticket) }}"
+                                hidden
+                            >
+                                @csrf
+                                @method('patch')
 
                             <div class="comment-form-head">
                                 <h3>Změnit řešitele ticketu</h3>
@@ -1120,22 +1209,24 @@
                                 @endif
                             </div>
 
-                            <div class="inline-form-actions">
-                                <button class="button button-primary button-compact" type="submit">Uložit řešitele</button>
-                                <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-assignee-editor">Zrušit</button>
-                            </div>
-                        </form>
+                                <div class="inline-form-actions">
+                                    <button class="button button-primary button-compact" type="submit">Uložit řešitele</button>
+                                    <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-assignee-editor">Zrušit</button>
+                                </div>
+                            </form>
+                        @endif
 
-                        <form
-                            id="hero-category-editor"
-                            class="inline-form hero-admin-panel"
-                            data-editor-panel
-                            method="post"
-                            action="{{ route('tickets.category.update', $ticket) }}"
-                            hidden
-                        >
-                            @csrf
-                            @method('patch')
+                        @if ($canUpdateCategory)
+                            <form
+                                id="hero-category-editor"
+                                class="inline-form hero-admin-panel"
+                                data-editor-panel
+                                method="post"
+                                action="{{ route('tickets.category.update', $ticket) }}"
+                                hidden
+                            >
+                                @csrf
+                                @method('patch')
 
                             <div class="comment-form-head">
                                 <h3>Změnit kategorii ticketu</h3>
@@ -1168,153 +1259,150 @@
                                 @endif
                             </div>
 
-                            <div class="inline-form-actions">
-                                <button class="button button-primary button-compact" type="submit">Uložit kategorii</button>
-                                <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-category-editor">Zrušit</button>
-                            </div>
-                        </form>
-
-                        @if ($pinningEnabled)
-                            <form
-                                id="hero-pin-editor"
-                                class="inline-form hero-admin-panel"
-                                data-editor-panel
-                                method="post"
-                                action="{{ route('tickets.pin.update', $ticket) }}"
-                                hidden
-                            >
-                                @csrf
-                                @method('patch')
-                                <input type="hidden" name="pinned" value="{{ $ticket->is_pinned ? '0' : '1' }}">
-
-                                <div class="comment-form-head">
-                                    <h3>Změnit připnutí ticketu</h3>
-                                </div>
-
-                                @if ($pinErrors->any())
-                                    <ul class="field-error-list">
-                                        @foreach ($pinErrors->all() as $error)
-                                            <li>{{ $error }}</li>
-                                        @endforeach
-                                    </ul>
-                                @endif
-
-                                @if ($pinErrors->has('pinned'))
-                                    <div class="field-error">{{ $pinErrors->first('pinned') }}</div>
-                                @endif
-
                                 <div class="inline-form-actions">
-                                    <button class="button button-primary button-compact" type="submit">
-                                        {{ $ticket->is_pinned ? 'Odepnout ticket' : 'Připnout ticket' }}
-                                    </button>
-                                    <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-pin-editor">Zrušit</button>
+                                    <button class="button button-primary button-compact" type="submit">Uložit kategorii</button>
+                                    <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-category-editor">Zrušit</button>
                                 </div>
                             </form>
-                        @else
-                            <div
-                                id="hero-pin-editor"
-                                class="inline-form hero-admin-panel"
-                                data-editor-panel
-                                hidden
-                            >
-                                <div class="comment-form-head">
-                                    <h3>Připnutí ticketu</h3>
-                                    <p>Připnutí bude dostupné po spuštění databázové migrace.</p>
-                                </div>
-
-                                <div class="inline-form-actions">
-                                    <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-pin-editor">Zavřít</button>
-                                </div>
-                            </div>
                         @endif
 
-                        @if ($isWatchingTicket)
-                            <form
-                                id="hero-watcher-editor"
-                                class="inline-form hero-admin-panel"
-                                data-editor-panel
-                                method="post"
-                                action="{{ route('tickets.watchers.destroy', $ticket) }}"
-                                hidden
-                            >
-                                @csrf
-                                @method('delete')
+                        @if ($canUpdatePin)
+                            @if ($pinningEnabled)
+                                <form
+                                    id="hero-pin-editor"
+                                    class="inline-form hero-admin-panel"
+                                    data-editor-panel
+                                    method="post"
+                                    action="{{ route('tickets.pin.update', $ticket) }}"
+                                    hidden
+                                >
+                                    @csrf
+                                    @method('patch')
+                                    <input type="hidden" name="pinned" value="{{ $ticket->is_pinned ? '0' : '1' }}">
 
-                                <div class="comment-form-head">
-                                    <h3>Sledování ticketu</h3>
-                                    <p>Počet sledujících: {{ $ticket->watchers->count() }}</p>
+                                    <div class="comment-form-head">
+                                        <h3>Změnit připnutí ticketu</h3>
+                                    </div>
+
+                                    @if ($pinErrors->any())
+                                        <ul class="field-error-list">
+                                            @foreach ($pinErrors->all() as $error)
+                                                <li>{{ $error }}</li>
+                                            @endforeach
+                                        </ul>
+                                    @endif
+
+                                    @if ($pinErrors->has('pinned'))
+                                        <div class="field-error">{{ $pinErrors->first('pinned') }}</div>
+                                    @endif
+
+                                    <div class="inline-form-actions">
+                                        <button class="button button-primary button-compact" type="submit">
+                                            {{ $ticket->is_pinned ? 'Odepnout ticket' : 'Připnout ticket' }}
+                                        </button>
+                                        <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-pin-editor">Zrušit</button>
+                                    </div>
+                                </form>
+                            @else
+                                <div
+                                    id="hero-pin-editor"
+                                    class="inline-form hero-admin-panel"
+                                    data-editor-panel
+                                    hidden
+                                >
+                                    <div class="comment-form-head">
+                                        <h3>Připnutí ticketu</h3>
+                                        <p>Připnutí bude dostupné po spuštění databázové migrace.</p>
+                                    </div>
+
+                                    <div class="inline-form-actions">
+                                        <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-pin-editor">Zavřít</button>
+                                    </div>
                                 </div>
+                            @endif
+                        @endif
 
-                                @if ($watcherErrors->any())
-                                    <ul class="field-error-list">
-                                        @foreach ($watcherErrors->all() as $error)
-                                            <li>{{ $error }}</li>
-                                        @endforeach
-                                    </ul>
-                                @endif
+                        @if ($watcherActionEnabled)
+                            @if ($isWatchingTicket)
+                                <form
+                                    id="hero-watcher-editor"
+                                    class="inline-form hero-admin-panel"
+                                    data-editor-panel
+                                    method="post"
+                                    action="{{ route('tickets.watchers.destroy', $ticket) }}"
+                                    hidden
+                                >
+                                    @csrf
+                                    @method('delete')
 
-                                @if ($watcherActionEnabled)
+                                    <div class="comment-form-head">
+                                        <h3>Sledování ticketu</h3>
+                                        <p>Počet sledujících: {{ $ticket->watchers->count() }}</p>
+                                    </div>
+
+                                    @if ($watcherErrors->any())
+                                        <ul class="field-error-list">
+                                            @foreach ($watcherErrors->all() as $error)
+                                                <li>{{ $error }}</li>
+                                            @endforeach
+                                        </ul>
+                                    @endif
+
                                     <div class="inline-form-actions">
                                         <button class="button button-secondary button-compact" type="submit">Přestat sledovat</button>
                                         <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-watcher-editor">Zrušit</button>
                                     </div>
-                                @else
-                                    <p class="inline-help">Sledování zatím nelze použít, protože v databázi neexistuje žádný uživatel.</p>
-                                @endif
 
-                                @if ($ticket->watchers->isEmpty())
-                                    <div class="watcher-empty">Zatím ticket nikdo nesleduje.</div>
-                                @else
-                                    <div class="watcher-list" aria-label="Seznam sledujících">
-                                        @foreach ($ticket->watchers as $watcher)
-                                            <span class="watcher-pill">{{ $watcher->name }}</span>
-                                        @endforeach
+                                    @if ($ticket->watchers->isEmpty())
+                                        <div class="watcher-empty">Zatím ticket nikdo nesleduje.</div>
+                                    @else
+                                        <div class="watcher-list" aria-label="Seznam sledujících">
+                                            @foreach ($ticket->watchers as $watcher)
+                                                <span class="watcher-pill">{{ $watcher->name }}</span>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                </form>
+                            @else
+                                <form
+                                    id="hero-watcher-editor"
+                                    class="inline-form hero-admin-panel"
+                                    data-editor-panel
+                                    method="post"
+                                    action="{{ route('tickets.watchers.store', $ticket) }}"
+                                    hidden
+                                >
+                                    @csrf
+
+                                    <div class="comment-form-head">
+                                        <h3>Sledování ticketu</h3>
+                                        <p>Počet sledujících: {{ $ticket->watchers->count() }}</p>
                                     </div>
-                                @endif
-                            </form>
-                        @else
-                            <form
-                                id="hero-watcher-editor"
-                                class="inline-form hero-admin-panel"
-                                data-editor-panel
-                                method="post"
-                                action="{{ route('tickets.watchers.store', $ticket) }}"
-                                hidden
-                            >
-                                @csrf
 
-                                <div class="comment-form-head">
-                                    <h3>Sledování ticketu</h3>
-                                    <p>Počet sledujících: {{ $ticket->watchers->count() }}</p>
-                                </div>
+                                    @if ($watcherErrors->any())
+                                        <ul class="field-error-list">
+                                            @foreach ($watcherErrors->all() as $error)
+                                                <li>{{ $error }}</li>
+                                            @endforeach
+                                        </ul>
+                                    @endif
 
-                                @if ($watcherErrors->any())
-                                    <ul class="field-error-list">
-                                        @foreach ($watcherErrors->all() as $error)
-                                            <li>{{ $error }}</li>
-                                        @endforeach
-                                    </ul>
-                                @endif
-
-                                @if ($watcherActionEnabled)
                                     <div class="inline-form-actions">
                                         <button class="button button-primary button-compact" type="submit">Začít sledovat</button>
                                         <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-watcher-editor">Zrušit</button>
                                     </div>
-                                @else
-                                    <p class="inline-help">Sledování zatím nelze použít, protože v databázi neexistuje žádný uživatel.</p>
-                                @endif
 
-                                @if ($ticket->watchers->isEmpty())
-                                    <div class="watcher-empty">Zatím ticket nikdo nesleduje.</div>
-                                @else
-                                    <div class="watcher-list" aria-label="Seznam sledujících">
-                                        @foreach ($ticket->watchers as $watcher)
-                                            <span class="watcher-pill">{{ $watcher->name }}</span>
-                                        @endforeach
-                                    </div>
-                                @endif
-                            </form>
+                                    @if ($ticket->watchers->isEmpty())
+                                        <div class="watcher-empty">Zatím ticket nikdo nesleduje.</div>
+                                    @else
+                                        <div class="watcher-list" aria-label="Seznam sledujících">
+                                            @foreach ($ticket->watchers as $watcher)
+                                                <span class="watcher-pill">{{ $watcher->name }}</span>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                </form>
+                            @endif
                         @endif
                     </div>
                 </div>
@@ -1372,6 +1460,30 @@
                             <span class="metadata-label">Updated at</span>
                             <div class="metadata-value">{{ $ticket->updated_at?->format('d.m.Y H:i') ?? '—' }}</div>
                         </div>
+
+                        @if ($canConfirmResolution || $canReportProblemPersists)
+                            <div class="metadata-item metadata-actions">
+                                <span class="metadata-label">Vyřešení</span>
+                                <div class="metadata-value">Requester může potvrdit vyřešení nebo vrátit ticket zpět k řešení.</div>
+                                <div class="metadata-action-list">
+                                    @if ($canConfirmResolution)
+                                        <form class="metadata-action-form" method="post" action="{{ route('tickets.confirm-resolution', $ticket) }}">
+                                            @csrf
+                                            @method('patch')
+                                            <button class="button button-primary button-compact" type="submit">Potvrdit vyřešeno</button>
+                                        </form>
+                                    @endif
+
+                                    @if ($canReportProblemPersists)
+                                        <form class="metadata-action-form" method="post" action="{{ route('tickets.report-problem-persists', $ticket) }}">
+                                            @csrf
+                                            @method('patch')
+                                            <button class="button button-secondary button-compact" type="submit">Problém trvá</button>
+                                        </form>
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
                     </aside>
                 </div>
             </section>
@@ -1384,20 +1496,22 @@
                             <p>Veřejná komunikace k tomuto ticketu v chronologickém pořadí.</p>
                         </div>
 
-                        <button
-                            class="button icon-button"
-                            type="button"
-                            data-editor-toggle="comment-editor"
-                            aria-controls="comment-editor"
-                            aria-expanded="false"
-                            title="Přidat veřejný komentář"
-                        >
-                            <span class="sr-only">Přidat veřejný komentář</span>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M12 20h9"/>
-                                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/>
-                            </svg>
-                        </button>
+                        @if ($canCommentPublic)
+                            <button
+                                class="button icon-button"
+                                type="button"
+                                data-editor-toggle="comment-editor"
+                                aria-controls="comment-editor"
+                                aria-expanded="false"
+                                title="Přidat veřejný komentář"
+                            >
+                                <span class="sr-only">Přidat veřejný komentář</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M12 20h9"/>
+                                    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/>
+                                </svg>
+                            </button>
+                        @endif
                     </div>
 
                     @if ($commentErrors->any())
@@ -1429,7 +1543,7 @@
                                     {!! nl2br(e($comment->body)) !!}
                                 </div>
 
-                                @if ($commentThreadingEnabled)
+                                @if ($commentThreadingEnabled && $canCommentPublic)
                                     <div class="comment-actions">
                                         <button
                                             class="comment-link"
@@ -1503,126 +1617,134 @@
                     </div>
                 @endif
 
-                <form
-                    id="comment-editor"
-                    class="comment-form"
-                    data-editor-panel
-                    method="post"
-                    action="{{ route('tickets.comments.store', $ticket) }}"
-                    hidden
-                >
-                    @csrf
+                @if ($canCommentPublic)
+                    <form
+                        id="comment-editor"
+                        class="comment-form"
+                        data-editor-panel
+                        method="post"
+                        action="{{ route('tickets.comments.store', $ticket) }}"
+                        hidden
+                    >
+                        @csrf
 
-                    <div class="comment-form-head">
-                        <h3>Přidat veřejný komentář</h3>
-                        <p>Komentář bude uložen jako veřejný a zobrazí se v historii ticketu.</p>
-                    </div>
-
-                    @if ($commentErrors->any())
-                        <ul class="field-error-list">
-                            @foreach ($commentErrors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
-                    @endif
-
-                    <div>
-                        <textarea class="textarea" name="body" required>{{ $replyParentId === '' ? old('body') : '' }}</textarea>
-                        @if ($commentErrors->has('body'))
-                            <div class="field-error">{{ $commentErrors->first('body') }}</div>
-                        @endif
-                    </div>
-
-                    <div class="comment-form-actions">
-                        <button class="button button-primary" type="submit">Přidat komentář</button>
-                        <button class="button button-secondary" type="button" data-editor-cancel="comment-editor">Zrušit</button>
-                    </div>
-                </form>
-            </section>
-
-            <section class="comment-section">
-                <div class="page-head" id="internal-notes">
-                    <div class="page-head-bar">
-                        <div>
-                            <h2>Interní poznámky</h2>
-                            <p>Oddělený interní blok pro administrativní poznámky k ticketu.</p>
+                        <div class="comment-form-head">
+                            <h3>Přidat veřejný komentář</h3>
+                            <p>Komentář bude uložen jako veřejný a zobrazí se v historii ticketu.</p>
                         </div>
 
-                        <button
-                            class="button icon-button"
-                            type="button"
-                            data-editor-toggle="internal-note-editor"
-                            aria-controls="internal-note-editor"
-                            aria-expanded="false"
-                            title="Přidat interní poznámku"
-                        >
-                            <span class="sr-only">Přidat interní poznámku</span>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M12 20h9"/>
-                                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/>
-                            </svg>
-                        </button>
-                    </div>
+                        @if ($commentErrors->any())
+                            <ul class="field-error-list">
+                                @foreach ($commentErrors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        @endif
 
-                    @if ($internalNoteErrors->any())
-                        <div class="field-error">Formulář interní poznámky obsahuje chyby. Otevřete editor tlačítkem s tužkou.</div>
-                    @endif
-                </div>
+                        <div>
+                            <textarea class="textarea" name="body" required>{{ $replyParentId === '' ? old('body') : '' }}</textarea>
+                            @if ($commentErrors->has('body'))
+                                <div class="field-error">{{ $commentErrors->first('body') }}</div>
+                            @endif
+                        </div>
 
-                @if ($ticket->internalComments->isEmpty())
-                    <div class="comment-empty">Zatím tu nejsou žádné interní poznámky.</div>
-                @else
-                    <div class="comment-list">
-                        @foreach ($ticket->internalComments as $note)
-                            <article class="comment-card internal-note-card">
-                                <div class="comment-head">
-                                    <div class="comment-author">{{ $note->user?->name ?? 'Neznámý uživatel' }}</div>
-                                    <div class="comment-time">{{ $note->created_at?->format('d.m.Y H:i') ?? '—' }}</div>
-                                </div>
-                                <div class="comment-body">
-                                    {!! nl2br(e($note->body)) !!}
-                                </div>
-                            </article>
-                        @endforeach
-                    </div>
+                        <div class="comment-form-actions">
+                            <button class="button button-primary" type="submit">Přidat komentář</button>
+                            <button class="button button-secondary" type="button" data-editor-cancel="comment-editor">Zrušit</button>
+                        </div>
+                    </form>
                 @endif
+            </section>
 
-                <form
-                    id="internal-note-editor"
-                    class="comment-form internal-note-form"
-                    data-editor-panel
-                    method="post"
-                    action="{{ route('tickets.internal-notes.store', $ticket) }}"
-                    hidden
-                >
-                    @csrf
+            @if ($canViewInternalNotes)
+                <section class="comment-section">
+                    <div class="page-head" id="internal-notes">
+                        <div class="page-head-bar">
+                            <div>
+                                <h2>Interní poznámky</h2>
+                                <p>Oddělený interní blok pro solvery a administraci.</p>
+                            </div>
 
-                    <div class="comment-form-head">
-                        <h3>Přidat interní poznámku</h3>
-                        <p>Interní administrativní akce připravená pro pozdější doplnění oprávnění.</p>
-                    </div>
+                            @if ($canCreateInternalNote)
+                                <button
+                                    class="button icon-button"
+                                    type="button"
+                                    data-editor-toggle="internal-note-editor"
+                                    aria-controls="internal-note-editor"
+                                    aria-expanded="false"
+                                    title="Přidat interní poznámku"
+                                >
+                                    <span class="sr-only">Přidat interní poznámku</span>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M12 20h9"/>
+                                        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/>
+                                    </svg>
+                                </button>
+                            @endif
+                        </div>
 
-                    @if ($internalNoteErrors->any())
-                        <ul class="field-error-list">
-                            @foreach ($internalNoteErrors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
-                    @endif
-
-                    <div>
-                        <textarea class="textarea" name="note_body" required>{{ old('note_body') }}</textarea>
-                        @if ($internalNoteErrors->has('note_body'))
-                            <div class="field-error">{{ $internalNoteErrors->first('note_body') }}</div>
+                        @if ($internalNoteErrors->any())
+                            <div class="field-error">Formulář interní poznámky obsahuje chyby. Otevřete editor tlačítkem s tužkou.</div>
                         @endif
                     </div>
 
-                    <div class="comment-form-actions">
-                        <button class="button button-primary" type="submit">Uložit interní poznámku</button>
-                        <button class="button button-secondary" type="button" data-editor-cancel="internal-note-editor">Zrušit</button>
-                    </div>
-                </form>
-            </section>
+                    @if ($ticket->internalComments->isEmpty())
+                        <div class="comment-empty">Zatím tu nejsou žádné interní poznámky.</div>
+                    @else
+                        <div class="comment-list">
+                            @foreach ($ticket->internalComments as $note)
+                                <article class="comment-card internal-note-card">
+                                    <div class="comment-head">
+                                        <div class="comment-author">{{ $note->user?->name ?? 'Neznámý uživatel' }}</div>
+                                        <div class="comment-time">{{ $note->created_at?->format('d.m.Y H:i') ?? '—' }}</div>
+                                    </div>
+                                    <div class="comment-body">
+                                        {!! nl2br(e($note->body)) !!}
+                                    </div>
+                                </article>
+                            @endforeach
+                        </div>
+                    @endif
+
+                    @if ($canCreateInternalNote)
+                        <form
+                            id="internal-note-editor"
+                            class="comment-form internal-note-form"
+                            data-editor-panel
+                            method="post"
+                            action="{{ route('tickets.internal-notes.store', $ticket) }}"
+                            hidden
+                        >
+                            @csrf
+
+                            <div class="comment-form-head">
+                                <h3>Přidat interní poznámku</h3>
+                                <p>Poznámka zůstane oddělená od veřejné komunikace ticketu.</p>
+                            </div>
+
+                            @if ($internalNoteErrors->any())
+                                <ul class="field-error-list">
+                                    @foreach ($internalNoteErrors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            @endif
+
+                            <div>
+                                <textarea class="textarea" name="note_body" required>{{ old('note_body') }}</textarea>
+                                @if ($internalNoteErrors->has('note_body'))
+                                    <div class="field-error">{{ $internalNoteErrors->first('note_body') }}</div>
+                                @endif
+                            </div>
+
+                            <div class="comment-form-actions">
+                                <button class="button button-primary" type="submit">Uložit interní poznámku</button>
+                                <button class="button button-secondary" type="button" data-editor-cancel="internal-note-editor">Zrušit</button>
+                            </div>
+                        </form>
+                    @endif
+                </section>
+            @endif
 
             <section class="section-panel">
                 <div class="section-panel-head" id="history">

@@ -8,13 +8,14 @@ trait ResolvesHelpdeskUser
 {
     protected function currentHelpdeskUser(): ?User
     {
-        $authenticatedUser = auth()->user();
+        return app(HelpdeskAuth::class)->user();
+    }
 
-        if ($authenticatedUser instanceof User) {
-            return $authenticatedUser;
-        }
-
-        // Temporary fallback until authentication is integrated.
-        return User::query()->orderBy('id')->first();
+    protected function requireHelpdeskUser(
+        string $message,
+        string $field = 'user',
+        ?string $errorBag = null,
+    ): User {
+        return app(HelpdeskAuth::class)->requireUser($message, $field, $errorBag);
     }
 }
