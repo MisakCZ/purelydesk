@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class Announcement extends Model
 {
@@ -41,11 +42,24 @@ class Announcement extends Model
     public static function typeOptions(): array
     {
         return [
-            self::TYPE_INFO => 'Info',
-            self::TYPE_WARNING => 'Warning',
-            self::TYPE_OUTAGE => 'Outage',
-            self::TYPE_MAINTENANCE => 'Maintenance',
+            self::TYPE_INFO => self::translatedTypeLabel(self::TYPE_INFO),
+            self::TYPE_WARNING => self::translatedTypeLabel(self::TYPE_WARNING),
+            self::TYPE_OUTAGE => self::translatedTypeLabel(self::TYPE_OUTAGE),
+            self::TYPE_MAINTENANCE => self::translatedTypeLabel(self::TYPE_MAINTENANCE),
         ];
+    }
+
+    public static function translatedTypeLabel(?string $type): string
+    {
+        $type = $type ?: self::TYPE_INFO;
+        $translationKey = 'announcements.types.'.$type;
+        $translated = __($translationKey);
+
+        if ($translated !== $translationKey) {
+            return $translated;
+        }
+
+        return Str::headline(str_replace('_', ' ', $type));
     }
 
     public static function hasTypeColumn(): bool

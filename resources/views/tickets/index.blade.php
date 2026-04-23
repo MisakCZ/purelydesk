@@ -1,12 +1,12 @@
 @extends('layouts.admin')
 
-@section('title', 'Tickety')
+@section('title', __('tickets.index.page_title'))
 
 @push('styles')
     <style>
         .filter-card {
             margin-bottom: 1rem;
-            padding: 1rem;
+            padding: 0.95rem;
             border: 1px solid #e5ebf1;
             border-radius: 1rem;
             background: #fff;
@@ -159,13 +159,13 @@
 
         .filter-form {
             display: grid;
-            gap: 0.85rem;
+            gap: 0.75rem;
         }
 
         .filter-grid {
             display: grid;
-            grid-template-columns: minmax(14rem, 1.35fr) repeat(4, minmax(10rem, 0.9fr));
-            gap: 0.85rem;
+            grid-template-columns: minmax(12rem, 1.2fr) repeat(4, minmax(9rem, 0.88fr));
+            gap: 0.75rem;
             align-items: end;
         }
 
@@ -209,8 +209,8 @@
         .filter-input,
         .filter-select {
             width: 100%;
-            min-height: 2.9rem;
-            padding: 0.8rem 0.95rem;
+            min-height: 2.75rem;
+            padding: 0.72rem 0.9rem;
             border: 1px solid #cfd8e3;
             border-radius: 0.9rem;
             background: #fff;
@@ -252,7 +252,7 @@
         }
 
         .ticket-table tbody tr:hover {
-            background: #f8fbfc;
+            background: #f8fbff;
         }
 
         .ticket-row-updated {
@@ -312,7 +312,7 @@
         .subject-meta {
             display: flex;
             flex-wrap: wrap;
-            gap: 0.4rem 0.8rem;
+            gap: 0.35rem 0.75rem;
             margin-top: 0.45rem;
             font-size: 0.84rem;
             color: #5b6b79;
@@ -321,13 +321,8 @@
         .subject-meta-item {
             display: inline-flex;
             align-items: center;
-            gap: 0.3rem;
+            gap: 0.25rem;
             line-height: 1.4;
-        }
-
-        .subject-meta-item strong {
-            color: #334155;
-            font-weight: 600;
         }
 
         .subject-meta-pill {
@@ -410,12 +405,13 @@
             width: 100%;
             justify-content: flex-start;
             text-align: left;
-            transition: box-shadow 0.15s ease, filter 0.15s ease;
+            transition: box-shadow 0.15s ease, filter 0.15s ease, transform 0.15s ease;
         }
 
         .list-inline-trigger:hover {
             filter: brightness(0.98);
             box-shadow: inset 0 0 0 1px rgba(15, 118, 110, 0.18);
+            transform: translateY(-1px);
         }
 
         .list-inline-trigger[aria-expanded="true"] {
@@ -635,6 +631,17 @@
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            const translations = {{ \Illuminate\Support\Js::from([
+                'inlineStatusTitle' => __('tickets.index.inline.status_title'),
+                'inlinePriorityTitle' => __('tickets.index.inline.priority_title'),
+                'saveStatus' => __('tickets.index.inline.save_status'),
+                'savePriority' => __('tickets.index.inline.save_priority'),
+                'save' => __('tickets.index.inline.save'),
+                'cancel' => __('tickets.index.inline.cancel'),
+                'genericError' => __('tickets.index.inline.generic_error'),
+                'saved' => __('tickets.index.inline.saved'),
+                'noNumber' => __('tickets.common.no_number'),
+            ]) }};
             const filterForm = document.querySelector('[data-ticket-filters]');
 
             if (filterForm) {
@@ -845,10 +852,10 @@
                 form.dataset.mode = mode;
                 form.dataset.submitUrl = trigger.dataset.submitUrl;
                 form.dataset.ticketId = trigger.dataset.ticketId;
-                title.textContent = mode === 'status' ? 'Změnit stav ticketu' : 'Změnit prioritu ticketu';
-                ticketLabel.textContent = `${trigger.dataset.ticketNumber || 'Bez čísla'} · ${trigger.dataset.ticketSubject || ''}`;
+                title.textContent = mode === 'status' ? translations.inlineStatusTitle : translations.inlinePriorityTitle;
+                ticketLabel.textContent = `${trigger.dataset.ticketNumber || translations.noNumber} · ${trigger.dataset.ticketSubject || ''}`;
                 select.name = mode === 'status' ? 'status_id' : 'priority_id';
-                submitButton.textContent = mode === 'status' ? 'Uložit stav' : 'Uložit prioritu';
+                submitButton.textContent = mode === 'status' ? translations.saveStatus : translations.savePriority;
                 populateOptions(mode, trigger.dataset.currentValue);
                 errorBox.hidden = true;
                 errorBox.textContent = '';
@@ -931,7 +938,7 @@
                     const responseData = await response.json().catch(() => null);
 
                     if (! response.ok) {
-                        const errorMessage = Object.values(responseData?.errors ?? {}).flat().join(' ') || responseData?.message || 'Změnu se nepodařilo uložit.';
+                        const errorMessage = Object.values(responseData?.errors ?? {}).flat().join(' ') || responseData?.message || translations.genericError;
                         errorBox.textContent = errorMessage;
                         errorBox.hidden = false;
 
@@ -940,7 +947,7 @@
 
                     updateTicketDisplays(form.dataset.ticketId, responseData.ticket ?? {});
                     activeTrigger.dataset.currentValue = String(select.value);
-                    showFeedback(responseData.message || 'Změna byla uložena.');
+                    showFeedback(responseData.message || translations.saved);
 
                     const row = document.querySelector(`tr[data-ticket-row="${form.dataset.ticketId}"]`);
 
@@ -954,7 +961,7 @@
 
                     closeEditor();
                 } catch (error) {
-                    errorBox.textContent = 'Změnu se nepodařilo uložit.';
+                    errorBox.textContent = translations.genericError;
                     errorBox.hidden = false;
                 } finally {
                     setSavingState(false);
@@ -966,6 +973,9 @@
 
 @section('content')
     @php
+        $locale = app()->getLocale();
+        $dateTimeFormat = __('tickets.formats.datetime');
+        $listUpdatedAtFormat = __('tickets.formats.list_updated_at');
         $clearFilterQuery = static function (string $filterKey) use ($filters): array {
             $query = array_filter($filters, fn ($value) => $value !== '');
             $query[$filterKey] = '';
@@ -974,23 +984,23 @@
         };
         $inlineStatusOptions = $statuses->map(fn ($status) => [
             'id' => $status->id,
-            'name' => $status->name,
+            'name' => $status->translatedName(),
         ])->values();
         $inlinePriorityOptions = $priorities->map(fn ($priority) => [
             'id' => $priority->id,
-            'name' => $priority->name,
+            'name' => $priority->translatedName(),
         ])->values();
     @endphp
 
     <div class="page-head">
         <div class="page-head-bar">
             <div>
-                <h2>Seznam ticketů</h2>
-                <p>Přehled aktuálních helpdesk požadavků v systému.</p>
+                <h2>{{ __('tickets.index.heading') }}</h2>
+                <p>{{ __('tickets.index.subheading') }}</p>
             </div>
 
             @if ($canCreateTickets)
-                <a class="button button-primary" href="{{ route('tickets.create') }}">Nový ticket</a>
+                <a class="button button-primary" href="{{ route('tickets.create') }}">{{ __('tickets.index.actions.create') }}</a>
             @endif
         </div>
     </div>
@@ -1003,7 +1013,7 @@
         <div id="ticket-inline-feedback" class="alert inline-feedback" role="status" aria-live="polite" hidden></div>
 
         @if ($activeAnnouncements->isNotEmpty())
-            <section class="announcement-stack" aria-label="Provozní oznámení">
+            <section class="announcement-stack" aria-label="{{ __('tickets.index.announcements.label') }}">
                 @foreach ($activeAnnouncements as $announcement)
                     <article class="announcement-card" data-type="{{ $announcement->type }}">
                         <div class="announcement-head">
@@ -1013,7 +1023,7 @@
 
                             <span class="badge">
                                 <span class="badge-dot"></span>
-                                {{ \App\Models\Announcement::typeOptions()[$announcement->type] ?? ucfirst($announcement->type) }}
+                                {{ \App\Models\Announcement::translatedTypeLabel($announcement->type) }}
                             </span>
                         </div>
 
@@ -1021,12 +1031,12 @@
 
                         @if ($announcement->starts_at || $announcement->ends_at)
                             <div class="announcement-meta">
-                                Aktivní
+                                {{ __('tickets.index.announcements.active') }}
                                 @if ($announcement->starts_at)
-                                    od {{ $announcement->starts_at->format('d.m.Y H:i') }}
+                                    {{ __('tickets.index.announcements.from') }} {{ $announcement->starts_at->locale($locale)->translatedFormat($dateTimeFormat) }}
                                 @endif
                                 @if ($announcement->ends_at)
-                                    do {{ $announcement->ends_at->format('d.m.Y H:i') }}
+                                    {{ __('tickets.index.announcements.to') }} {{ $announcement->ends_at->locale($locale)->translatedFormat($dateTimeFormat) }}
                                 @endif
                             </div>
                         @endif
@@ -1035,20 +1045,20 @@
             </section>
         @endif
 
-        <section class="filter-card" aria-label="Filtrování ticketů">
+        <section class="filter-card" aria-label="{{ __('tickets.index.filters.section') }}">
             <form class="filter-form" method="get" action="{{ route('tickets.index') }}" data-ticket-filters>
                 <input type="hidden" name="search" value="{{ $filters['search'] }}" data-filter-search-hidden>
 
                 <div class="filter-grid">
                     <div class="filter-field">
                         <div class="filter-head">
-                            <label class="filter-label" for="search_input">Hledání v subjectu</label>
+                            <label class="filter-label" for="search_input">{{ __('tickets.index.filters.search') }}</label>
                             @if ($filters['search'] !== '')
                                 <a
                                     class="filter-clear"
                                     href="{{ route('tickets.index', $clearFilterQuery('search')) }}"
-                                    aria-label="Zrušit hledání v subjectu"
-                                    title="Zrušit hledání v subjectu"
+                                    aria-label="{{ __('tickets.index.filters.clear_search') }}"
+                                    title="{{ __('tickets.index.filters.clear_search') }}"
                                 >
                                     &times;
                                 </a>
@@ -1059,94 +1069,94 @@
                             id="search_input"
                             type="search"
                             value="{{ $filters['search'] }}"
-                            placeholder="Např. tiskárna, VPN"
+                            placeholder="{{ __('tickets.index.filters.search_placeholder') }}"
                             data-filter-search-input
                         >
                     </div>
 
                     <div class="filter-field">
                         <div class="filter-head">
-                            <label class="filter-label" for="status">Status</label>
+                            <label class="filter-label" for="status">{{ __('tickets.index.filters.status') }}</label>
                             @if ($filters['status'] !== '')
                                 <a
                                     class="filter-clear"
                                     href="{{ route('tickets.index', $clearFilterQuery('status')) }}"
-                                    aria-label="Zrušit filtr statusu"
-                                    title="Zrušit filtr statusu"
+                                    aria-label="{{ __('tickets.index.filters.clear_status') }}"
+                                    title="{{ __('tickets.index.filters.clear_status') }}"
                                 >
                                     &times;
                                 </a>
                             @endif
                         </div>
                         <select class="filter-select" id="status" name="status" data-filter-auto-submit>
-                            <option value="">Všechny</option>
+                            <option value="">{{ __('tickets.index.filters.all') }}</option>
                             @foreach ($statuses as $status)
-                                <option value="{{ $status->id }}" @selected($filters['status'] === (string) $status->id)>{{ $status->name }}</option>
+                                <option value="{{ $status->id }}" @selected($filters['status'] === (string) $status->id)>{{ $status->translatedName() }}</option>
                             @endforeach
                         </select>
                     </div>
 
                     <div class="filter-field">
                         <div class="filter-head">
-                            <label class="filter-label" for="priority">Priority</label>
+                            <label class="filter-label" for="priority">{{ __('tickets.index.filters.priority') }}</label>
                             @if ($filters['priority'] !== '')
                                 <a
                                     class="filter-clear"
                                     href="{{ route('tickets.index', $clearFilterQuery('priority')) }}"
-                                    aria-label="Zrušit filtr priority"
-                                    title="Zrušit filtr priority"
+                                    aria-label="{{ __('tickets.index.filters.clear_priority') }}"
+                                    title="{{ __('tickets.index.filters.clear_priority') }}"
                                 >
                                     &times;
                                 </a>
                             @endif
                         </div>
                         <select class="filter-select" id="priority" name="priority" data-filter-auto-submit>
-                            <option value="">Všechny</option>
+                            <option value="">{{ __('tickets.index.filters.all') }}</option>
                             @foreach ($priorities as $priority)
-                                <option value="{{ $priority->id }}" @selected($filters['priority'] === (string) $priority->id)>{{ $priority->name }}</option>
+                                <option value="{{ $priority->id }}" @selected($filters['priority'] === (string) $priority->id)>{{ $priority->translatedName() }}</option>
                             @endforeach
                         </select>
                     </div>
 
                     <div class="filter-field">
                         <div class="filter-head">
-                            <label class="filter-label" for="category">Category</label>
+                            <label class="filter-label" for="category">{{ __('tickets.index.filters.category') }}</label>
                             @if ($filters['category'] !== '')
                                 <a
                                     class="filter-clear"
                                     href="{{ route('tickets.index', $clearFilterQuery('category')) }}"
-                                    aria-label="Zrušit filtr kategorie"
-                                    title="Zrušit filtr kategorie"
+                                    aria-label="{{ __('tickets.index.filters.clear_category') }}"
+                                    title="{{ __('tickets.index.filters.clear_category') }}"
                                 >
                                     &times;
                                 </a>
                             @endif
                         </div>
                         <select class="filter-select" id="category" name="category" data-filter-auto-submit>
-                            <option value="">Všechny</option>
+                            <option value="">{{ __('tickets.index.filters.all') }}</option>
                             @foreach ($categories as $category)
-                                <option value="{{ $category->id }}" @selected($filters['category'] === (string) $category->id)>{{ $category->name }}</option>
+                                <option value="{{ $category->id }}" @selected($filters['category'] === (string) $category->id)>{{ $category->translatedName() }}</option>
                             @endforeach
                         </select>
                     </div>
 
                     <div class="filter-field">
                         <div class="filter-head">
-                            <label class="filter-label" for="watched">Sledování</label>
+                            <label class="filter-label" for="watched">{{ __('tickets.index.filters.watching') }}</label>
                             @if ($filters['watched'] !== '')
                                 <a
                                     class="filter-clear"
                                     href="{{ route('tickets.index', $clearFilterQuery('watched')) }}"
-                                    aria-label="Zrušit filtr sledovaných ticketů"
-                                    title="Zrušit filtr sledovaných ticketů"
+                                    aria-label="{{ __('tickets.index.filters.clear_watching') }}"
+                                    title="{{ __('tickets.index.filters.clear_watching') }}"
                                 >
                                     &times;
                                 </a>
                             @endif
                         </div>
                         <select class="filter-select" id="watched" name="watched" data-filter-auto-submit>
-                            <option value="">Všechny tickety</option>
-                            <option value="1" @selected($filters['watched'] === '1')>Jen moje sledované</option>
+                            <option value="">{{ __('tickets.index.filters.all_tickets') }}</option>
+                            <option value="1" @selected($filters['watched'] === '1')>{{ __('tickets.index.filters.watched_only') }}</option>
                         </select>
                     </div>
                 </div>
@@ -1154,16 +1164,16 @@
         </section>
 
         @if ($pinningEnabled && $pinnedTickets->isNotEmpty())
-            <section class="pinned-section" aria-label="Připnuté tickety">
+            <section class="pinned-section" aria-label="{{ __('tickets.index.pinned.label') }}">
                 <div class="pinned-section-head">
                     <div>
-                        <h3>Připnuté tickety</h3>
-                        <p>Rychlý přehled ticketů označených pro zvýšenou pozornost.</p>
+                        <h3>{{ __('tickets.index.pinned.heading') }}</h3>
+                        <p>{{ __('tickets.index.pinned.subheading') }}</p>
                     </div>
 
                     <span class="badge badge-pinned">
                         <span class="badge-dot"></span>
-                        {{ $pinnedTickets->count() }}× připnuto
+                        {{ __('tickets.index.pinned.count', ['count' => $pinnedTickets->count()]) }}
                     </span>
                 </div>
 
@@ -1172,31 +1182,31 @@
                         <article class="pinned-ticket">
                             <div class="pinned-ticket-head">
                                 <div>
-                                    <div class="pinned-ticket-number">{{ $ticket->ticket_number ?? 'Bez čísla' }}</div>
+                                    <div class="pinned-ticket-number">{{ $ticket->ticket_number ?? __('tickets.common.no_number') }}</div>
                                     <h3 class="pinned-ticket-subject">
                                         <a class="ticket-link" href="{{ route('tickets.show', $ticket) }}">{{ $ticket->subject }}</a>
                                     </h3>
                                 </div>
 
-                                <span class="badge badge-pinned">Připnuto</span>
+                                <span class="badge badge-pinned">{{ __('tickets.index.pinned.badge') }}</span>
                             </div>
 
                             <div class="pinned-ticket-badges">
                                 <span class="badge {{ $ticket->status?->badgeToneClass() ?? 'badge-tone-slate' }}" data-ticket-id="{{ $ticket->id }}" data-ticket-field="status">
                                     <span class="badge-dot"></span>
-                                    <span data-ticket-field-value>{{ $ticket->status?->name ?? '—' }}</span>
+                                    <span data-ticket-field-value>{{ $ticket->status?->translatedName() ?? __('tickets.common.not_available') }}</span>
                                 </span>
                                 <span class="badge {{ $ticket->priority?->badgeToneClass() ?? 'badge-tone-slate' }}" data-ticket-id="{{ $ticket->id }}" data-ticket-field="priority">
                                     <span class="badge-dot"></span>
-                                    <span data-ticket-field-value>{{ $ticket->priority?->name ?? '—' }}</span>
+                                    <span data-ticket-field-value>{{ $ticket->priority?->translatedName() ?? __('tickets.common.not_available') }}</span>
                                 </span>
                             </div>
 
                             <div class="pinned-ticket-meta">
-                                <div>Visibility: {{ $visibilityOptions[$ticket->normalizedVisibility()] ?? ucfirst((string) $ticket->normalizedVisibility()) }}</div>
-                                <div>Requester: {{ $ticket->requester?->name ?? '—' }}</div>
-                                <div>Assignee: {{ $ticket->assignee?->name ?? '—' }}</div>
-                                <div>Updated: <span class="ticket-updated-value" data-ticket-id="{{ $ticket->id }}" data-ticket-updated-at>{{ $ticket->updated_at?->format('d.m. H:i') ?? '—' }}</span></div>
+                                <div>{{ $ticket->translatedVisibilityLabel() }}</div>
+                                <div>{{ __('tickets.index.meta.requester', ['name' => $ticket->requester?->name ?? __('tickets.common.not_available')]) }}</div>
+                                <div>{{ __('tickets.index.meta.assignee', ['name' => $ticket->assignee?->name ?? __('tickets.common.unassigned')]) }}</div>
+                                <div>{{ __('tickets.index.meta.updated', ['date' => $ticket->updated_at?->locale($locale)->translatedFormat($listUpdatedAtFormat) ?? __('tickets.common.not_available')]) }}</div>
                             </div>
                         </article>
                     @endforeach
@@ -1205,13 +1215,13 @@
         @endif
 
         @if ($tickets->isEmpty())
-            <section class="empty-state" aria-label="Prázdný seznam ticketů">
+            <section class="empty-state" aria-label="{{ __('tickets.index.heading') }}">
                 @if ($hasActiveFilters)
-                    <h3>Žádné tickety neodpovídají zadaným filtrům</h3>
-                    <p>Upravte některý z aktivních filtrů nebo zrušte konkrétní omezení červeným křížkem.</p>
+                    <h3>{{ __('tickets.index.empty.filtered_heading') }}</h3>
+                    <p>{{ __('tickets.index.empty.filtered_body') }}</p>
                 @else
-                    <h3>Zatím nejsou evidované žádné tickety</h3>
-                    <p>Jakmile budou v systému vytvořené první požadavky, zobrazí se zde jejich seznam včetně stavu, priority a přiřazení.</p>
+                    <h3>{{ __('tickets.index.empty.heading') }}</h3>
+                    <p>{{ __('tickets.index.empty.body') }}</p>
                 @endif
             </section>
         @else
@@ -1219,11 +1229,11 @@
                 <table class="ticket-table">
                     <thead>
                         <tr>
-                            <th class="ticket-col-number" scope="col">Ticket number</th>
-                            <th scope="col">Subject</th>
-                            <th class="ticket-col-status" scope="col">Status</th>
-                            <th class="ticket-col-priority" scope="col">Priority</th>
-                            <th class="ticket-col-updated" scope="col">Updated at</th>
+                            <th class="ticket-col-number" scope="col">{{ __('tickets.index.table.ticket_number') }}</th>
+                            <th scope="col">{{ __('tickets.index.table.subject') }}</th>
+                            <th class="ticket-col-status" scope="col">{{ __('tickets.index.table.status') }}</th>
+                            <th class="ticket-col-priority" scope="col">{{ __('tickets.index.table.priority') }}</th>
+                            <th class="ticket-col-updated" scope="col">{{ __('tickets.index.table.updated_at') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1231,7 +1241,7 @@
                             <tr data-ticket-row="{{ $ticket->id }}">
                                 <td class="ticket-number ticket-col-number">
                                     <a class="ticket-link" href="{{ route('tickets.show', $ticket) }}">
-                                        {{ $ticket->ticket_number ?? '—' }}
+                                        {{ $ticket->ticket_number ?? __('tickets.common.not_available') }}
                                     </a>
                                 </td>
                                 <td class="subject">
@@ -1241,19 +1251,16 @@
 
                                     <div class="subject-meta">
                                         <span class="subject-meta-item">
-                                            <strong>Visibility:</strong>
-                                            {{ $visibilityOptions[$ticket->normalizedVisibility()] ?? ucfirst((string) $ticket->normalizedVisibility()) }}
+                                            {{ $ticket->translatedVisibilityLabel() }}
                                         </span>
                                         <span class="subject-meta-item">
-                                            <strong>Assignee:</strong>
-                                            {{ $ticket->assignee?->name ?? 'Nepřiřazeno' }}
+                                            {{ __('tickets.index.meta.assignee', ['name' => $ticket->assignee?->name ?? __('tickets.common.unassigned')]) }}
                                         </span>
                                         <span class="subject-meta-item">
-                                            <strong>Comments:</strong>
-                                            {{ $ticket->public_comments_count }}
+                                            {{ trans_choice('tickets.index.meta.comments', $ticket->public_comments_count, ['count' => $ticket->public_comments_count]) }}
                                         </span>
                                         @if ($pinningEnabled && $ticket->is_pinned)
-                                            <span class="subject-meta-item subject-meta-pill">Připnuto</span>
+                                            <span class="subject-meta-item subject-meta-pill">{{ __('tickets.index.meta.pinned') }}</span>
                                         @endif
                                     </div>
                                 </td>
@@ -1268,17 +1275,17 @@
                                             data-inline-mode="status"
                                             data-submit-url="{{ route('tickets.status.update', $ticket) }}"
                                             data-current-value="{{ $ticket->ticket_status_id }}"
-                                            data-ticket-number="{{ $ticket->ticket_number ?? '—' }}"
+                                            data-ticket-number="{{ $ticket->ticket_number ?? __('tickets.common.not_available') }}"
                                             data-ticket-subject="{{ $ticket->subject }}"
                                             aria-expanded="false"
                                         >
                                             <span class="badge-dot"></span>
-                                            <span class="badge-label" data-ticket-field-value>{{ $ticket->status?->name ?? '—' }}</span>
+                                            <span class="badge-label" data-ticket-field-value>{{ $ticket->status?->translatedName() ?? __('tickets.common.not_available') }}</span>
                                         </button>
                                     @else
                                         <span class="badge {{ $ticket->status?->badgeToneClass() ?? 'badge-tone-slate' }}" data-ticket-id="{{ $ticket->id }}" data-ticket-field="status">
                                             <span class="badge-dot"></span>
-                                            <span class="badge-label" data-ticket-field-value>{{ $ticket->status?->name ?? '—' }}</span>
+                                            <span class="badge-label" data-ticket-field-value>{{ $ticket->status?->translatedName() ?? __('tickets.common.not_available') }}</span>
                                         </span>
                                     @endif
                                 </td>
@@ -1293,22 +1300,22 @@
                                             data-inline-mode="priority"
                                             data-submit-url="{{ route('tickets.priority.update', $ticket) }}"
                                             data-current-value="{{ $ticket->ticket_priority_id }}"
-                                            data-ticket-number="{{ $ticket->ticket_number ?? '—' }}"
+                                            data-ticket-number="{{ $ticket->ticket_number ?? __('tickets.common.not_available') }}"
                                             data-ticket-subject="{{ $ticket->subject }}"
                                             aria-expanded="false"
                                         >
                                             <span class="badge-dot"></span>
-                                            <span class="badge-label" data-ticket-field-value>{{ $ticket->priority?->name ?? '—' }}</span>
+                                            <span class="badge-label" data-ticket-field-value>{{ $ticket->priority?->translatedName() ?? __('tickets.common.not_available') }}</span>
                                         </button>
                                     @else
                                         <span class="badge {{ $ticket->priority?->badgeToneClass() ?? 'badge-tone-slate' }}" data-ticket-id="{{ $ticket->id }}" data-ticket-field="priority">
                                             <span class="badge-dot"></span>
-                                            <span class="badge-label" data-ticket-field-value>{{ $ticket->priority?->name ?? '—' }}</span>
+                                            <span class="badge-label" data-ticket-field-value>{{ $ticket->priority?->translatedName() ?? __('tickets.common.not_available') }}</span>
                                         </span>
                                     @endif
                                 </td>
                                 <td class="ticket-col-updated muted">
-                                    <span class="ticket-updated-value" data-ticket-id="{{ $ticket->id }}" data-ticket-updated-at>{{ $ticket->updated_at?->format('d.m. H:i') ?? '—' }}</span>
+                                    <span class="ticket-updated-value" data-ticket-id="{{ $ticket->id }}" data-ticket-updated-at>{{ $ticket->updated_at?->locale($locale)->translatedFormat($listUpdatedAtFormat) ?? __('tickets.common.not_available') }}</span>
                                 </td>
                             </tr>
                         @endforeach
@@ -1327,8 +1334,8 @@
                     <div class="field-error" data-inline-error hidden></div>
 
                     <div class="list-inline-editor-actions">
-                        <button class="button button-primary button-compact" type="submit" data-inline-submit>Uložit</button>
-                        <button class="button button-secondary button-compact" type="button" data-inline-cancel>Zrušit</button>
+                        <button class="button button-primary button-compact" type="submit" data-inline-submit>{{ __('tickets.index.inline.save') }}</button>
+                        <button class="button button-secondary button-compact" type="button" data-inline-cancel>{{ __('tickets.index.inline.cancel') }}</button>
                     </div>
                 </form>
             </div>
@@ -1339,14 +1346,14 @@
             @if ($tickets->hasPages())
                 <div class="pagination-wrap">
                     <div class="pagination-meta">
-                        Zobrazeno {{ $tickets->firstItem() }}-{{ $tickets->lastItem() }} z {{ $tickets->total() }} ticketů
+                        {{ __('tickets.index.pagination.meta', ['from' => $tickets->firstItem(), 'to' => $tickets->lastItem(), 'total' => $tickets->total()]) }}
                     </div>
 
-                    <nav class="pagination" aria-label="Stránkování ticketů">
+                    <nav class="pagination" aria-label="{{ __('tickets.index.pagination.label') }}">
                         @if ($tickets->onFirstPage())
-                            <span class="page-link disabled">Předchozí</span>
+                            <span class="page-link disabled">{{ __('tickets.index.pagination.previous') }}</span>
                         @else
-                            <a class="page-link" href="{{ $tickets->previousPageUrl() }}">Předchozí</a>
+                            <a class="page-link" href="{{ $tickets->previousPageUrl() }}">{{ __('tickets.index.pagination.previous') }}</a>
                         @endif
 
                         @foreach ($tickets->getUrlRange(max(1, $tickets->currentPage() - 2), min($tickets->lastPage(), $tickets->currentPage() + 2)) as $page => $url)
@@ -1358,9 +1365,9 @@
                         @endforeach
 
                         @if ($tickets->hasMorePages())
-                            <a class="page-link" href="{{ $tickets->nextPageUrl() }}">Další</a>
+                            <a class="page-link" href="{{ $tickets->nextPageUrl() }}">{{ __('tickets.index.pagination.next') }}</a>
                         @else
-                            <span class="page-link disabled">Další</span>
+                            <span class="page-link disabled">{{ __('tickets.index.pagination.next') }}</span>
                         @endif
                     </nav>
                 </div>

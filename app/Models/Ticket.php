@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class Ticket extends Model
 {
@@ -63,10 +64,35 @@ class Ticket extends Model
     public static function visibilityOptions(): array
     {
         return [
-            self::VISIBILITY_PUBLIC => 'Public',
-            self::VISIBILITY_INTERNAL => 'Internal',
-            self::VISIBILITY_PRIVATE => 'Private',
+            self::VISIBILITY_PUBLIC => self::visibilityLabel(self::VISIBILITY_PUBLIC),
+            self::VISIBILITY_INTERNAL => self::visibilityLabel(self::VISIBILITY_INTERNAL),
+            self::VISIBILITY_PRIVATE => self::visibilityLabel(self::VISIBILITY_PRIVATE),
         ];
+    }
+
+    public static function visibilityLabel(?string $visibility): string
+    {
+        $normalizedVisibility = $visibility === self::LEGACY_VISIBILITY_RESTRICTED
+            ? self::VISIBILITY_PRIVATE
+            : (string) $visibility;
+
+        if ($normalizedVisibility === '') {
+            return '—';
+        }
+
+        $translationKey = 'tickets.values.visibility.'.$normalizedVisibility;
+        $translated = __($translationKey);
+
+        if ($translated !== $translationKey) {
+            return $translated;
+        }
+
+        return Str::headline(str_replace('_', ' ', $normalizedVisibility));
+    }
+
+    public function translatedVisibilityLabel(): string
+    {
+        return self::visibilityLabel($this->normalizedVisibility());
     }
 
     public function scopeVisibleTo(Builder $query, ?User $user): Builder

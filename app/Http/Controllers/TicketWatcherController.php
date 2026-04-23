@@ -23,7 +23,7 @@ class TicketWatcherController extends Controller
 
         return redirect()
             ->route('tickets.show', $ticket)
-            ->with('status', 'Ticket jste začali sledovat.');
+            ->with('status', __('tickets.flash.watching_started'));
     }
 
     public function destroy(Ticket $ticket): RedirectResponse
@@ -36,13 +36,13 @@ class TicketWatcherController extends Controller
 
         return redirect()
             ->route('tickets.show', $ticket)
-            ->with('status', 'Sledování ticketu bylo zrušeno.');
+            ->with('status', __('tickets.flash.watching_stopped'));
     }
 
     private function resolveWatcher(): User
     {
         return $this->requireHelpdeskUser(
-            'Sledování ticketu zatím nelze změnit, protože v databázi neexistuje žádný uživatel.',
+            __('tickets.validation.watcher_missing'),
             'watcher',
             'ticketWatcher',
         );

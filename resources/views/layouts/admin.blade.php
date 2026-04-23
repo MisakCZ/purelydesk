@@ -210,17 +210,17 @@
                     <div class="brand-mark">HD</div>
                     <div class="brand-copy">
                         <h1>{{ config('app.name', 'Helpdesk') }}</h1>
-                        <p>Základ interní administrace</p>
+                        <p>{{ __('layout.brand.subtitle') }}</p>
                     </div>
                 </div>
 
-                <nav class="nav" aria-label="Hlavní navigace">
+                <nav class="nav" aria-label="{{ __('layout.nav.main') }}">
                     <a class="nav-link {{ request()->routeIs('tickets.index') ? 'active' : '' }}" href="{{ route('tickets.index') }}">
-                        Tickety
+                        {{ __('layout.nav.tickets') }}
                     </a>
                     @if ($canManageAnnouncements ?? false)
                         <a class="nav-link {{ request()->routeIs('announcements.*') ? 'active' : '' }}" href="{{ route('announcements.index') }}">
-                            Oznámení
+                            {{ __('layout.nav.announcements') }}
                         </a>
                     @endif
                 </nav>

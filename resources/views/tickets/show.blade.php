@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', $ticket->ticket_number ? 'Ticket '.$ticket->ticket_number : 'Detail ticketu')
+@section('title', $ticket->ticket_number ? __('tickets.show.page_title', ['ticket_number' => $ticket->ticket_number]) : __('tickets.show.page_heading'))
 
 @php
     $errorBags = $errors ?? new \Illuminate\Support\ViewErrorBag();
@@ -58,6 +58,11 @@
             default => 'Byla zaznamenána změna ticketu.',
         };
     };
+@endphp
+
+@php
+    $locale = app()->getLocale();
+    $dateTimeFormat = __('tickets.formats.datetime');
 @endphp
 
 @push('styles')
@@ -852,17 +857,17 @@
 
 @section('content')
     <div class="page-head">
-            <div class="page-head-bar">
+                <div class="page-head-bar">
                 <div>
-                    <h2>Detail ticketu</h2>
-                    <p>První detailní přehled helpdesk požadavku.</p>
+                    <h2>{{ __('tickets.show.page_heading') }}</h2>
+                    <p>{{ __('tickets.show.page_subheading') }}</p>
                 </div>
 
             <div class="page-head-actions">
                 @if ($canEditTicket)
-                    <a class="button button-secondary" href="{{ route('tickets.edit', $ticket) }}">Upravit ticket</a>
+                    <a class="button button-secondary" href="{{ route('tickets.edit', $ticket) }}">{{ __('tickets.show.actions.edit') }}</a>
                 @endif
-                <a class="button button-secondary" href="{{ route('tickets.index') }}">Zpět na seznam</a>
+                <a class="button button-secondary" href="{{ route('tickets.index') }}">{{ __('tickets.show.actions.back') }}</a>
             </div>
         </div>
     </div>
@@ -878,35 +883,35 @@
                     id="original-version-box"
                     class="original-version-panel"
                     data-editor-panel
-                    hidden
+                        hidden
                 >
                     <div class="original-version-head">
                         <div class="original-version-copy">
-                            <h3>Původní verze ticketu</h3>
-                            <p>Neměnný otisk ticketu uložený do historie před pozdějšími úpravami.</p>
+                            <h3>{{ __('tickets.show.original_version.heading') }}</h3>
+                            <p>{{ __('tickets.show.original_version.subheading') }}</p>
                         </div>
 
                         <button class="button button-secondary button-compact" type="button" data-editor-cancel="original-version-box">
-                            Zavřít
+                            {{ __('tickets.show.original_version.close') }}
                         </button>
                     </div>
 
                     @if ($originalSnapshotSource !== 'create')
                         <p class="original-version-note">
-                            U staršího ticketu byl původní snapshot zachycen až při první následné změně po zavedení historie.
+                            {{ __('tickets.show.original_version.legacy_note') }}
                         </p>
                     @endif
 
                     <section class="detail-grid">
                         <article class="detail-card full">
-                            <span class="detail-label">Subject</span>
-                            <div class="detail-value">{{ $originalSnapshot['subject'] ?? '—' }}</div>
+                            <span class="detail-label">{{ __('tickets.show.original_version.subject') }}</span>
+                            <div class="detail-value">{{ $originalSnapshot['subject'] ?? __('tickets.common.not_available') }}</div>
                         </article>
 
                         <article class="detail-card full">
-                            <span class="detail-label">Description</span>
+                            <span class="detail-label">{{ __('tickets.show.original_version.description') }}</span>
                             <div class="detail-value">
-                                {!! nl2br(e($originalSnapshot['description'] ?? '—')) !!}
+                                {!! nl2br(e($originalSnapshot['description'] ?? __('tickets.common.not_available'))) !!}
                             </div>
                         </article>
                     </section>
@@ -914,7 +919,7 @@
             @endif
 
             <section class="ticket-hero">
-                <div class="ticket-number">{{ $ticket->ticket_number ?? 'Bez čísla ticketu' }}</div>
+                <div class="ticket-number">{{ $ticket->ticket_number ?? __('tickets.common.no_ticket_number') }}</div>
                 <h3 class="ticket-subject">{{ $ticket->subject }}</h3>
                 <div class="hero-meta-actions">
                     <div class="ticket-meta">
@@ -925,15 +930,15 @@
                                 data-editor-toggle="hero-status-editor"
                                 aria-controls="hero-status-editor"
                                 aria-expanded="false"
-                                title="Upravit stav"
+                                title="{{ __('tickets.show.hero.status') }}"
                             >
                                 <span class="badge-dot"></span>
-                                Status: {{ $ticket->status?->name ?? '—' }}
+                                {{ __('tickets.show.hero.status') }}: {{ $ticket->status?->translatedName() ?? __('tickets.common.not_available') }}
                             </button>
                         @else
                             <span class="badge {{ $ticket->status?->badgeToneClass() ?? 'badge-tone-slate' }}">
                                 <span class="badge-dot"></span>
-                                Status: {{ $ticket->status?->name ?? '—' }}
+                                {{ __('tickets.show.hero.status') }}: {{ $ticket->status?->translatedName() ?? __('tickets.common.not_available') }}
                             </span>
                         @endif
 
@@ -944,15 +949,15 @@
                                 data-editor-toggle="hero-priority-editor"
                                 aria-controls="hero-priority-editor"
                                 aria-expanded="false"
-                                title="Upravit prioritu"
+                                title="{{ __('tickets.show.hero.priority') }}"
                             >
                                 <span class="badge-dot"></span>
-                                Priorita: {{ $ticket->priority?->name ?? '—' }}
+                                {{ __('tickets.show.hero.priority') }}: {{ $ticket->priority?->translatedName() ?? __('tickets.common.not_available') }}
                             </button>
                         @else
                             <span class="badge {{ $ticket->priority?->badgeToneClass() ?? 'badge-tone-slate' }}">
                                 <span class="badge-dot"></span>
-                                Priorita: {{ $ticket->priority?->name ?? '—' }}
+                                {{ __('tickets.show.hero.priority') }}: {{ $ticket->priority?->translatedName() ?? __('tickets.common.not_available') }}
                             </span>
                         @endif
 
@@ -963,15 +968,15 @@
                                 data-editor-toggle="hero-visibility-editor"
                                 aria-controls="hero-visibility-editor"
                                 aria-expanded="false"
-                                title="Upravit viditelnost"
+                                title="{{ __('tickets.show.hero.visibility') }}"
                             >
                                 <span class="badge-dot"></span>
-                                Viditelnost: {{ $visibilityOptions[$ticket->normalizedVisibility()] ?? ucfirst((string) $ticket->normalizedVisibility()) }}
+                                {{ __('tickets.show.hero.visibility') }}: {{ $ticket->translatedVisibilityLabel() }}
                             </button>
                         @else
                             <span class="badge">
                                 <span class="badge-dot"></span>
-                                Viditelnost: {{ $visibilityOptions[$ticket->normalizedVisibility()] ?? ucfirst((string) $ticket->normalizedVisibility()) }}
+                                {{ __('tickets.show.hero.visibility') }}: {{ $ticket->translatedVisibilityLabel() }}
                             </span>
                         @endif
 
@@ -982,15 +987,15 @@
                                 data-editor-toggle="hero-assignee-editor"
                                 aria-controls="hero-assignee-editor"
                                 aria-expanded="false"
-                                title="Upravit řešitele"
+                                title="{{ __('tickets.show.hero.assignee') }}"
                             >
                                 <span class="badge-dot"></span>
-                                Řešitel: {{ $ticket->assignee?->name ?? 'Nepřiřazeno' }}
+                                {{ __('tickets.show.hero.assignee') }}: {{ $ticket->assignee?->name ?? __('tickets.common.unassigned') }}
                             </button>
                         @else
                             <span class="badge">
                                 <span class="badge-dot"></span>
-                                Řešitel: {{ $ticket->assignee?->name ?? 'Nepřiřazeno' }}
+                                {{ __('tickets.show.hero.assignee') }}: {{ $ticket->assignee?->name ?? __('tickets.common.unassigned') }}
                             </span>
                         @endif
 
@@ -1001,15 +1006,15 @@
                                 data-editor-toggle="hero-category-editor"
                                 aria-controls="hero-category-editor"
                                 aria-expanded="false"
-                                title="Upravit kategorii"
+                                title="{{ __('tickets.show.hero.category') }}"
                             >
                                 <span class="badge-dot"></span>
-                                Kategorie: {{ $ticket->category?->name ?? '—' }}
+                                {{ __('tickets.show.hero.category') }}: {{ $ticket->category?->translatedName() ?? __('tickets.common.not_available') }}
                             </button>
                         @else
                             <span class="badge">
                                 <span class="badge-dot"></span>
-                                Kategorie: {{ $ticket->category?->name ?? '—' }}
+                                {{ __('tickets.show.hero.category') }}: {{ $ticket->category?->translatedName() ?? __('tickets.common.not_available') }}
                             </span>
                         @endif
 
@@ -1020,24 +1025,24 @@
                                 data-editor-toggle="hero-pin-editor"
                                 aria-controls="hero-pin-editor"
                                 aria-expanded="false"
-                                title="Upravit připnutí"
+                                title="{{ __('tickets.show.hero.pinning') }}"
                             >
                                 <span class="badge-dot"></span>
-                                Připnutí:
+                                {{ __('tickets.show.hero.pinning') }}:
                                 @if (! $pinningEnabled)
-                                    Nedostupné
+                                    {{ __('tickets.common.unavailable') }}
                                 @else
-                                    {{ $ticket->is_pinned ? 'Ano' : 'Ne' }}
+                                    {{ $ticket->is_pinned ? __('tickets.common.yes') : __('tickets.common.no') }}
                                 @endif
                             </button>
                         @else
                             <span class="badge{{ $pinningEnabled && $ticket->is_pinned ? ' badge-watching' : '' }}">
                                 <span class="badge-dot"></span>
-                                Připnutí:
+                                {{ __('tickets.show.hero.pinning') }}:
                                 @if (! $pinningEnabled)
-                                    Nedostupné
+                                    {{ __('tickets.common.unavailable') }}
                                 @else
-                                    {{ $ticket->is_pinned ? 'Ano' : 'Ne' }}
+                                    {{ $ticket->is_pinned ? __('tickets.common.yes') : __('tickets.common.no') }}
                                 @endif
                             </span>
                         @endif
@@ -1049,25 +1054,25 @@
                                 data-editor-toggle="hero-watcher-editor"
                                 aria-controls="hero-watcher-editor"
                                 aria-expanded="false"
-                                title="Upravit sledování"
+                                title="{{ __('tickets.show.hero.edit_title.watching') }}"
                             >
                                 <span class="badge-dot"></span>
-                                Sledování: {{ $isWatchingTicket ? 'Ano' : 'Ne' }}
+                                {{ __('tickets.show.hero.watching') }}: {{ $isWatchingTicket ? __('tickets.common.yes') : __('tickets.common.no') }}
                             </button>
                         @else
                             <span class="badge{{ $isWatchingTicket ? ' badge-watching' : '' }}">
                                 <span class="badge-dot"></span>
-                                Sledování: {{ $isWatchingTicket ? 'Ano' : 'Ne' }}
+                                {{ __('tickets.show.hero.watching') }}: {{ $isWatchingTicket ? __('tickets.common.yes') : __('tickets.common.no') }}
                             </span>
                         @endif
                     </div>
 
                     @if ($hasHeroQuickActions)
-                        <p class="hero-meta-help">Kliknutím na badge rychle upravíte provozní nastavení ticketu.</p>
+                        <p class="hero-meta-help">{{ __('tickets.show.hero.help') }}</p>
                     @endif
 
                     @if ($heroAdminHasErrors)
-                        <div class="hero-admin-errors">Některý z formulářů správy ticketu obsahuje chyby. Otevřete příslušný badge.</div>
+                        <div class="hero-admin-errors">{{ __('tickets.show.hero.errors') }}</div>
                     @endif
 
                     <div class="hero-admin-panels">
@@ -1084,7 +1089,7 @@
                                 @method('patch')
 
                                 <div class="comment-form-head">
-                                    <h3>Změnit stav ticketu</h3>
+                                    <h3>{{ __('tickets.show.forms.change_status') }}</h3>
                                 </div>
 
                                 @if ($statusErrors->any())
@@ -1096,7 +1101,7 @@
                                 @endif
 
                                 <div class="field">
-                                    <label class="label" for="hero_status_id">Stav</label>
+                                    <label class="label" for="hero_status_id">{{ __('tickets.show.hero.status') }}</label>
                                     <div class="inline-form-row">
                                         <select class="select" id="hero_status_id" name="status_id" required>
                                             @foreach ($statuses as $status)
@@ -1104,7 +1109,7 @@
                                                     value="{{ $status->id }}"
                                                     @selected((string) old('status_id', $ticket->ticket_status_id) === (string) $status->id)
                                                 >
-                                                    {{ $status->name }}
+                                                    {{ $status->translatedName() }}
                                                 </option>
                                             @endforeach
                                         </select>
@@ -1115,8 +1120,8 @@
                                 </div>
 
                                 <div class="inline-form-actions">
-                                    <button class="button button-primary button-compact" type="submit">Uložit stav</button>
-                                    <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-status-editor">Zrušit</button>
+                                    <button class="button button-primary button-compact" type="submit">{{ __('tickets.show.forms.save_status') }}</button>
+                                    <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-status-editor">{{ __('tickets.show.forms.cancel') }}</button>
                                 </div>
                             </form>
                         @endif
@@ -1134,7 +1139,7 @@
                                 @method('patch')
 
                             <div class="comment-form-head">
-                                <h3>Změnit prioritu ticketu</h3>
+                                <h3>{{ __('tickets.show.forms.change_priority') }}</h3>
                             </div>
 
                             @if ($priorityErrors->any())
@@ -1146,7 +1151,7 @@
                             @endif
 
                             <div class="field">
-                                <label class="label" for="hero_priority_id">Priorita</label>
+                                <label class="label" for="hero_priority_id">{{ __('tickets.show.hero.priority') }}</label>
                                 <div class="inline-form-row">
                                     <select class="select" id="hero_priority_id" name="priority_id" required>
                                         @foreach ($priorities as $priority)
@@ -1154,7 +1159,7 @@
                                                 value="{{ $priority->id }}"
                                                 @selected((string) old('priority_id', $ticket->ticket_priority_id) === (string) $priority->id)
                                             >
-                                                {{ $priority->name }}
+                                                {{ $priority->translatedName() }}
                                             </option>
                                         @endforeach
                                     </select>
@@ -1165,8 +1170,8 @@
                             </div>
 
                                 <div class="inline-form-actions">
-                                    <button class="button button-primary button-compact" type="submit">Uložit prioritu</button>
-                                    <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-priority-editor">Zrušit</button>
+                                    <button class="button button-primary button-compact" type="submit">{{ __('tickets.show.forms.save_priority') }}</button>
+                                    <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-priority-editor">{{ __('tickets.show.forms.cancel') }}</button>
                                 </div>
                             </form>
                         @endif
@@ -1184,7 +1189,7 @@
                                 @method('patch')
 
                             <div class="comment-form-head">
-                                <h3>Změnit viditelnost ticketu</h3>
+                                <h3>{{ __('tickets.show.forms.change_visibility') }}</h3>
                             </div>
 
                             @if ($visibilityErrors->any())
@@ -1196,7 +1201,7 @@
                             @endif
 
                             <div class="field">
-                                <label class="label" for="hero_visibility">Viditelnost</label>
+                                <label class="label" for="hero_visibility">{{ __('tickets.show.hero.visibility') }}</label>
                                 <div class="inline-form-row">
                                     <select class="select" id="hero_visibility" name="visibility" required>
                                         @foreach ($visibilityOptions as $value => $label)
@@ -1215,8 +1220,8 @@
                             </div>
 
                                 <div class="inline-form-actions">
-                                    <button class="button button-primary button-compact" type="submit">Uložit viditelnost</button>
-                                    <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-visibility-editor">Zrušit</button>
+                                    <button class="button button-primary button-compact" type="submit">{{ __('tickets.show.forms.save_visibility') }}</button>
+                                    <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-visibility-editor">{{ __('tickets.show.forms.cancel') }}</button>
                                 </div>
                             </form>
                         @endif
@@ -1234,7 +1239,7 @@
                                 @method('patch')
 
                             <div class="comment-form-head">
-                                <h3>Změnit řešitele ticketu</h3>
+                                <h3>{{ __('tickets.show.forms.change_assignee') }}</h3>
                             </div>
 
                             @if ($assigneeErrors->any())
@@ -1246,10 +1251,10 @@
                             @endif
 
                             <div class="field">
-                                <label class="label" for="hero_assignee_id">Řešitel</label>
+                                <label class="label" for="hero_assignee_id">{{ __('tickets.show.hero.assignee') }}</label>
                                 <div class="inline-form-row">
                                     <select class="select" id="hero_assignee_id" name="assignee_id">
-                                        <option value="">Nepřiřazeno</option>
+                                        <option value="">{{ __('tickets.common.unassigned') }}</option>
                                         @foreach ($assignees as $assignee)
                                             <option
                                                 value="{{ $assignee->id }}"
@@ -1266,8 +1271,8 @@
                             </div>
 
                                 <div class="inline-form-actions">
-                                    <button class="button button-primary button-compact" type="submit">Uložit řešitele</button>
-                                    <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-assignee-editor">Zrušit</button>
+                                    <button class="button button-primary button-compact" type="submit">{{ __('tickets.show.forms.save_assignee') }}</button>
+                                    <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-assignee-editor">{{ __('tickets.show.forms.cancel') }}</button>
                                 </div>
                             </form>
                         @endif
@@ -1285,7 +1290,7 @@
                                 @method('patch')
 
                             <div class="comment-form-head">
-                                <h3>Změnit kategorii ticketu</h3>
+                                <h3>{{ __('tickets.show.forms.change_category') }}</h3>
                             </div>
 
                             @if ($categoryErrors->any())
@@ -1297,7 +1302,7 @@
                             @endif
 
                             <div class="field">
-                                <label class="label" for="hero_category_id">Kategorie</label>
+                                <label class="label" for="hero_category_id">{{ __('tickets.show.hero.category') }}</label>
                                 <div class="inline-form-row">
                                     <select class="select" id="hero_category_id" name="category_id" required>
                                         @foreach ($categories as $category)
@@ -1305,7 +1310,7 @@
                                                 value="{{ $category->id }}"
                                                 @selected((string) old('category_id', $ticket->ticket_category_id) === (string) $category->id)
                                             >
-                                                {{ $category->name }}
+                                                {{ $category->translatedName() }}
                                             </option>
                                         @endforeach
                                     </select>
@@ -1316,8 +1321,8 @@
                             </div>
 
                                 <div class="inline-form-actions">
-                                    <button class="button button-primary button-compact" type="submit">Uložit kategorii</button>
-                                    <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-category-editor">Zrušit</button>
+                                    <button class="button button-primary button-compact" type="submit">{{ __('tickets.show.forms.save_category') }}</button>
+                                    <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-category-editor">{{ __('tickets.show.forms.cancel') }}</button>
                                 </div>
                             </form>
                         @endif
@@ -1337,7 +1342,7 @@
                                     <input type="hidden" name="pinned" value="{{ $ticket->is_pinned ? '0' : '1' }}">
 
                                     <div class="comment-form-head">
-                                        <h3>Změnit připnutí ticketu</h3>
+                                        <h3>{{ __('tickets.show.forms.change_pinning') }}</h3>
                                     </div>
 
                                     @if ($pinErrors->any())
@@ -1354,9 +1359,9 @@
 
                                     <div class="inline-form-actions">
                                         <button class="button button-primary button-compact" type="submit">
-                                            {{ $ticket->is_pinned ? 'Odepnout ticket' : 'Připnout ticket' }}
+                                            {{ $ticket->is_pinned ? __('tickets.show.forms.unpin_ticket') : __('tickets.show.forms.pin_ticket') }}
                                         </button>
-                                        <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-pin-editor">Zrušit</button>
+                                        <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-pin-editor">{{ __('tickets.show.forms.cancel') }}</button>
                                     </div>
                                 </form>
                             @else
@@ -1367,12 +1372,12 @@
                                     hidden
                                 >
                                     <div class="comment-form-head">
-                                        <h3>Připnutí ticketu</h3>
-                                        <p>Připnutí bude dostupné po spuštění databázové migrace.</p>
+                                        <h3>{{ __('tickets.show.forms.pinning') }}</h3>
+                                        <p>{{ __('tickets.show.forms.pinning_unavailable') }}</p>
                                     </div>
 
                                     <div class="inline-form-actions">
-                                        <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-pin-editor">Zavřít</button>
+                                        <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-pin-editor">{{ __('tickets.common.close') }}</button>
                                     </div>
                                 </div>
                             @endif
@@ -1392,8 +1397,8 @@
                                     @method('delete')
 
                                     <div class="comment-form-head">
-                                        <h3>Sledování ticketu</h3>
-                                        <p>Počet sledujících: {{ $ticket->watchers->count() }}</p>
+                                        <h3>{{ __('tickets.show.forms.watching') }}</h3>
+                                        <p>{{ __('tickets.show.hero.watchers_count', ['count' => $ticket->watchers->count()]) }}</p>
                                     </div>
 
                                     @if ($watcherErrors->any())
@@ -1405,14 +1410,14 @@
                                     @endif
 
                                     <div class="inline-form-actions">
-                                        <button class="button button-secondary button-compact" type="submit">Přestat sledovat</button>
-                                        <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-watcher-editor">Zrušit</button>
+                                        <button class="button button-secondary button-compact" type="submit">{{ __('tickets.show.forms.watch_stop') }}</button>
+                                        <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-watcher-editor">{{ __('tickets.show.forms.cancel') }}</button>
                                     </div>
 
                                     @if ($ticket->watchers->isEmpty())
-                                        <div class="watcher-empty">Zatím ticket nikdo nesleduje.</div>
+                                        <div class="watcher-empty">{{ __('tickets.show.hero.watchers_empty') }}</div>
                                     @else
-                                        <div class="watcher-list" aria-label="Seznam sledujících">
+                                        <div class="watcher-list" aria-label="{{ __('tickets.show.hero.watchers_label') }}">
                                             @foreach ($ticket->watchers as $watcher)
                                                 <span class="watcher-pill">{{ $watcher->name }}</span>
                                             @endforeach
@@ -1431,8 +1436,8 @@
                                     @csrf
 
                                     <div class="comment-form-head">
-                                        <h3>Sledování ticketu</h3>
-                                        <p>Počet sledujících: {{ $ticket->watchers->count() }}</p>
+                                        <h3>{{ __('tickets.show.forms.watching') }}</h3>
+                                        <p>{{ __('tickets.show.hero.watchers_count', ['count' => $ticket->watchers->count()]) }}</p>
                                     </div>
 
                                     @if ($watcherErrors->any())
@@ -1444,14 +1449,14 @@
                                     @endif
 
                                     <div class="inline-form-actions">
-                                        <button class="button button-primary button-compact" type="submit">Začít sledovat</button>
-                                        <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-watcher-editor">Zrušit</button>
+                                        <button class="button button-primary button-compact" type="submit">{{ __('tickets.show.forms.watch_start') }}</button>
+                                        <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-watcher-editor">{{ __('tickets.show.forms.cancel') }}</button>
                                     </div>
 
                                     @if ($ticket->watchers->isEmpty())
-                                        <div class="watcher-empty">Zatím ticket nikdo nesleduje.</div>
+                                        <div class="watcher-empty">{{ __('tickets.show.hero.watchers_empty') }}</div>
                                     @else
-                                        <div class="watcher-list" aria-label="Seznam sledujících">
+                                        <div class="watcher-list" aria-label="{{ __('tickets.show.hero.watchers_label') }}">
                                             @foreach ($ticket->watchers as $watcher)
                                                 <span class="watcher-pill">{{ $watcher->name }}</span>
                                             @endforeach
@@ -1467,7 +1472,7 @@
             <section class="section-panel section-content-meta">
                 <div class="section-panel-head">
                     <div>
-                        <h2>Obsah a metadata</h2>
+                        <h2>{{ __('tickets.show.content.heading') }}</h2>
                         <p>Popis požadavku a základní informace o založení a poslední úpravě ticketu.</p>
                     </div>
                 </div>
@@ -1491,42 +1496,42 @@
                                         <path d="M3.05 13a9 9 0 1 0 2.13-5.7L3 8"/>
                                         <path d="M12 7v5l3 2"/>
                                     </svg>
-                                    Upraveno
+                                    {{ __('tickets.show.original_version.edited') }}
                                 </button>
                             @endif
                         </div>
 
                         <div class="detail-value content-description">
-                            {!! nl2br(e($ticket->description ?? '—')) !!}
+                            {!! nl2br(e($ticket->description ?? __('tickets.common.not_available'))) !!}
                         </div>
                     </article>
 
-                    <aside class="metadata-list" aria-label="Metadata ticketu">
+                    <aside class="metadata-list" aria-label="{{ __('tickets.show.metadata.label') }}">
                         <div class="metadata-item">
-                            <span class="metadata-label">Requester</span>
-                            <div class="metadata-value">{{ $ticket->requester?->name ?? '—' }}</div>
+                            <span class="metadata-label">{{ __('tickets.show.metadata.requester') }}</span>
+                            <div class="metadata-value">{{ $ticket->requester?->name ?? __('tickets.common.not_available') }}</div>
                         </div>
 
                         <div class="metadata-item">
-                            <span class="metadata-label">Created at</span>
-                            <div class="metadata-value">{{ $ticket->created_at?->format('d.m.Y H:i') ?? '—' }}</div>
+                            <span class="metadata-label">{{ __('tickets.show.metadata.created_at') }}</span>
+                            <div class="metadata-value">{{ $ticket->created_at?->locale($locale)->translatedFormat($dateTimeFormat) ?? __('tickets.common.not_available') }}</div>
                         </div>
 
                         <div class="metadata-item">
-                            <span class="metadata-label">Updated at</span>
-                            <div class="metadata-value">{{ $ticket->updated_at?->format('d.m.Y H:i') ?? '—' }}</div>
+                            <span class="metadata-label">{{ __('tickets.show.metadata.updated_at') }}</span>
+                            <div class="metadata-value">{{ $ticket->updated_at?->locale($locale)->translatedFormat($dateTimeFormat) ?? __('tickets.common.not_available') }}</div>
                         </div>
 
                         @if ($canConfirmResolution || $canReportProblemPersists)
                             <div class="metadata-item metadata-actions">
-                                <span class="metadata-label">Vyřešení</span>
-                                <div class="metadata-value">Requester může potvrdit vyřešení nebo vrátit ticket zpět k řešení.</div>
+                                <span class="metadata-label">{{ __('tickets.show.metadata.resolution') }}</span>
+                                <div class="metadata-value">{{ __('tickets.show.metadata.resolution_help') }}</div>
                                 <div class="metadata-action-list">
                                     @if ($canConfirmResolution)
                                         <form class="metadata-action-form" method="post" action="{{ route('tickets.confirm-resolution', $ticket) }}">
                                             @csrf
                                             @method('patch')
-                                            <button class="button button-primary button-compact" type="submit">Potvrdit vyřešeno</button>
+                                            <button class="button button-primary button-compact" type="submit">{{ __('tickets.show.metadata.confirm_resolved') }}</button>
                                         </form>
                                     @endif
 
@@ -1534,7 +1539,7 @@
                                         <form class="metadata-action-form" method="post" action="{{ route('tickets.report-problem-persists', $ticket) }}">
                                             @csrf
                                             @method('patch')
-                                            <button class="button button-secondary button-compact" type="submit">Problém trvá</button>
+                                            <button class="button button-secondary button-compact" type="submit">{{ __('tickets.show.metadata.problem_persists') }}</button>
                                         </form>
                                     @endif
                                 </div>

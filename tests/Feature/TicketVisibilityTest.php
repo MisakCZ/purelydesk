@@ -329,6 +329,81 @@ class TicketVisibilityTest extends TestCase
         }
     }
 
+    public function test_ticket_list_uses_czech_translations_for_system_labels_and_values(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $resolvedStatus = TicketStatus::query()->create([
+            'name' => 'Resolved',
+            'slug' => 'resolved',
+            'sort_order' => 2,
+            'is_closed' => true,
+        ]);
+        $criticalPriority = TicketPriority::query()->create([
+            'name' => 'Critical',
+            'slug' => 'critical',
+            'sort_order' => 2,
+        ]);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'status' => $resolvedStatus,
+            'priority' => $criticalPriority,
+            'visibility' => Ticket::VISIBILITY_INTERNAL,
+            'subject' => 'Prekladovy ticket',
+        ]);
+
+        config()->set('app.locale', 'cs');
+        app()->setLocale('cs');
+
+        $this->actingAs($requester);
+
+        $this->get(route('tickets.index'))
+            ->assertOk()
+            ->assertSeeText('Seznam ticketů')
+            ->assertSeeText('Vyřešeno')
+            ->assertSeeText('Kritická')
+            ->assertSeeText('Interní')
+            ->assertDontSeeText('Resolved')
+            ->assertDontSeeText('Critical');
+    }
+
+    public function test_ticket_list_uses_english_translations_for_system_labels_and_values(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $resolvedStatus = TicketStatus::query()->create([
+            'name' => 'Vyřešeno',
+            'slug' => 'resolved',
+            'sort_order' => 2,
+            'is_closed' => true,
+        ]);
+        $criticalPriority = TicketPriority::query()->create([
+            'name' => 'Kritická',
+            'slug' => 'critical',
+            'sort_order' => 2,
+        ]);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'status' => $resolvedStatus,
+            'priority' => $criticalPriority,
+            'visibility' => Ticket::VISIBILITY_INTERNAL,
+            'subject' => 'Localized ticket',
+        ]);
+
+        config()->set('app.locale', 'en');
+        app()->setLocale('en');
+
+        $this->actingAs($requester);
+
+        $this->get(route('tickets.index'))
+            ->assertOk()
+            ->assertSeeText('Ticket List')
+            ->assertSeeText('Resolved')
+            ->assertSeeText('Critical')
+            ->assertSeeText('Internal')
+            ->assertSeeText('Search subject')
+            ->assertDontSeeText('Vyřešeno')
+            ->assertDontSeeText('Kritická');
+    }
+
     private function createUserWithRole(Role $role): User
     {
         $user = User::factory()->create();

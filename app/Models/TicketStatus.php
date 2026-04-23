@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class TicketStatus extends Model
 {
@@ -53,13 +54,33 @@ class TicketStatus extends Model
         return 'badge-tone-'.self::badgeToneForSlug($this->slug);
     }
 
+    public function translatedName(): string
+    {
+        return self::translatedNameForSlug($this->slug, $this->name);
+    }
+
+    public static function translatedNameForSlug(?string $slug, ?string $fallback = null): string
+    {
+        if ($slug === null || $slug === '') {
+            return $fallback ?: '—';
+        }
+
+        $translationKey = 'tickets.values.statuses.'.$slug;
+        $translated = __($translationKey);
+
+        if ($translated !== $translationKey) {
+            return $translated;
+        }
+
+        return $fallback ?: Str::headline(str_replace('_', ' ', $slug));
+    }
+
     public static function badgeToneForSlug(?string $slug): string
     {
         return match ($slug) {
             'assigned' => self::BADGE_TONE_BLUE,
-            'in_progress' => self::BADGE_TONE_AMBER,
-            'waiting_user' => self::BADGE_TONE_VIOLET,
-            'waiting_third_party' => self::BADGE_TONE_CYAN,
+            'in_progress' => self::BADGE_TONE_BLUE,
+            'waiting_user', 'waiting_third_party' => self::BADGE_TONE_AMBER,
             'resolved' => self::BADGE_TONE_GREEN,
             'closed' => self::BADGE_TONE_NEUTRAL,
             'cancelled' => self::BADGE_TONE_RED,

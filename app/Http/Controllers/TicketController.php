@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\CarbonInterface;
 use App\Http\Requests\UpdateTicketPinRequest;
 use App\Http\Requests\UpdateTicketCategoryRequest;
 use App\Http\Requests\UpdateTicketAssigneeRequest;
@@ -84,9 +85,9 @@ class TicketController extends Controller
             'pinningEnabled' => Ticket::supportsPinning(),
             'tickets' => $tickets,
             'filters' => $filters,
-            'statuses' => TicketStatus::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name']),
-            'priorities' => TicketPriority::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name']),
-            'categories' => TicketCategory::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'statuses' => TicketStatus::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name', 'slug']),
+            'priorities' => TicketPriority::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name', 'slug']),
+            'categories' => TicketCategory::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'slug']),
             'visibilityOptions' => Ticket::visibilityOptions(),
             'hasActiveFilters' => collect($filters)->contains(fn ($value) => $value !== ''),
             'canCreateTickets' => $this->ticketPolicy()->create($actor),
@@ -184,10 +185,10 @@ class TicketController extends Controller
 
         return view('tickets.show', [
             'ticket' => $ticket,
-            'statuses' => TicketStatus::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name']),
+            'statuses' => TicketStatus::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name', 'slug']),
             'assignees' => User::query()->orderBy('name')->get(['id', 'name']),
-            'priorities' => TicketPriority::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name']),
-            'categories' => TicketCategory::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'priorities' => TicketPriority::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name', 'slug']),
+            'categories' => TicketCategory::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'slug']),
             'pinningEnabled' => Ticket::supportsPinning(),
             'visibilityOptions' => Ticket::visibilityOptions(),
             'watcherActionEnabled' => $canWatchTicket,
@@ -227,7 +228,7 @@ class TicketController extends Controller
             'closed_at' => $selectedStatus?->is_closed
                 ? ($ticket->closed_at ?? now())
                 : null,
-        ], 'Stav ticketu byl úspěšně změněn.', 'status_update', $request);
+        ], __('tickets.flash.status_updated'), 'status_update', $request);
     }
 
     public function updateAssignee(UpdateTicketAssigneeRequest $request, Ticket $ticket): RedirectResponse
@@ -238,7 +239,7 @@ class TicketController extends Controller
             'assignee_id' => $request->filled('assignee_id')
                 ? (int) $request->input('assignee_id')
                 : null,
-        ], 'Řešitel ticketu byl úspěšně změněn.', 'assignee_update');
+        ], __('tickets.flash.assignee_updated'), 'assignee_update');
     }
 
     public function updatePriority(UpdateTicketPriorityRequest $request, Ticket $ticket): RedirectResponse|JsonResponse
@@ -247,7 +248,7 @@ class TicketController extends Controller
 
         return $this->applyTicketUpdateWithHistory($ticket, [
             'ticket_priority_id' => $request->integer('priority_id'),
-        ], 'Priorita ticketu byla úspěšně změněna.', 'priority_update', $request);
+        ], __('tickets.flash.priority_updated'), 'priority_update', $request);
     }
 
     public function updateCategory(UpdateTicketCategoryRequest $request, Ticket $ticket): RedirectResponse
@@ -256,7 +257,7 @@ class TicketController extends Controller
 
         return $this->applyTicketUpdateWithHistory($ticket, [
             'ticket_category_id' => $request->integer('category_id'),
-        ], 'Kategorie ticketu byla úspěšně změněna.', 'category_update');
+        ], __('tickets.flash.category_updated'), 'category_update');
     }
 
     public function updateVisibility(UpdateTicketVisibilityRequest $request, Ticket $ticket): RedirectResponse
@@ -265,7 +266,7 @@ class TicketController extends Controller
 
         return $this->applyTicketUpdateWithHistory($ticket, [
             'visibility' => $request->string('visibility')->toString(),
-        ], 'Viditelnost ticketu byla úspěšně změněna.', 'visibility_update');
+        ], __('tickets.flash.visibility_updated'), 'visibility_update');
     }
 
     public function updatePin(UpdateTicketPinRequest $request, Ticket $ticket): RedirectResponse
@@ -274,7 +275,7 @@ class TicketController extends Controller
 
         if (! Ticket::supportsPinning()) {
             throw ValidationException::withMessages([
-                'pinned' => 'Připnutí ticketu zatím není v databázi dostupné. Spusťte migrace aplikace.',
+                'pinned' => __('tickets.validation.pinning_unavailable'),
             ])->errorBag('ticketPin');
         }
 
@@ -284,8 +285,8 @@ class TicketController extends Controller
             'is_pinned' => $isPinned,
             'pinned_at' => $isPinned ? now() : null,
         ], $isPinned
-            ? 'Ticket byl úspěšně připnut.'
-            : 'Ticket byl úspěšně odepnut.', 'pin_update');
+            ? __('tickets.flash.ticket_pinned')
+            : __('tickets.flash.ticket_unpinned'), 'pin_update');
     }
 
     public function store(Request $request): RedirectResponse
@@ -396,7 +397,7 @@ class TicketController extends Controller
         }
 
         throw ValidationException::withMessages([
-            'status' => 'Nelze vytvořit ticket, protože v systému chybí výchozí stav "new". Kontaktujte administrátora.',
+            'status' => __('tickets.validation.initial_status_missing'),
         ]);
     }
 
@@ -463,16 +464,16 @@ class TicketController extends Controller
             'id' => $ticket->id,
             'status' => [
                 'id' => $ticket->ticket_status_id,
-                'name' => $ticket->status?->name ?? '—',
+                'name' => $ticket->status?->translatedName() ?? __('tickets.common.not_available'),
                 'badge_class' => $ticket->status?->badgeToneClass() ?? 'badge-tone-slate',
             ],
             'priority' => [
                 'id' => $ticket->ticket_priority_id,
-                'name' => $ticket->priority?->name ?? '—',
+                'name' => $ticket->priority?->translatedName() ?? __('tickets.common.not_available'),
                 'badge_class' => $ticket->priority?->badgeToneClass() ?? 'badge-tone-slate',
             ],
             'updated_at' => $ticket->updated_at?->toIso8601String(),
-            'updated_at_display' => $ticket->updated_at?->format('d.m. H:i') ?? '—',
+            'updated_at_display' => $this->formatListUpdatedAt($ticket->updated_at),
         ];
     }
 
@@ -618,6 +619,17 @@ class TicketController extends Controller
     private function nonEmptyTicketFilters(array $filters): array
     {
         return array_filter($filters, fn (string $value) => $value !== '');
+    }
+
+    private function formatListUpdatedAt(?CarbonInterface $value): string
+    {
+        if (! $value instanceof CarbonInterface) {
+            return __('tickets.common.not_available');
+        }
+
+        return $value
+            ->locale(app()->getLocale())
+            ->translatedFormat(__('tickets.formats.list_updated_at'));
     }
 
     private function ticketSnapshotRelations(): array

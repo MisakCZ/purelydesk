@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class TicketPriority extends Model
 {
@@ -45,6 +46,27 @@ class TicketPriority extends Model
     public function badgeToneClass(): string
     {
         return 'badge-tone-'.self::badgeToneForSlug($this->slug);
+    }
+
+    public function translatedName(): string
+    {
+        return self::translatedNameForSlug($this->slug, $this->name);
+    }
+
+    public static function translatedNameForSlug(?string $slug, ?string $fallback = null): string
+    {
+        if ($slug === null || $slug === '') {
+            return $fallback ?: '—';
+        }
+
+        $translationKey = 'tickets.values.priorities.'.$slug;
+        $translated = __($translationKey);
+
+        if ($translated !== $translationKey) {
+            return $translated;
+        }
+
+        return $fallback ?: Str::headline(str_replace('_', ' ', $slug));
     }
 
     public static function badgeToneForSlug(?string $slug): string
