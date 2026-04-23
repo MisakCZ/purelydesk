@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateTicketPinRequest;
 use App\Http\Requests\UpdateTicketCategoryRequest;
 use App\Http\Requests\UpdateTicketAssigneeRequest;
 use App\Http\Requests\UpdateTicketPriorityRequest;
+use App\Http\Requests\UpdateTicketRequesterRequest;
 use App\Http\Requests\UpdateTicketStatusRequest;
 use App\Http\Requests\UpdateTicketVisibilityRequest;
 use App\Models\Announcement;
@@ -174,6 +175,7 @@ class TicketController extends Controller
         $canUpdateStatus = $this->ticketPolicy()->updateStatus($actor, $ticket);
         $canUpdatePriority = $this->ticketPolicy()->updatePriority($actor, $ticket);
         $canUpdateVisibility = $this->ticketPolicy()->updateVisibility($actor, $ticket);
+        $canUpdateRequester = $this->ticketPolicy()->updateRequester($actor, $ticket);
         $canUpdateAssignee = $this->ticketPolicy()->updateAssignee($actor, $ticket);
         $canUpdateCategory = $this->ticketPolicy()->updateCategory($actor, $ticket);
         $canUpdatePin = $this->ticketPolicy()->updatePin($actor, $ticket);
@@ -183,11 +185,13 @@ class TicketController extends Controller
         $canEditTicket = $this->ticketPolicy()->update($actor, $ticket);
         $canConfirmResolution = $this->ticketPolicy()->confirmResolution($actor, $ticket);
         $canReportProblemPersists = $this->ticketPolicy()->reportProblemPersists($actor, $ticket);
+        $people = User::query()->orderBy('name')->get(['id', 'name']);
 
         return view('tickets.show', [
             'ticket' => $ticket,
             'statuses' => TicketStatus::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name', 'slug']),
-            'assignees' => User::query()->orderBy('name')->get(['id', 'name']),
+            'requesters' => $people,
+            'assignees' => $people,
             'priorities' => TicketPriority::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name', 'slug']),
             'categories' => TicketCategory::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'slug']),
             'pinningEnabled' => Ticket::supportsPinning(),
@@ -206,6 +210,7 @@ class TicketController extends Controller
             'canUpdateStatus' => $canUpdateStatus,
             'canUpdatePriority' => $canUpdatePriority,
             'canUpdateVisibility' => $canUpdateVisibility,
+            'canUpdateRequester' => $canUpdateRequester,
             'canUpdateAssignee' => $canUpdateAssignee,
             'canUpdateCategory' => $canUpdateCategory,
             'canUpdatePin' => $canUpdatePin,
@@ -230,6 +235,15 @@ class TicketController extends Controller
                 ? ($ticket->closed_at ?? now())
                 : null,
         ], __('tickets.flash.status_updated'), 'status_update', $request, 'tickets.flash.status_updated');
+    }
+
+    public function updateRequester(UpdateTicketRequesterRequest $request, Ticket $ticket): RedirectResponse
+    {
+        $this->authorizeTicketAbility('updateRequester', $ticket);
+
+        return $this->applyTicketUpdateWithHistory($ticket, [
+            'requester_id' => $request->integer('requester_id'),
+        ], __('tickets.flash.requester_updated'), 'requester_update');
     }
 
     public function updateAssignee(UpdateTicketAssigneeRequest $request, Ticket $ticket): RedirectResponse
@@ -417,7 +431,14 @@ class TicketController extends Controller
 
     private function generateTicketNumber(Ticket $ticket): string
     {
-        return sprintf('T-%s-%05d', now()->format('Ymd'), $ticket->id);
+        $createdAt = $ticket->created_at ?? now();
+        $year = (int) $createdAt->format('Y');
+        $sequence = Ticket::query()
+            ->whereYear('created_at', $year)
+            ->where($ticket->getQualifiedKeyName(), '<=', $ticket->getKey())
+            ->count();
+
+        return sprintf('%d-%03d', $year, $sequence);
     }
 
     private function applyTicketUpdateWithHistory(
@@ -554,7 +575,13 @@ class TicketController extends Controller
     {
         return $query
             ->when($filters['search'] !== '', function (Builder $query) use ($filters): void {
-                $query->where('subject', 'like', '%'.addcslashes($filters['search'], '\\%_').'%');
+                $search = '%'.addcslashes($filters['search'], '\\%_').'%';
+
+                $query->where(function (Builder $query) use ($search): void {
+                    $query
+                        ->where('subject', 'like', $search)
+                        ->orWhere('description', 'like', $search);
+                });
             })
             ->when($filters['status'] !== '', function (Builder $query) use ($filters): void {
                 $query->where('ticket_status_id', (int) $filters['status']);

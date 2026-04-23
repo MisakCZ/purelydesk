@@ -6,10 +6,10 @@
     <style>
         .filter-card {
             margin-bottom: 1rem;
-            padding: 0.95rem;
-            border: 1px solid #e5ebf1;
+            padding: 0.85rem 0.9rem;
+            border: 1px solid #dbe3eb;
             border-radius: 1rem;
-            background: #fff;
+            background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
         }
 
         .announcement-stack {
@@ -158,47 +158,58 @@
         }
 
         .filter-form {
-            display: grid;
-            gap: 0.75rem;
+            display: block;
         }
 
         .filter-grid {
             display: grid;
             grid-template-columns: minmax(12rem, 1.2fr) repeat(4, minmax(9rem, 0.88fr));
-            gap: 0.75rem;
+            gap: 0.6rem;
             align-items: end;
         }
 
         .filter-field {
             display: grid;
-            gap: 0.45rem;
+            gap: 0.35rem;
+            padding: 0.55rem 0.65rem 0.65rem;
+            border: 1px solid #edf2f7;
+            border-radius: 0.9rem;
+            background: #f8fafc;
+            min-width: 0;
         }
 
         .filter-head {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 0.65rem;
+            gap: 0.5rem;
+            min-width: 0;
         }
 
         .filter-label {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: #13202b;
+            font-size: 0.73rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: #64748b;
+            min-width: 0;
         }
 
         .filter-clear {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 1.35rem;
-            height: 1.35rem;
-            border-radius: 999px;
+            width: 1.15rem;
+            height: 1.15rem;
+            border-radius: 0.4rem;
+            background: transparent;
             color: #b42318;
             text-decoration: none;
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: 700;
             line-height: 1;
+            flex: 0 0 auto;
+            transition: background-color 0.15s ease, color 0.15s ease;
         }
 
         .filter-clear:hover {
@@ -206,22 +217,72 @@
             color: #991b1b;
         }
 
+        .filter-control {
+            position: relative;
+        }
+
+        .filter-control-select::after {
+            content: "";
+            position: absolute;
+            right: 0.82rem;
+            top: 50%;
+            width: 0.52rem;
+            height: 0.52rem;
+            border-right: 1.6px solid #94a3b8;
+            border-bottom: 1.6px solid #94a3b8;
+            transform: translateY(-65%) rotate(45deg);
+            pointer-events: none;
+        }
+
+        .filter-search-icon {
+            position: absolute;
+            left: 0.82rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0.9rem;
+            height: 0.9rem;
+            color: #94a3b8;
+            pointer-events: none;
+        }
+
         .filter-input,
         .filter-select {
             width: 100%;
-            min-height: 2.75rem;
-            padding: 0.72rem 0.9rem;
-            border: 1px solid #cfd8e3;
-            border-radius: 0.9rem;
+            min-height: 2.45rem;
+            padding: 0.52rem 0.75rem;
+            border: 1px solid #d7e0ea;
+            border-radius: 0.78rem;
             background: #fff;
-            color: #13202b;
+            color: #0f172a;
             font: inherit;
+            font-size: 0.92rem;
+            font-weight: 500;
+            line-height: 1.35;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+            transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+        }
+
+        .filter-input {
+            padding-left: 2.15rem;
+        }
+
+        .filter-select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            padding-right: 2rem;
         }
 
         .filter-input:focus,
         .filter-select:focus {
             outline: 2px solid rgba(15, 118, 110, 0.16);
             border-color: #0f766e;
+            background: #fff;
+        }
+
+        .filter-input::placeholder {
+            color: #94a3b8;
+            font-weight: 400;
         }
 
         .table-wrap {
@@ -1025,14 +1086,22 @@
                                 </a>
                             @endif
                         </div>
-                        <input
-                            class="filter-input"
-                            id="search_input"
-                            type="search"
-                            value="{{ $filters['search'] }}"
-                            placeholder="{{ __('tickets.index.filters.search_placeholder') }}"
-                            data-filter-search-input
-                        >
+                        <div class="filter-control">
+                            <span class="filter-search-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="11" cy="11" r="7"></circle>
+                                    <path d="m20 20-3.5-3.5"></path>
+                                </svg>
+                            </span>
+                            <input
+                                class="filter-input"
+                                id="search_input"
+                                type="search"
+                                value="{{ $filters['search'] }}"
+                                placeholder="{{ __('tickets.index.filters.search_placeholder') }}"
+                                data-filter-search-input
+                            >
+                        </div>
                     </div>
 
                     <div class="filter-field">
@@ -1049,12 +1118,14 @@
                                 </a>
                             @endif
                         </div>
-                        <select class="filter-select" id="status" name="status" data-filter-auto-submit>
-                            <option value="">{{ __('tickets.index.filters.all') }}</option>
-                            @foreach ($statuses as $status)
-                                <option value="{{ $status->id }}" @selected($filters['status'] === (string) $status->id)>{{ $status->translatedName() }}</option>
-                            @endforeach
-                        </select>
+                        <div class="filter-control filter-control-select">
+                            <select class="filter-select" id="status" name="status" data-filter-auto-submit>
+                                <option value="">{{ __('tickets.index.filters.all') }}</option>
+                                @foreach ($statuses as $status)
+                                    <option value="{{ $status->id }}" @selected($filters['status'] === (string) $status->id)>{{ $status->translatedName() }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
 
                     <div class="filter-field">
@@ -1071,12 +1142,14 @@
                                 </a>
                             @endif
                         </div>
-                        <select class="filter-select" id="priority" name="priority" data-filter-auto-submit>
-                            <option value="">{{ __('tickets.index.filters.all') }}</option>
-                            @foreach ($priorities as $priority)
-                                <option value="{{ $priority->id }}" @selected($filters['priority'] === (string) $priority->id)>{{ $priority->translatedName() }}</option>
-                            @endforeach
-                        </select>
+                        <div class="filter-control filter-control-select">
+                            <select class="filter-select" id="priority" name="priority" data-filter-auto-submit>
+                                <option value="">{{ __('tickets.index.filters.all') }}</option>
+                                @foreach ($priorities as $priority)
+                                    <option value="{{ $priority->id }}" @selected($filters['priority'] === (string) $priority->id)>{{ $priority->translatedName() }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
 
                     <div class="filter-field">
@@ -1093,12 +1166,14 @@
                                 </a>
                             @endif
                         </div>
-                        <select class="filter-select" id="category" name="category" data-filter-auto-submit>
-                            <option value="">{{ __('tickets.index.filters.all') }}</option>
-                            @foreach ($categories as $category)
-                                <option value="{{ $category->id }}" @selected($filters['category'] === (string) $category->id)>{{ $category->translatedName() }}</option>
-                            @endforeach
-                        </select>
+                        <div class="filter-control filter-control-select">
+                            <select class="filter-select" id="category" name="category" data-filter-auto-submit>
+                                <option value="">{{ __('tickets.index.filters.all') }}</option>
+                                @foreach ($categories as $category)
+                                    <option value="{{ $category->id }}" @selected($filters['category'] === (string) $category->id)>{{ $category->translatedName() }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
 
                     <div class="filter-field">
@@ -1115,10 +1190,12 @@
                                 </a>
                             @endif
                         </div>
-                        <select class="filter-select" id="watched" name="watched" data-filter-auto-submit>
-                            <option value="">{{ __('tickets.index.filters.all_tickets') }}</option>
-                            <option value="1" @selected($filters['watched'] === '1')>{{ __('tickets.index.filters.watched_only') }}</option>
-                        </select>
+                        <div class="filter-control filter-control-select">
+                            <select class="filter-select" id="watched" name="watched" data-filter-auto-submit>
+                                <option value="">{{ __('tickets.index.filters.all_tickets') }}</option>
+                                <option value="1" @selected($filters['watched'] === '1')>{{ __('tickets.index.filters.watched_only') }}</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
             </form>

@@ -31,6 +31,7 @@ Route::patch('/tickets/{ticket}/category', [TicketController::class, 'updateCate
 Route::patch('/tickets/{ticket}/confirm-resolution', [TicketController::class, 'confirmResolution'])->name('tickets.confirm-resolution');
 Route::patch('/tickets/{ticket}/pin', [TicketController::class, 'updatePin'])->name('tickets.pin.update');
 Route::patch('/tickets/{ticket}/priority', [TicketController::class, 'updatePriority'])->name('tickets.priority.update');
+Route::patch('/tickets/{ticket}/requester', [TicketController::class, 'updateRequester'])->name('tickets.requester.update');
 Route::patch('/tickets/{ticket}/report-problem-persists', [TicketController::class, 'reportProblemPersists'])->name('tickets.report-problem-persists');
 Route::patch('/tickets/{ticket}/status', [TicketController::class, 'updateStatus'])->name('tickets.status.update');
 Route::patch('/tickets/{ticket}/visibility', [TicketController::class, 'updateVisibility'])->name('tickets.visibility.update');

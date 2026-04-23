@@ -47,7 +47,7 @@ class AnnouncementController extends Controller
 
         return redirect()
             ->route('announcements.index')
-            ->with('status', 'Oznámení bylo úspěšně vytvořeno.');
+            ->with('status', __('announcements.flash.created'));
     }
 
     public function update(StoreAnnouncementRequest $request, Announcement $announcement): RedirectResponse
@@ -59,7 +59,7 @@ class AnnouncementController extends Controller
 
         return redirect()
             ->route('announcements.index')
-            ->with('status', 'Oznámení bylo úspěšně upraveno.');
+            ->with('status', __('announcements.flash.updated'));
     }
 
     public function destroy(Announcement $announcement): RedirectResponse
@@ -70,13 +70,13 @@ class AnnouncementController extends Controller
 
         return redirect()
             ->route('announcements.index')
-            ->with('status', 'Oznámení bylo úspěšně smazáno.');
+            ->with('status', __('announcements.flash.deleted'));
     }
 
     private function resolveAuthor(): User
     {
         return $this->requireHelpdeskUser(
-            'Oznámení zatím nelze uložit, protože v databázi neexistuje žádný uživatel.',
+            __('announcements.validation.author_missing'),
             'author',
         );
     }

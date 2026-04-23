@@ -62,6 +62,19 @@ class Announcement extends Model
         return Str::headline(str_replace('_', ' ', $type));
     }
 
+    public static function translatedVisibilityLabel(?string $visibility): string
+    {
+        $visibility = $visibility ?: 'public';
+        $translationKey = 'announcements.values.visibility.'.$visibility;
+        $translated = __($translationKey);
+
+        if ($translated !== $translationKey) {
+            return $translated;
+        }
+
+        return Str::headline(str_replace('_', ' ', $visibility));
+    }
+
     public static function hasTypeColumn(): bool
     {
         static $hasTypeColumn;

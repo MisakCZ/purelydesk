@@ -300,6 +300,261 @@
                 background: #eef2f6;
             }
 
+            .panel {
+                padding: 1.25rem;
+                border: 1px solid var(--line);
+                border-radius: 1rem;
+                background: var(--panel);
+            }
+
+            .panel-head {
+                display: grid;
+                gap: 0.35rem;
+                margin-bottom: 1rem;
+            }
+
+            .panel-head h3 {
+                margin: 0;
+                font-size: 1.05rem;
+                color: var(--text);
+            }
+
+            .panel-head p {
+                margin: 0;
+                color: var(--muted);
+                line-height: 1.6;
+            }
+
+            .form-layout,
+            .announcement-form {
+                display: grid;
+                gap: 1rem;
+            }
+
+            .field,
+            .form-field {
+                display: grid;
+                gap: 0.45rem;
+            }
+
+            .field-full {
+                grid-column: 1 / -1;
+            }
+
+            .label,
+            .form-label {
+                font-size: 0.92rem;
+                font-weight: 600;
+                color: var(--text);
+            }
+
+            .input,
+            .select,
+            .textarea,
+            .form-input,
+            .form-select,
+            .form-textarea {
+                width: 100%;
+                min-height: 2.9rem;
+                padding: 0.8rem 0.95rem;
+                border: 1px solid #cfd8e3;
+                border-radius: 0.9rem;
+                background: #fff;
+                color: var(--text);
+                font: inherit;
+            }
+
+            .textarea,
+            .form-textarea {
+                min-height: 9.5rem;
+                resize: vertical;
+            }
+
+            .input:focus,
+            .select:focus,
+            .textarea:focus,
+            .form-input:focus,
+            .form-select:focus,
+            .form-textarea:focus {
+                outline: 2px solid rgba(15, 118, 110, 0.16);
+                border-color: var(--accent);
+            }
+
+            .hint {
+                color: var(--muted);
+                font-size: 0.9rem;
+                line-height: 1.55;
+            }
+
+            .error-list,
+            .field-error-list {
+                margin: 0;
+                padding: 0.9rem 1rem;
+                list-style: none;
+                border: 1px solid #f3c8c3;
+                border-radius: 0.9rem;
+                background: #fff5f4;
+                color: #b42318;
+            }
+
+            .error-list li + li,
+            .field-error-list li + li {
+                margin-top: 0.35rem;
+            }
+
+            .field-error {
+                color: #b42318;
+                font-size: 0.9rem;
+            }
+
+            .actions,
+            .form-actions {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                flex-wrap: wrap;
+            }
+
+            .checkbox-field {
+                display: flex;
+                align-items: center;
+                gap: 0.7rem;
+                padding: 0.85rem 1rem;
+                border: 1px solid #e5ebf1;
+                border-radius: 0.9rem;
+                background: #fcfaf6;
+                color: var(--text);
+                font-weight: 600;
+            }
+
+            .checkbox-field input {
+                width: 1rem;
+                height: 1rem;
+                margin: 0;
+            }
+
+            .alert {
+                margin-bottom: 1rem;
+                padding: 0.9rem 1rem;
+                border-radius: 0.9rem;
+                border: 1px solid #b7e4dd;
+                background: #ecfdf8;
+                color: #0f513f;
+            }
+
+            .empty-state {
+                padding: 2.25rem 1rem;
+                text-align: center;
+                border: 1px dashed #cfd8e3;
+                border-radius: 1rem;
+                background: linear-gradient(180deg, #fbfdff 0%, #f7fafc 100%);
+            }
+
+            .empty-state h3 {
+                margin: 0;
+                color: var(--text);
+                font-size: 1.08rem;
+            }
+
+            .empty-state p {
+                max-width: 32rem;
+                margin: 0.75rem auto 0;
+                color: var(--muted);
+                line-height: 1.65;
+            }
+
+            .ticket-number {
+                color: #7b8794;
+                font-size: 0.79rem;
+                font-weight: 400;
+                line-height: 1.35;
+                white-space: nowrap;
+            }
+
+            .subject-title {
+                display: block;
+                color: var(--text);
+                line-height: 1.35;
+                font-size: 1rem;
+                font-weight: 700;
+                overflow-wrap: anywhere;
+            }
+
+            .badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.45rem;
+                padding: 0.35rem 0.7rem;
+                border-radius: 999px;
+                font-size: 0.84rem;
+                font-weight: 600;
+                background: #eef2f6;
+                color: #334155;
+                white-space: nowrap;
+                max-width: 100%;
+            }
+
+            .badge-tone-slate {
+                background: #eef2f6;
+                color: #475569;
+            }
+
+            .badge-tone-blue {
+                background: #e6efff;
+                color: #1d4ed8;
+            }
+
+            .badge-tone-amber {
+                background: #fff4db;
+                color: #b45309;
+            }
+
+            .badge-tone-violet {
+                background: #f3e8ff;
+                color: #7c3aed;
+            }
+
+            .badge-tone-cyan {
+                background: #e6fffb;
+                color: #0f766e;
+            }
+
+            .badge-tone-green {
+                background: #e8f8ee;
+                color: #15803d;
+            }
+
+            .badge-tone-neutral {
+                background: #e5e7eb;
+                color: #111827;
+            }
+
+            .badge-tone-red {
+                background: #ffe7e7;
+                color: #b91c1c;
+            }
+
+            .badge-dot {
+                width: 0.55rem;
+                height: 0.55rem;
+                border-radius: 999px;
+                background: currentColor;
+                opacity: 0.7;
+                flex: 0 0 auto;
+            }
+
+            .badge-button {
+                border: 0;
+                cursor: pointer;
+            }
+
+            .badge-caret {
+                font-size: 0.72rem;
+                line-height: 1;
+                opacity: 0.7;
+                transition: transform 0.15s ease;
+            }
+
             @media (max-width: 720px) {
                 .shell {
                     width: min(100% - 1rem, 100%);

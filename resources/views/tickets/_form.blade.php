@@ -10,7 +10,7 @@
 
 <div class="form-grid">
     <div class="field field-full">
-        <label class="label" for="subject">Předmět</label>
+        <label class="label" for="subject">{{ __('tickets.form.labels.subject') }}</label>
         <input
             class="input"
             id="subject"
@@ -20,19 +20,19 @@
             maxlength="255"
             required
         >
-        <div class="hint">Stručný název ticketu pro seznam a orientaci.</div>
+        <div class="hint">{{ __('tickets.form.hints.subject') }}</div>
         @if ($viewErrors->has('subject'))
             <div class="field-error">{{ $viewErrors->first('subject') }}</div>
         @endif
     </div>
 
     <div class="field">
-        <label class="label" for="priority_id">Priorita</label>
+        <label class="label" for="priority_id">{{ __('tickets.form.labels.priority') }}</label>
         <select class="select" id="priority_id" name="priority_id" required>
-            <option value="">Vyberte prioritu</option>
+            <option value="">{{ __('tickets.form.placeholders.priority') }}</option>
             @foreach ($priorities as $priority)
                 <option value="{{ $priority->id }}" @selected($priorityValue === (string) $priority->id)>
-                    {{ $priority->name }}
+                    {{ $priority->translatedName() }}
                 </option>
             @endforeach
         </select>
@@ -42,12 +42,12 @@
     </div>
 
     <div class="field">
-        <label class="label" for="category_id">Kategorie</label>
+        <label class="label" for="category_id">{{ __('tickets.form.labels.category') }}</label>
         <select class="select" id="category_id" name="category_id" required>
-            <option value="">Vyberte kategorii</option>
+            <option value="">{{ __('tickets.form.placeholders.category') }}</option>
             @foreach ($categories as $category)
                 <option value="{{ $category->id }}" @selected($categoryValue === (string) $category->id)>
-                    {{ $category->name }}
+                    {{ $category->translatedName() }}
                 </option>
             @endforeach
         </select>
@@ -58,7 +58,7 @@
 
     @if ($ticket && $canManageVisibility)
         <div class="field">
-            <label class="label" for="visibility">Viditelnost</label>
+            <label class="label" for="visibility">{{ __('tickets.form.labels.visibility') }}</label>
             <select class="select" id="visibility" name="visibility" required>
                 @foreach ($visibilityOptions as $value => $label)
                     <option value="{{ $value }}" @selected($visibilityValue === (string) $value)>
@@ -66,7 +66,7 @@
                     </option>
                 @endforeach
             </select>
-            <div class="hint">Internal ticket vidí requester, solveři a admin. Private ticket vidí requester, assignee a admin.</div>
+            <div class="hint">{{ __('tickets.form.hints.visibility') }}</div>
             @if ($viewErrors->has('visibility'))
                 <div class="field-error">{{ $viewErrors->first('visibility') }}</div>
             @endif
@@ -74,9 +74,9 @@
     @endif
 
     <div class="field field-full">
-        <label class="label" for="description">Popis</label>
+        <label class="label" for="description">{{ __('tickets.form.labels.description') }}</label>
         <textarea class="textarea" id="description" name="description" required>{{ $descriptionValue }}</textarea>
-        <div class="hint">Detailnější popis problému nebo požadavku.</div>
+        <div class="hint">{{ __('tickets.form.hints.description') }}</div>
         @if ($viewErrors->has('description'))
             <div class="field-error">{{ $viewErrors->first('description') }}</div>
         @endif
@@ -86,12 +86,12 @@
         <div class="field field-full">
             <label class="checkbox-field" for="pinned">
                 <input id="pinned" name="pinned" type="checkbox" value="1" @checked((string) $pinnedValue === '1')>
-                Připnout ticket
+                {{ __('tickets.form.labels.pinned') }}
             </label>
             @if ($pinningEnabled)
-                <div class="hint">Připnutý ticket se zobrazí i v horním bloku připnutých ticketů.</div>
+                <div class="hint">{{ __('tickets.form.hints.pinned') }}</div>
             @else
-                <div class="hint">Připnutí bude funkční po spuštění databázové migrace pro pinning ticketů.</div>
+                <div class="hint">{{ __('tickets.form.hints.pinned_unavailable') }}</div>
             @endif
             @if ($viewErrors->has('pinned'))
                 <div class="field-error">{{ $viewErrors->first('pinned') }}</div>

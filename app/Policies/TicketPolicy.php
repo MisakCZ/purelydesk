@@ -50,6 +50,11 @@ class TicketPolicy
         return $this->canManageWorkflow($user, $ticket);
     }
 
+    public function updateRequester(?User $user, Ticket $ticket): bool
+    {
+        return $this->canManageWorkflow($user, $ticket);
+    }
+
     public function updateAssignee(?User $user, Ticket $ticket): bool
     {
         return $this->canManageWorkflow($user, $ticket);

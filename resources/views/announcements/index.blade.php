@@ -1,61 +1,63 @@
 @extends('layouts.admin')
 
-@section('title', 'Oznámení')
+@section('title', __('announcements.index.page_title'))
+
+@php
+    $locale = app()->getLocale();
+    $dateTimeFormat = __('announcements.formats.datetime');
+@endphp
 
 @push('styles')
     <style>
         .announcements-layout {
             display: grid;
-            gap: 1.5rem;
+            gap: 1.15rem;
             grid-template-columns: minmax(0, 1.1fr) minmax(18rem, 0.9fr);
         }
 
-        .panel {
-            padding: 1.25rem;
-            border: 1px solid #e5ebf1;
-            border-radius: 1rem;
-            background: #fff;
+        .announcements-layout .panel {
+            padding: 1rem 1.05rem;
         }
 
-        .panel h3 {
-            margin: 0;
-            font-size: 1.05rem;
-            color: #13202b;
+        .announcements-layout .panel-head {
+            margin-bottom: 0.85rem;
         }
 
-        .panel p {
-            margin: 0.5rem 0 0;
-            color: #5b6b79;
-            line-height: 1.6;
+        .announcements-layout .panel-head p {
+            font-size: 0.94rem;
         }
 
         .announcement-list {
             display: grid;
-            gap: 1rem;
+            gap: 0.85rem;
         }
 
         .announcement-item {
-            padding: 1rem;
+            padding: 1rem 1.1rem;
             border: 1px solid #d9e0e7;
             border-left-width: 0.45rem;
             border-radius: 1rem;
-            background: #fbfdff;
+            background: #fff;
         }
 
         .announcement-item[data-type="info"] {
             border-left-color: #2563eb;
+            background: #f8fbff;
         }
 
         .announcement-item[data-type="warning"] {
             border-left-color: #d97706;
+            background: #fffaf0;
         }
 
         .announcement-item[data-type="outage"] {
             border-left-color: #dc2626;
+            background: #fff6f6;
         }
 
         .announcement-item[data-type="maintenance"] {
             border-left-color: #7c3aed;
+            background: #f9f7ff;
         }
 
         .announcement-row {
@@ -72,16 +74,17 @@
         }
 
         .announcement-item p {
-            margin: 0.6rem 0 0;
+            margin: 0.5rem 0 0;
             color: #334155;
             line-height: 1.6;
             white-space: pre-line;
         }
 
         .announcement-detail {
-            margin-top: 0.75rem;
+            margin-top: 0.65rem;
             color: #5b6b79;
-            font-size: 0.92rem;
+            font-size: 0.9rem;
+            line-height: 1.55;
         }
 
         .announcement-actions {
@@ -89,7 +92,7 @@
             align-items: center;
             justify-content: flex-end;
             gap: 0.65rem;
-            margin-top: 1rem;
+            margin-top: 0.85rem;
             flex-wrap: wrap;
         }
 
@@ -115,8 +118,7 @@
         }
 
         .announcement-form {
-            display: grid;
-            gap: 1rem;
+            margin-top: 1rem;
         }
 
         .button-danger {
@@ -130,92 +132,44 @@
         }
 
         .button-small {
-            min-height: 2.35rem;
-            padding: 0.5rem 0.8rem;
+            min-height: 2.45rem;
+            padding: 0.52rem 0.82rem;
             border-radius: 0.8rem;
-        }
-
-        .form-field {
-            display: grid;
-            gap: 0.45rem;
-        }
-
-        .form-label {
-            font-size: 0.92rem;
-            font-weight: 600;
-            color: #13202b;
-        }
-
-        .form-input,
-        .form-select,
-        .form-textarea {
-            width: 100%;
-            min-height: 2.9rem;
-            padding: 0.8rem 0.95rem;
-            border: 1px solid #cfd8e3;
-            border-radius: 0.9rem;
-            background: #fff;
-            color: #13202b;
-            font: inherit;
-        }
-
-        .form-textarea {
-            min-height: 9rem;
-            resize: vertical;
-        }
-
-        .form-input:focus,
-        .form-select:focus,
-        .form-textarea:focus {
-            outline: 2px solid rgba(15, 118, 110, 0.16);
-            border-color: #0f766e;
         }
 
         .form-grid {
             display: grid;
-            gap: 1rem;
+            gap: 0.85rem;
             grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
-        .checkbox-field {
-            display: flex;
-            align-items: center;
-            gap: 0.65rem;
-            color: #13202b;
-            font-weight: 600;
+        .announcements-layout .form-input,
+        .announcements-layout .form-select,
+        .announcements-layout .form-textarea {
+            min-height: 2.75rem;
+            padding: 0.72rem 0.9rem;
         }
 
-        .field-error {
-            color: #b91c1c;
-            font-size: 0.9rem;
+        .announcements-layout .form-textarea {
+            min-height: 7.5rem;
         }
 
-        .empty-state {
-            padding: 2.5rem 1rem;
-            text-align: center;
-            border: 1px dashed #cfd8e3;
-            border-radius: 1rem;
-            background: linear-gradient(180deg, #fbfdff 0%, #f7fafc 100%);
+        .announcements-layout input[type="datetime-local"].form-input {
+            min-height: 2.65rem;
+            padding-top: 0.66rem;
+            padding-bottom: 0.66rem;
         }
 
-        .empty-state h3 {
-            margin: 0;
-            color: #13202b;
-            font-size: 1.1rem;
+        .announcements-layout .checkbox-field {
+            padding: 0.78rem 0.92rem;
         }
 
-        .empty-state p {
-            max-width: 30rem;
-            margin: 0.75rem auto 0;
+        .announcements-layout .empty-state {
+            padding: 1.35rem 0.9rem;
         }
 
-        .alert {
-            margin-bottom: 1rem;
-            padding: 0.9rem 1rem;
-            border-radius: 0.9rem;
-            border: 1px solid #b7e4dd;
-            background: #ecfdf8;
-            color: #0f513f;
+        .announcements-layout .empty-state p {
+            max-width: 26rem;
         }
 
         @media (max-width: 920px) {
@@ -240,11 +194,11 @@
     <div class="page-head">
         <div class="page-head-bar">
             <div>
-                <h2>Provozní oznámení</h2>
-                <p>Jednoduchá interní správa oznámení zobrazovaných nad seznamem ticketů.</p>
+                <h2>{{ __('announcements.index.heading') }}</h2>
+                <p>{{ __('announcements.index.subheading') }}</p>
             </div>
 
-            <a class="button button-secondary" href="{{ route('tickets.index') }}">Zpět na tickety</a>
+            <a class="button button-secondary" href="{{ route('tickets.index') }}">{{ __('announcements.index.actions.back_to_tickets') }}</a>
         </div>
     </div>
 
@@ -254,17 +208,19 @@
         @endif
 
         <div class="announcements-layout">
-            <section class="panel" aria-label="Seznam oznámení">
-                <h3>Existující oznámení</h3>
-                <p>Na seznamu ticketů se zobrazují jen aktivní veřejná oznámení podle `is_active`, `starts_at` a `ends_at`.</p>
+            <section class="panel" aria-label="{{ __('announcements.index.sections.existing_heading') }}">
+                <div class="panel-head">
+                    <h3>{{ __('announcements.index.sections.existing_heading') }}</h3>
+                    <p>{{ __('announcements.index.sections.existing_subheading') }}</p>
+                </div>
 
                 @if ($announcements->isEmpty())
-                    <div class="empty-state" style="margin-top: 1rem;">
-                        <h3>Zatím nejsou založená žádná oznámení</h3>
-                        <p>Po vytvoření prvního oznámení se objeví tady i nad seznamem ticketů, pokud bude právě aktivní.</p>
+                    <div class="empty-state">
+                        <h3>{{ __('announcements.index.empty.heading') }}</h3>
+                        <p>{{ __('announcements.index.empty.body') }}</p>
                     </div>
                 @else
-                    <div class="announcement-list" style="margin-top: 1rem;">
+                    <div class="announcement-list">
                         @foreach ($announcements as $announcement)
                             <article class="announcement-item" data-type="{{ $announcement->type }}">
                                 <div class="announcement-row">
@@ -273,37 +229,37 @@
                                         <div class="announcement-detail">
                                             {{ $announcementTypes[$announcement->type] ?? ucfirst($announcement->type) }}
                                             @if ($announcement->author)
-                                                · Autor: {{ $announcement->author->name }}
+                                                · {{ __('announcements.index.meta.author', ['name' => $announcement->author->name]) }}
                                             @endif
                                         </div>
                                     </div>
 
                                     <span class="announcement-status {{ $announcement->isCurrentlyActive() ? 'is-active' : 'is-inactive' }}">
-                                        {{ $announcement->isCurrentlyActive() ? 'Aktivní' : 'Neaktivní' }}
+                                        {{ $announcement->isCurrentlyActive() ? __('announcements.index.state.active') : __('announcements.index.state.inactive') }}
                                     </span>
                                 </div>
 
                                 <p>{{ $announcement->body }}</p>
 
                                 <div class="announcement-detail">
-                                    Visibility: {{ $announcement->visibility }}
+                                    {{ __('announcements.index.meta.visibility', ['value' => \App\Models\Announcement::translatedVisibilityLabel($announcement->visibility)]) }}
                                     @if ($announcement->starts_at)
-                                        · Od: {{ $announcement->starts_at->format('d.m.Y H:i') }}
+                                        · {{ __('announcements.index.meta.starts_at', ['date' => $announcement->starts_at->locale($locale)->translatedFormat($dateTimeFormat)]) }}
                                     @endif
                                     @if ($announcement->ends_at)
-                                        · Do: {{ $announcement->ends_at->format('d.m.Y H:i') }}
+                                        · {{ __('announcements.index.meta.ends_at', ['date' => $announcement->ends_at->locale($locale)->translatedFormat($dateTimeFormat)]) }}
                                     @endif
-                                    · Vytvořeno: {{ $announcement->created_at?->format('d.m.Y H:i') ?? '—' }}
+                                    · {{ __('announcements.index.meta.created_at', ['date' => $announcement->created_at?->locale($locale)->translatedFormat($dateTimeFormat) ?? __('tickets.common.not_available')]) }}
                                 </div>
 
                                 <div class="announcement-actions">
-                                    <a class="button button-secondary button-small" href="{{ route('announcements.edit', $announcement) }}">Upravit</a>
+                                    <a class="button button-secondary button-small" href="{{ route('announcements.edit', $announcement) }}">{{ __('announcements.index.actions.edit') }}</a>
 
                                     <form method="post" action="{{ route('announcements.destroy', $announcement) }}">
                                         @csrf
                                         @method('delete')
 
-                                        <button class="button button-danger button-small" type="submit">Smazat</button>
+                                        <button class="button button-danger button-small" type="submit">{{ __('announcements.index.actions.delete') }}</button>
                                     </form>
                                 </div>
                             </article>
@@ -312,15 +268,17 @@
                 @endif
             </section>
 
-            <section class="panel" aria-label="Nové oznámení">
-                <h3>Nové oznámení</h3>
-                <p>Zatím bez plného řízení oprávnění. Nové oznámení se ukládá jako veřejné a aktivní podle zadaných dat.</p>
+            <section class="panel" aria-label="{{ __('announcements.index.sections.create_heading') }}">
+                <div class="panel-head">
+                    <h3>{{ __('announcements.index.sections.create_heading') }}</h3>
+                    <p>{{ __('announcements.index.sections.create_subheading') }}</p>
+                </div>
 
-                <form class="announcement-form" method="post" action="{{ route('announcements.store') }}" style="margin-top: 1rem;">
+                <form class="announcement-form" method="post" action="{{ route('announcements.store') }}">
                     @csrf
                     @include('announcements._form', ['announcement' => null, 'announcementTypes' => $announcementTypes])
 
-                    <button class="button button-primary" type="submit">Uložit oznámení</button>
+                    <button class="button button-primary" type="submit">{{ __('announcements.index.actions.save') }}</button>
                 </form>
             </section>
         </div>

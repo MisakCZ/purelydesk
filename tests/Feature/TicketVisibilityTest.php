@@ -297,6 +297,49 @@ class TicketVisibilityTest extends TestCase
         ]);
     }
 
+    public function test_solver_can_update_requester_via_detail_badge_action(): void
+    {
+        $originalRequester = $this->createUserWithRole($this->userRole);
+        $replacementRequester = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $ticket = $this->createTicket([
+            'requester' => $originalRequester,
+            'visibility' => Ticket::VISIBILITY_INTERNAL,
+        ]);
+
+        $this->actingAs($solver)
+            ->patch(route('tickets.requester.update', $ticket), [
+                'requester_id' => $replacementRequester->id,
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        $this->assertDatabaseHas('tickets', [
+            'id' => $ticket->id,
+            'requester_id' => $replacementRequester->id,
+        ]);
+    }
+
+    public function test_regular_user_cannot_update_requester(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $replacementRequester = $this->createUserWithRole($this->userRole);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+        ]);
+
+        $this->actingAs($requester)
+            ->patch(route('tickets.requester.update', $ticket), [
+                'requester_id' => $replacementRequester->id,
+            ])
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('tickets', [
+            'id' => $ticket->id,
+            'requester_id' => $requester->id,
+        ]);
+    }
+
     public function test_inline_json_update_respects_current_page_locale(): void
     {
         $requester = $this->createUserWithRole($this->userRole);
@@ -372,6 +415,63 @@ class TicketVisibilityTest extends TestCase
 
             $this->assertTrue($ticket->updated_at->equalTo(Carbon::now()));
             $this->assertTrue($ticket->last_activity_at->equalTo(Carbon::now()));
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_ticket_list_search_matches_ticket_description(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $matchingTicket = $this->createTicket([
+            'requester' => $requester,
+            'subject' => 'Printer issue',
+            'description' => 'VPN token synchronization failed during remote access setup.',
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+        ]);
+        $nonMatchingTicket = $this->createTicket([
+            'requester' => $requester,
+            'subject' => 'Network issue',
+            'description' => 'Local switch replacement request.',
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+        ]);
+
+        $this->actingAs($requester)
+            ->get(route('tickets.index', ['search' => 'synchronization']))
+            ->assertOk()
+            ->assertSeeText($matchingTicket->subject)
+            ->assertDontSeeText($nonMatchingTicket->subject);
+    }
+
+    public function test_new_tickets_use_yearly_ticket_number_sequence(): void
+    {
+        try {
+            Carbon::setTestNow('2026-04-23 09:00:00');
+
+            $requester = $this->createUserWithRole($this->userRole);
+
+            $this->actingAs($requester)
+                ->post(route('tickets.store'), [
+                    'subject' => 'First generated number',
+                    'description' => 'First generated description',
+                    'priority_id' => $this->defaultPriority->id,
+                    'category_id' => $this->defaultCategory->id,
+                ])
+                ->assertRedirect(route('tickets.index'));
+
+            $this->actingAs($requester)
+                ->post(route('tickets.store'), [
+                    'subject' => 'Second generated number',
+                    'description' => 'Second generated description',
+                    'priority_id' => $this->defaultPriority->id,
+                    'category_id' => $this->defaultCategory->id,
+                ])
+                ->assertRedirect(route('tickets.index'));
+
+            $tickets = Ticket::query()->orderBy('id')->get();
+
+            $this->assertSame('2026-001', $tickets[0]->ticket_number);
+            $this->assertSame('2026-002', $tickets[1]->ticket_number);
         } finally {
             Carbon::setTestNow();
         }
