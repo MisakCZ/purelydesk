@@ -12,13 +12,65 @@
     <style>
         .ticket-form-panel {
             display: grid;
-            gap: 1.1rem;
+            gap: 0.95rem;
+            padding: 1rem 1.05rem;
+            border: 1px solid #e5ebf1;
+            border-radius: 1rem;
+            background: #fff;
+        }
+
+        .ticket-form-panel .form-layout {
+            gap: 0.95rem;
         }
 
         .ticket-form-panel .form-grid {
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 1rem;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.85rem 1rem;
+        }
+
+        .ticket-form-panel .field {
+            gap: 0.38rem;
+        }
+
+        .ticket-form-panel .label {
+            font-size: 0.73rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+
+        .ticket-form-panel .input,
+        .ticket-form-panel .select,
+        .ticket-form-panel .textarea {
+            min-height: 2.65rem;
+            padding: 0.72rem 0.88rem;
+            border-radius: 0.85rem;
+            color: #0f172a;
+            font-size: 0.92rem;
+            font-weight: 500;
+            line-height: 1.35;
+        }
+
+        .ticket-form-panel .textarea {
+            min-height: 8.75rem;
+        }
+
+        .ticket-form-panel .input::placeholder,
+        .ticket-form-panel .textarea::placeholder {
+            color: #94a3b8;
+            font-weight: 400;
+        }
+
+        .ticket-form-panel .hint {
+            font-size: 0.84rem;
+            line-height: 1.45;
+        }
+
+        .ticket-form-panel .actions {
+            gap: 0.65rem;
+            padding-top: 0.15rem;
         }
 
         @media (max-width: 900px) {
@@ -42,7 +94,7 @@
     </div>
 
     <div class="page-body">
-        <section class="panel ticket-form-panel">
+        <section class="ticket-form-panel">
             <form class="form-layout" method="post" action="{{ route('tickets.update', $ticket) }}">
                 @csrf
                 @method('patch')

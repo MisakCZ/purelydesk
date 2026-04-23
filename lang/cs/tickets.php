@@ -105,7 +105,7 @@ return [
         'page_title' => 'Upravit :ticket_number',
         'page_title_fallback' => 'Upravit ticket',
         'heading' => 'Upravit ticket',
-        'subheading' => 'Základní editace ticketu včetně připnutí a viditelnosti.',
+        'subheading' => 'Základní úprava ticketu a jeho viditelnosti.',
         'actions' => [
             'back' => 'Zpět na detail',
             'save' => 'Uložit změny',
@@ -128,7 +128,7 @@ return [
         'hints' => [
             'subject' => 'Stručný název ticketu pro seznam a orientaci.',
             'description' => 'Detailnější popis problému nebo požadavku.',
-            'visibility' => 'Interní ticket vidí requester, solveři a admin. Privátní ticket vidí requester, assignee a admin.',
+            'visibility' => 'Interní ticket uvidí zadavatel, řešitelé a administrace. Privátní ticket uvidí jen zadavatel, přiřazený řešitel a administrace.',
             'pinned' => 'Připnutý ticket se zobrazí i v horním bloku připnutých ticketů.',
             'pinned_unavailable' => 'Připnutí bude funkční po spuštění databázové migrace pro pinning ticketů.',
         ],

@@ -105,7 +105,7 @@ return [
         'page_title' => 'Edit :ticket_number',
         'page_title_fallback' => 'Edit ticket',
         'heading' => 'Edit ticket',
-        'subheading' => 'Basic ticket editing including pinning and visibility.',
+        'subheading' => 'Basic ticket editing and visibility settings.',
         'actions' => [
             'back' => 'Back to detail',
             'save' => 'Save changes',
@@ -128,7 +128,7 @@ return [
         'hints' => [
             'subject' => 'Short ticket title for the list and quick orientation.',
             'description' => 'More detailed description of the issue or request.',
-            'visibility' => 'Internal tickets are visible to the requester, solvers, and admin. Private tickets are visible to the requester, assignee, and admin.',
+            'visibility' => 'Internal tickets are visible to the requester, solvers, and administration. Private tickets are visible only to the requester, the assigned solver, and administration.',
             'pinned' => 'Pinned tickets are also shown in the highlighted pinned tickets section.',
             'pinned_unavailable' => 'Pinning will work after the database migration for ticket pinning is run.',
         ],

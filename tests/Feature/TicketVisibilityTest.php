@@ -477,6 +477,67 @@ class TicketVisibilityTest extends TestCase
         }
     }
 
+    public function test_create_and_edit_forms_do_not_render_pinning_controls(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+        ]);
+
+        $this->actingAs($requester)
+            ->get(route('tickets.create'))
+            ->assertOk()
+            ->assertDontSee('name="pinned"', false)
+            ->assertDontSeeText(__('tickets.form.labels.pinned'));
+
+        $this->actingAs($requester)
+            ->get(route('tickets.edit', $ticket))
+            ->assertOk()
+            ->assertDontSee('name="pinned"', false)
+            ->assertDontSeeText(__('tickets.form.labels.pinned'));
+    }
+
+    public function test_create_and_edit_flow_ignore_pinned_input(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+
+        $this->actingAs($requester)
+            ->post(route('tickets.store'), [
+                'subject' => 'Ticket without form pinning',
+                'description' => 'Pin value should be ignored on create.',
+                'priority_id' => $this->defaultPriority->id,
+                'category_id' => $this->defaultCategory->id,
+                'pinned' => 1,
+            ])
+            ->assertRedirect(route('tickets.index'));
+
+        $createdTicket = Ticket::query()->where('subject', 'Ticket without form pinning')->firstOrFail();
+
+        $this->assertFalse((bool) $createdTicket->is_pinned);
+        $this->assertNull($createdTicket->pinned_at);
+
+        $editableTicket = $this->createTicket([
+            'requester' => $requester,
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+        ]);
+
+        $this->actingAs($requester)
+            ->patch(route('tickets.update', $editableTicket), [
+                'subject' => 'Updated without form pinning',
+                'description' => 'Pin value should be ignored on edit.',
+                'priority_id' => $this->defaultPriority->id,
+                'category_id' => $this->defaultCategory->id,
+                'pinned' => 1,
+            ])
+            ->assertRedirect(route('tickets.show', $editableTicket));
+
+        $editableTicket->refresh();
+
+        $this->assertFalse((bool) $editableTicket->is_pinned);
+        $this->assertNull($editableTicket->pinned_at);
+    }
+
     public function test_ticket_list_uses_czech_translations_for_system_labels_and_values(): void
     {
         $requester = $this->createUserWithRole($this->userRole);

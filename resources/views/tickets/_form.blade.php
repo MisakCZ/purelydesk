@@ -5,7 +5,6 @@
     $categoryValue = (string) old('category_id', $ticket?->ticket_category_id);
     $descriptionValue = old('description', $ticket?->description);
     $visibilityValue = (string) old('visibility', $ticket?->visibility ?? \App\Models\Ticket::VISIBILITY_PUBLIC);
-    $pinnedValue = old('pinned', $ticket?->is_pinned ? '1' : null);
 @endphp
 
 <div class="form-grid">
@@ -81,21 +80,4 @@
             <div class="field-error">{{ $viewErrors->first('description') }}</div>
         @endif
     </div>
-
-    @if ($canManagePin)
-        <div class="field field-full">
-            <label class="checkbox-field" for="pinned">
-                <input id="pinned" name="pinned" type="checkbox" value="1" @checked((string) $pinnedValue === '1')>
-                {{ __('tickets.form.labels.pinned') }}
-            </label>
-            @if ($pinningEnabled)
-                <div class="hint">{{ __('tickets.form.hints.pinned') }}</div>
-            @else
-                <div class="hint">{{ __('tickets.form.hints.pinned_unavailable') }}</div>
-            @endif
-            @if ($viewErrors->has('pinned'))
-                <div class="field-error">{{ $viewErrors->first('pinned') }}</div>
-            @endif
-        </div>
-    @endif
 </div>

@@ -309,20 +309,14 @@ class TicketController extends Controller
         $actor = $this->currentHelpdeskUser();
         abort_unless($this->ticketPolicy()->create($actor), 403);
 
-        $canManagePin = $this->ticketPolicy()->managePinnedState($actor);
         $validated = $this->validateTicketInput(
             $request,
             allowVisibility: false,
-            allowPin: $canManagePin,
         );
 
         $initialStatus = $this->resolveInitialStatus();
         $attributes = [
-            ...$this->buildEditableTicketAttributes(
-                $validated,
-                shouldPin: $canManagePin && $request->boolean('pinned'),
-                allowPin: $canManagePin,
-            ),
+            ...$this->buildEditableTicketAttributes($validated),
             'visibility' => Ticket::VISIBILITY_PUBLIC,
             'requester_id' => $this->resolveRequester()->id,
             'assignee_id' => null,
@@ -349,18 +343,17 @@ class TicketController extends Controller
         $this->authorizeTicketAbility('update', $ticket);
 
         $canManageVisibility = $this->ticketPolicy()->updateVisibility($this->currentHelpdeskUser(), $ticket);
-        $canManagePin = $this->ticketPolicy()->updatePin($this->currentHelpdeskUser(), $ticket);
         $validated = $this->validateTicketInput(
             $request,
             allowVisibility: $canManageVisibility,
-            allowPin: $canManagePin,
         );
 
-        return $this->applyTicketUpdateWithHistory($ticket, $this->buildEditableTicketAttributes(
-            $validated,
-            shouldPin: $canManagePin && $request->boolean('pinned'),
-            allowPin: $canManagePin,
-        ), 'Ticket byl úspěšně upraven.', 'ticket_update');
+        return $this->applyTicketUpdateWithHistory(
+            $ticket,
+            $this->buildEditableTicketAttributes($validated),
+            'Ticket byl úspěšně upraven.',
+            'ticket_update',
+        );
     }
 
     public function confirmResolution(Ticket $ticket): RedirectResponse
@@ -537,13 +530,9 @@ class TicketController extends Controller
             'priorities' => TicketPriority::query()->orderBy('sort_order')->orderBy('name')->get(),
             'categories' => TicketCategory::query()->where('is_active', true)->orderBy('name')->get(),
             'visibilityOptions' => Ticket::visibilityOptions(),
-            'pinningEnabled' => Ticket::supportsPinning(),
             'canManageVisibility' => $ticket instanceof Ticket
                 ? $this->ticketPolicy()->updateVisibility($actor, $ticket)
                 : false,
-            'canManagePin' => $ticket instanceof Ticket
-                ? $this->ticketPolicy()->updatePin($actor, $ticket)
-                : $this->ticketPolicy()->managePinnedState($actor),
         ];
     }
 
@@ -679,7 +668,6 @@ class TicketController extends Controller
     private function validateTicketInput(
         Request $request,
         bool $allowVisibility,
-        bool $allowPin,
     ): array
     {
         $rules = [
@@ -693,25 +681,16 @@ class TicketController extends Controller
             $rules['visibility'] = ['nullable', 'in:public,internal,private'];
         }
 
-        if ($allowPin) {
-            $rules['pinned'] = ['nullable', 'boolean'];
-        }
-
         return $request->validate($rules);
     }
 
-    private function buildEditableTicketAttributes(
-        array $validated,
-        bool $shouldPin,
-        bool $allowPin,
-    ): array
+    private function buildEditableTicketAttributes(array $validated): array
     {
         $attributes = [
             'subject' => $validated['subject'],
             'description' => $validated['description'],
             'ticket_priority_id' => $validated['priority_id'],
             'ticket_category_id' => $validated['category_id'],
-            ...$this->buildPinningAttributes($shouldPin, $allowPin),
         ];
 
         if (array_key_exists('visibility', $validated) && $validated['visibility'] !== null) {
@@ -719,28 +698,6 @@ class TicketController extends Controller
         }
 
         return $attributes;
-    }
-
-    private function buildPinningAttributes(bool $shouldPin, bool $allowPin): array
-    {
-        if (! $allowPin) {
-            return [];
-        }
-
-        if ($shouldPin && ! Ticket::supportsPinning()) {
-            throw ValidationException::withMessages([
-                'pinned' => 'Připnutí ticketu zatím není v databázi dostupné. Spusťte migrace aplikace.',
-            ]);
-        }
-
-        if (! Ticket::supportsPinning()) {
-            return [];
-        }
-
-        return [
-            'is_pinned' => $shouldPin,
-            'pinned_at' => $shouldPin ? now() : null,
-        ];
     }
 
     private function ensureOriginalSnapshot(Ticket $ticket, string $source): void
