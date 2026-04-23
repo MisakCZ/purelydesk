@@ -54,19 +54,19 @@ class TicketStatus extends Model
         return 'badge-tone-'.self::badgeToneForSlug($this->slug);
     }
 
-    public function translatedName(): string
+    public function translatedName(?string $locale = null): string
     {
-        return self::translatedNameForSlug($this->slug, $this->name);
+        return self::translatedNameForSlug($this->slug, $this->name, $locale);
     }
 
-    public static function translatedNameForSlug(?string $slug, ?string $fallback = null): string
+    public static function translatedNameForSlug(?string $slug, ?string $fallback = null, ?string $locale = null): string
     {
         if ($slug === null || $slug === '') {
             return $fallback ?: '—';
         }
 
         $translationKey = 'tickets.values.statuses.'.$slug;
-        $translated = __($translationKey);
+        $translated = __($translationKey, [], $locale);
 
         if ($translated !== $translationKey) {
             return $translated;

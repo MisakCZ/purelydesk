@@ -17,7 +17,7 @@ return [
     ],
     'index' => [
         'page_title' => 'Tickets',
-        'heading' => 'Ticket List',
+        'heading' => 'Tickets',
         'subheading' => 'Overview of current helpdesk requests in the system.',
         'actions' => [
             'create' => 'New ticket',
@@ -53,7 +53,7 @@ return [
             'badge' => 'Pinned',
         ],
         'table' => [
-            'ticket_number' => 'Ticket number',
+            'ticket_number' => 'Number',
             'subject' => 'Subject',
             'status' => 'Status',
             'priority' => 'Priority',
@@ -61,7 +61,8 @@ return [
         ],
         'meta' => [
             'requester' => 'Requested by :name',
-            'assignee' => 'Assigned to :name',
+            'assignee' => 'Assignee: :name',
+            'assignee_unassigned' => 'Unassigned',
             'comments' => '{0} No comments|{1} 1 comment|[2,*] :count comments',
             'updated' => 'Updated :date',
             'pinned' => 'Pinned',

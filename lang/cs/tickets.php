@@ -53,15 +53,16 @@ return [
             'badge' => 'Připnuto',
         ],
         'table' => [
-            'ticket_number' => 'Ticket number',
+            'ticket_number' => 'Číslo',
             'subject' => 'Předmět',
             'status' => 'Status',
             'priority' => 'Priorita',
             'updated_at' => 'Aktualizováno',
         ],
         'meta' => [
-            'requester' => 'Zadal: :name',
-            'assignee' => 'Řeší: :name',
+            'requester' => 'Zadal :name',
+            'assignee' => 'Řešitel: :name',
+            'assignee_unassigned' => 'Bez přiřazení',
             'comments' => '{0} Bez komentářů|{1} 1 komentář|[2,4] :count komentáře|[5,*] :count komentářů',
             'updated' => 'Aktualizováno :date',
             'pinned' => 'Připnuto',
@@ -194,7 +195,7 @@ return [
         'visibility' => [
             'public' => 'Veřejný',
             'internal' => 'Interní',
-            'private' => 'Soukromý',
+            'private' => 'Privátní',
         ],
         'categories' => [
             'general' => 'Obecné',

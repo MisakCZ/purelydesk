@@ -18,6 +18,7 @@ use App\Models\TicketPriority;
 use App\Models\TicketStatus;
 use App\Models\User;
 use App\Policies\TicketPolicy;
+use App\Support\LocaleManager;
 use App\Support\ResolvesHelpdeskUser;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Contracts\View\View;
@@ -228,7 +229,7 @@ class TicketController extends Controller
             'closed_at' => $selectedStatus?->is_closed
                 ? ($ticket->closed_at ?? now())
                 : null,
-        ], __('tickets.flash.status_updated'), 'status_update', $request);
+        ], __('tickets.flash.status_updated'), 'status_update', $request, 'tickets.flash.status_updated');
     }
 
     public function updateAssignee(UpdateTicketAssigneeRequest $request, Ticket $ticket): RedirectResponse
@@ -248,7 +249,7 @@ class TicketController extends Controller
 
         return $this->applyTicketUpdateWithHistory($ticket, [
             'ticket_priority_id' => $request->integer('priority_id'),
-        ], __('tickets.flash.priority_updated'), 'priority_update', $request);
+        ], __('tickets.flash.priority_updated'), 'priority_update', $request, 'tickets.flash.priority_updated');
     }
 
     public function updateCategory(UpdateTicketCategoryRequest $request, Ticket $ticket): RedirectResponse
@@ -425,6 +426,7 @@ class TicketController extends Controller
         string $successMessage,
         string $action,
         ?Request $request = null,
+        ?string $jsonSuccessMessageKey = null,
     ): RedirectResponse|JsonResponse {
         $ticket->loadMissing($this->ticketSnapshotRelations());
 
@@ -442,9 +444,13 @@ class TicketController extends Controller
         $this->recordSnapshotUpdate($ticket, $oldSnapshot, $newSnapshot, $action);
 
         if ($request instanceof Request && $request->expectsJson()) {
+            $responseLocale = app(LocaleManager::class)->resolveForRequest($request);
+
             return response()->json([
-                'message' => $successMessage,
-                'ticket' => $this->inlineTicketResponsePayload($ticket),
+                'message' => $jsonSuccessMessageKey !== null
+                    ? __($jsonSuccessMessageKey, [], $responseLocale)
+                    : $successMessage,
+                'ticket' => $this->inlineTicketResponsePayload($ticket, $responseLocale),
             ]);
         }
 
@@ -453,9 +459,9 @@ class TicketController extends Controller
             ->with('status', $successMessage);
     }
 
-    private function inlineTicketResponsePayload(Ticket $ticket): array
+    private function inlineTicketResponsePayload(Ticket $ticket, ?string $locale = null): array
     {
-        $ticket->loadMissing([
+        $ticket->load([
             'status:id,name,slug',
             'priority:id,name,slug',
         ]);
@@ -464,16 +470,16 @@ class TicketController extends Controller
             'id' => $ticket->id,
             'status' => [
                 'id' => $ticket->ticket_status_id,
-                'name' => $ticket->status?->translatedName() ?? __('tickets.common.not_available'),
+                'name' => $ticket->status?->translatedName($locale) ?? __('tickets.common.not_available', [], $locale),
                 'badge_class' => $ticket->status?->badgeToneClass() ?? 'badge-tone-slate',
             ],
             'priority' => [
                 'id' => $ticket->ticket_priority_id,
-                'name' => $ticket->priority?->translatedName() ?? __('tickets.common.not_available'),
+                'name' => $ticket->priority?->translatedName($locale) ?? __('tickets.common.not_available', [], $locale),
                 'badge_class' => $ticket->priority?->badgeToneClass() ?? 'badge-tone-slate',
             ],
             'updated_at' => $ticket->updated_at?->toIso8601String(),
-            'updated_at_display' => $this->formatListUpdatedAt($ticket->updated_at),
+            'updated_at_display' => $this->formatListUpdatedAt($ticket->updated_at, $locale),
         ];
     }
 
@@ -621,15 +627,15 @@ class TicketController extends Controller
         return array_filter($filters, fn (string $value) => $value !== '');
     }
 
-    private function formatListUpdatedAt(?CarbonInterface $value): string
+    private function formatListUpdatedAt(?CarbonInterface $value, ?string $locale = null): string
     {
         if (! $value instanceof CarbonInterface) {
-            return __('tickets.common.not_available');
+            return __('tickets.common.not_available', [], $locale);
         }
 
         return $value
-            ->locale(app()->getLocale())
-            ->translatedFormat(__('tickets.formats.list_updated_at'));
+            ->locale($locale ?? app()->getLocale())
+            ->translatedFormat(__('tickets.formats.list_updated_at', [], $locale));
     }
 
     private function ticketSnapshotRelations(): array

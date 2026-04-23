@@ -23,6 +23,18 @@
                 box-sizing: border-box;
             }
 
+            .sr-only {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                padding: 0;
+                margin: -1px;
+                overflow: hidden;
+                clip: rect(0, 0, 0, 0);
+                white-space: nowrap;
+                border: 0;
+            }
+
             [hidden] {
                 display: none !important;
             }
@@ -89,6 +101,7 @@
                 display: flex;
                 gap: 0.75rem;
                 flex-wrap: wrap;
+                align-items: center;
             }
 
             .nav-link {
@@ -107,6 +120,114 @@
                 color: var(--accent);
                 background: var(--accent-soft);
                 border-color: rgba(15, 118, 110, 0.12);
+            }
+
+            .locale-switcher {
+                margin-left: 0.55rem;
+                padding-left: 0.75rem;
+                border-left: 1px solid rgba(217, 224, 231, 0.95);
+                position: relative;
+            }
+
+            .locale-switcher[open] {
+                z-index: 20;
+            }
+
+            .locale-toggle {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.35rem;
+                min-height: 2.2rem;
+                padding: 0;
+                border: 0;
+                background: transparent;
+                color: #7b8794;
+                cursor: pointer;
+                font: inherit;
+                font-size: 0.76rem;
+                font-weight: 700;
+                letter-spacing: 0.04em;
+                text-transform: uppercase;
+                transition: color 0.15s ease;
+                list-style: none;
+            }
+
+            .locale-toggle::-webkit-details-marker {
+                display: none;
+            }
+
+            .locale-toggle:hover {
+                color: var(--text);
+            }
+
+            .locale-current {
+                color: #13202b;
+                line-height: 1;
+            }
+
+            .locale-chevron {
+                color: #94a3b8;
+                font-size: 0.7rem;
+                line-height: 1;
+                transition: transform 0.15s ease;
+            }
+
+            .locale-switcher[open] .locale-chevron {
+                transform: rotate(180deg);
+            }
+
+            .locale-menu {
+                position: absolute;
+                top: calc(100% + 0.45rem);
+                right: 0;
+                min-width: 8.75rem;
+                padding: 0.35rem;
+                border: 1px solid rgba(217, 224, 231, 0.95);
+                border-radius: 0.9rem;
+                background: #fff;
+                box-shadow: 0 16px 32px rgba(15, 23, 42, 0.12);
+            }
+
+            .locale-form {
+                margin: 0;
+            }
+
+            .locale-option {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                width: 100%;
+                min-height: 2.3rem;
+                padding: 0.48rem 0.65rem;
+                border: 0;
+                border-radius: 0.65rem;
+                background: transparent;
+                color: #475569;
+                cursor: pointer;
+                font: inherit;
+                text-align: left;
+                transition: background-color 0.15s ease, color 0.15s ease;
+            }
+
+            .locale-option:hover {
+                background: #f8fafc;
+                color: #13202b;
+            }
+
+            .locale-option.active {
+                background: #eef6f5;
+                color: #13202b;
+                font-weight: 700;
+            }
+
+            .locale-option-label {
+                line-height: 1.3;
+            }
+
+            .locale-option-check {
+                color: var(--accent);
+                font-size: 0.82rem;
+                line-height: 1;
             }
 
             .page-card {
@@ -199,6 +320,17 @@
                     flex-direction: column;
                     align-items: stretch;
                 }
+
+                .locale-switcher {
+                    margin-left: 0;
+                    padding-left: 0;
+                    border-left: 0;
+                }
+
+                .locale-menu {
+                    right: auto;
+                    left: 0;
+                }
             }
         </style>
         @stack('styles')
@@ -215,6 +347,7 @@
                 </div>
 
                 <nav class="nav" aria-label="{{ __('layout.nav.main') }}">
+                    @php($activeLocale = $currentLocale ?? app()->getLocale())
                     <a class="nav-link {{ request()->routeIs('tickets.index') ? 'active' : '' }}" href="{{ route('tickets.index') }}">
                         {{ __('layout.nav.tickets') }}
                     </a>
@@ -223,6 +356,38 @@
                             {{ __('layout.nav.announcements') }}
                         </a>
                     @endif
+
+                    <details class="locale-switcher">
+                        <summary
+                            class="locale-toggle"
+                            aria-label="{{ __('layout.nav.current', ['locale' => strtoupper($activeLocale)]) }}"
+                            title="{{ __('layout.nav.switch') }}"
+                        >
+                            <span class="locale-current">{{ strtoupper($activeLocale) }}</span>
+                            <span class="locale-chevron" aria-hidden="true">▾</span>
+                        </summary>
+
+                        <div class="locale-menu" role="menu" aria-label="{{ __('layout.nav.language') }}">
+                            @foreach (($supportedLocales ?? config('helpdesk.supported_locales', [])) as $supportedLocale)
+                                <form class="locale-form" method="post" action="{{ route('locale.update') }}">
+                                    @csrf
+                                    <input type="hidden" name="locale" value="{{ $supportedLocale }}">
+                                    <button
+                                        class="locale-option {{ $activeLocale === $supportedLocale ? 'active' : '' }}"
+                                        type="submit"
+                                        role="menuitem"
+                                        title="{{ __('layout.nav.switch') }}: {{ __('layout.nav.locales.'.$supportedLocale) }}"
+                                        aria-pressed="{{ $activeLocale === $supportedLocale ? 'true' : 'false' }}"
+                                    >
+                                        <span class="locale-option-label">{{ __('layout.nav.locales.'.$supportedLocale) }}</span>
+                                        @if ($activeLocale === $supportedLocale)
+                                            <span class="locale-option-check" aria-hidden="true">✓</span>
+                                        @endif
+                                    </button>
+                                </form>
+                            @endforeach
+                        </div>
+                    </details>
                 </nav>
             </header>
 

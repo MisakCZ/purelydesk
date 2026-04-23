@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AnnouncementController;
+use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\TicketCommentController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\TicketWatcherController;
@@ -16,6 +17,7 @@ Route::get('/tickets/{ticket}/edit', [TicketController::class, 'edit'])->name('t
 Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
 Route::get('/announcements', [AnnouncementController::class, 'index'])->name('announcements.index');
 Route::get('/announcements/{announcement}/edit', [AnnouncementController::class, 'edit'])->name('announcements.edit');
+Route::post('/locale', [LocaleController::class, 'update'])->name('locale.update');
 Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store');
 Route::post('/announcements', [AnnouncementController::class, 'store'])->name('announcements.store');
 Route::patch('/announcements/{announcement}', [AnnouncementController::class, 'update'])->name('announcements.update');

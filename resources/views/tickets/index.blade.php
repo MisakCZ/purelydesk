@@ -274,9 +274,9 @@
         }
 
         .ticket-number {
-            color: #64748b;
-            font-size: 0.82rem;
-            font-weight: 500;
+            color: #7b8794;
+            font-size: 0.79rem;
+            font-weight: 400;
             line-height: 1.35;
             white-space: nowrap;
         }
@@ -312,7 +312,7 @@
         .subject-meta {
             display: flex;
             flex-wrap: wrap;
-            gap: 0.35rem 0.75rem;
+            gap: 0.2rem 0.45rem;
             margin-top: 0.45rem;
             font-size: 0.84rem;
             color: #5b6b79;
@@ -325,12 +325,9 @@
             line-height: 1.4;
         }
 
-        .subject-meta-pill {
-            padding: 0.15rem 0.5rem;
-            border-radius: 999px;
-            background: #f5f0df;
-            color: #8a5a00;
-            font-weight: 700;
+        .subject-meta-separator {
+            color: #94a3b8;
+            line-height: 1.4;
         }
 
         .badge {
@@ -401,6 +398,34 @@
             cursor: pointer;
         }
 
+        .badge-caret {
+            font-size: 0.72rem;
+            line-height: 1;
+            opacity: 0.7;
+            transition: transform 0.15s ease;
+        }
+
+        .list-inline-menu {
+            position: relative;
+            display: block;
+        }
+
+        .list-inline-menu[open] {
+            z-index: 20;
+        }
+
+        .list-inline-menu[open] .badge-caret {
+            transform: rotate(180deg);
+        }
+
+        .list-inline-menu > summary {
+            list-style: none;
+        }
+
+        .list-inline-menu > summary::-webkit-details-marker {
+            display: none;
+        }
+
         .list-inline-trigger {
             width: 100%;
             justify-content: flex-start;
@@ -424,6 +449,64 @@
             min-width: 0;
             overflow: hidden;
             text-overflow: ellipsis;
+        }
+
+        .list-inline-dropdown {
+            position: absolute;
+            top: calc(100% + 0.45rem);
+            left: 0;
+            min-width: 14.5rem;
+            max-width: min(18rem, calc(100vw - 2rem));
+            padding: 0.35rem;
+            border: 1px solid #d9e0e7;
+            border-radius: 0.95rem;
+            background: #fff;
+            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
+        }
+
+        .list-inline-options {
+            display: grid;
+            gap: 0.2rem;
+            max-height: 15rem;
+            overflow: auto;
+        }
+
+        .list-inline-option {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            min-height: 2.35rem;
+            padding: 0.48rem 0.7rem;
+            border: 0;
+            border-radius: 0.7rem;
+            background: transparent;
+            color: #334155;
+            cursor: pointer;
+            font: inherit;
+            text-align: left;
+            transition: background-color 0.15s ease, color 0.15s ease;
+        }
+
+        .list-inline-option:hover {
+            background: #f8fafc;
+            color: #13202b;
+        }
+
+        .list-inline-option.active {
+            background: #eef6f5;
+            color: #13202b;
+            font-weight: 700;
+        }
+
+        .list-inline-option:disabled {
+            cursor: default;
+        }
+
+        .list-inline-option-check {
+            color: #0f766e;
+            font-size: 0.82rem;
+            line-height: 1;
         }
 
         .ticket-link {
@@ -453,50 +536,6 @@
             margin-top: -0.2rem;
         }
 
-        .list-inline-editor {
-            position: fixed;
-            z-index: 40;
-            width: min(21rem, calc(100vw - 1.5rem));
-            padding: 1rem;
-            border: 1px solid #d9e0e7;
-            border-radius: 1rem;
-            background: #fff;
-            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
-        }
-
-        .list-inline-editor.is-saving {
-            opacity: 0.8;
-        }
-
-        .list-inline-editor-form {
-            display: grid;
-            gap: 0.8rem;
-        }
-
-        .list-inline-editor-head {
-            display: grid;
-            gap: 0.25rem;
-        }
-
-        .list-inline-editor-title {
-            font-size: 0.95rem;
-            font-weight: 700;
-            color: #13202b;
-        }
-
-        .list-inline-editor-ticket {
-            color: #5b6b79;
-            font-size: 0.88rem;
-            line-height: 1.45;
-        }
-
-        .list-inline-editor-actions {
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            gap: 0.65rem;
-        }
-
         .button-compact {
             min-height: 2.35rem;
             padding: 0.5rem 0.8rem;
@@ -508,6 +547,12 @@
             color: #b42318;
             font-size: 0.9rem;
             line-height: 1.5;
+        }
+
+        .inline-feedback.is-error {
+            border-color: #fecaca;
+            background: #fef2f2;
+            color: #991b1b;
         }
 
         .empty-state {
@@ -632,15 +677,8 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const translations = {{ \Illuminate\Support\Js::from([
-                'inlineStatusTitle' => __('tickets.index.inline.status_title'),
-                'inlinePriorityTitle' => __('tickets.index.inline.priority_title'),
-                'saveStatus' => __('tickets.index.inline.save_status'),
-                'savePriority' => __('tickets.index.inline.save_priority'),
-                'save' => __('tickets.index.inline.save'),
-                'cancel' => __('tickets.index.inline.cancel'),
                 'genericError' => __('tickets.index.inline.generic_error'),
                 'saved' => __('tickets.index.inline.saved'),
-                'noNumber' => __('tickets.common.no_number'),
             ]) }};
             const filterForm = document.querySelector('[data-ticket-filters]');
 
@@ -667,31 +705,12 @@
                 }
             }
 
-            const editor = document.getElementById('ticket-inline-editor');
             const feedback = document.getElementById('ticket-inline-feedback');
-
-            if (! editor) {
-                return;
-            }
-
-            const form = editor.querySelector('[data-inline-form]');
-            const select = editor.querySelector('[data-inline-select]');
-            const title = editor.querySelector('[data-inline-title]');
-            const ticketLabel = editor.querySelector('[data-inline-ticket]');
-            const errorBox = editor.querySelector('[data-inline-error]');
-            const submitButton = editor.querySelector('[data-inline-submit]');
-            const cancelButton = editor.querySelector('[data-inline-cancel]');
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            const optionNodes = {
-                status: document.getElementById('ticket-inline-options-status'),
-                priority: document.getElementById('ticket-inline-options-priority'),
-            };
-            const options = Object.fromEntries(Object.entries(optionNodes).map(([key, node]) => [
-                key,
-                node ? JSON.parse(node.textContent) : [],
-            ]));
+            const requestLocale = document.documentElement.lang
+                ? document.documentElement.lang.split('-')[0].toLowerCase()
+                : null;
 
-            let activeTrigger = null;
             let feedbackTimeout = null;
 
             const hideFeedback = () => {
@@ -700,16 +719,18 @@
                 }
 
                 feedback.hidden = true;
+                feedback.classList.remove('is-error');
                 feedback.textContent = '';
             };
 
-            const showFeedback = (message) => {
+            const showFeedback = (message, type = 'success') => {
                 if (! feedback || ! message) {
                     return;
                 }
 
                 feedback.textContent = message;
                 feedback.hidden = false;
+                feedback.classList.toggle('is-error', type === 'error');
 
                 if (feedbackTimeout) {
                     window.clearTimeout(feedbackTimeout);
@@ -720,77 +741,60 @@
                 }, 2600);
             };
 
-            const setSavingState = (isSaving) => {
-                editor.classList.toggle('is-saving', isSaving);
-                submitButton.disabled = isSaving;
-                cancelButton.disabled = isSaving;
-                select.disabled = isSaving;
-            };
+            const syncMenuState = (menu) => {
+                const trigger = menu.querySelector('summary');
 
-            const setTriggerExpanded = (trigger, expanded) => {
                 if (! trigger) {
                     return;
                 }
 
-                trigger.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+                trigger.setAttribute('aria-expanded', menu.open ? 'true' : 'false');
             };
 
-            const closeEditor = () => {
-                setTriggerExpanded(activeTrigger, false);
-                activeTrigger = null;
-                form.dataset.mode = '';
-                form.dataset.submitUrl = '';
-                form.dataset.ticketId = '';
-                select.name = '';
-                select.innerHTML = '';
-                errorBox.hidden = true;
-                errorBox.textContent = '';
-                editor.hidden = true;
-            };
-
-            const positionEditor = (trigger) => {
-                if (! trigger) {
+            const closeMenu = (menu) => {
+                if (! menu) {
                     return;
                 }
 
-                const rect = trigger.getBoundingClientRect();
-                const width = editor.offsetWidth;
-                const height = editor.offsetHeight;
-                const padding = 12;
-                let top = rect.bottom + 8;
-                let left = rect.left;
-
-                if (left + width > window.innerWidth - padding) {
-                    left = window.innerWidth - width - padding;
-                }
-
-                if (left < padding) {
-                    left = padding;
-                }
-
-                if (top + height > window.innerHeight - padding) {
-                    top = Math.max(padding, rect.top - height - 8);
-                }
-
-                editor.style.top = `${top}px`;
-                editor.style.left = `${left}px`;
+                menu.open = false;
+                syncMenuState(menu);
             };
 
-            const populateOptions = (mode, currentValue) => {
-                select.innerHTML = '';
+            document.querySelectorAll('[data-ticket-inline-menu]').forEach((menu) => {
+                syncMenuState(menu);
 
-                (options[mode] ?? []).forEach((option) => {
-                    const optionNode = document.createElement('option');
-                    optionNode.value = option.id;
-                    optionNode.textContent = option.name;
+                menu.addEventListener('toggle', () => {
+                    syncMenuState(menu);
 
-                    if (String(option.id) === String(currentValue)) {
-                        optionNode.selected = true;
+                    if (! menu.open) {
+                        return;
                     }
 
-                    select.appendChild(optionNode);
+                    document.querySelectorAll('[data-ticket-inline-menu][open]').forEach((otherMenu) => {
+                        if (otherMenu !== menu) {
+                            closeMenu(otherMenu);
+                        }
+                    });
                 });
-            };
+            });
+
+            document.addEventListener('click', (event) => {
+                document.querySelectorAll('[data-ticket-inline-menu][open]').forEach((menu) => {
+                    if (! menu.contains(event.target)) {
+                        closeMenu(menu);
+                    }
+                });
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key !== 'Escape') {
+                    return;
+                }
+
+                document.querySelectorAll('[data-ticket-inline-menu][open]').forEach((menu) => {
+                    closeMenu(menu);
+                });
+            });
 
             const updateTicketDisplays = (ticketId, ticketData) => {
                 const replaceBadgeToneClass = (node, badgeClass) => {
@@ -813,6 +817,10 @@
                     document.querySelectorAll(`[data-ticket-id="${ticketId}"][data-ticket-field="status"] [data-ticket-field-value]`).forEach((node) => {
                         node.textContent = ticketData.status.name;
                     });
+
+                    document.querySelectorAll(`[data-ticket-id="${ticketId}"][data-ticket-field="status"] [data-ticket-current-value]`).forEach((node) => {
+                        node.setAttribute('data-ticket-current-value', ticketData.status.id);
+                    });
                 }
 
                 if (ticketData.priority) {
@@ -823,6 +831,10 @@
                     document.querySelectorAll(`[data-ticket-id="${ticketId}"][data-ticket-field="priority"] [data-ticket-field-value]`).forEach((node) => {
                         node.textContent = ticketData.priority.name;
                     });
+
+                    document.querySelectorAll(`[data-ticket-id="${ticketId}"][data-ticket-field="priority"] [data-ticket-current-value]`).forEach((node) => {
+                        node.setAttribute('data-ticket-current-value', ticketData.priority.id);
+                    });
                 }
 
                 if (ticketData.updated_at_display) {
@@ -832,140 +844,97 @@
                 }
             };
 
-            const openEditor = (trigger) => {
-                const mode = trigger.dataset.inlineMode;
+            const updateOptionStates = (ticketId, field, selectedValue) => {
+                document.querySelectorAll(`[data-ticket-id="${ticketId}"][data-ticket-field="${field}"][data-ticket-option-value]`).forEach((button) => {
+                    const isActive = String(button.dataset.ticketOptionValue) === String(selectedValue);
+                    const check = button.querySelector('[data-ticket-option-check]');
 
-                if (! mode || ! options[mode]) {
-                    return;
-                }
+                    button.disabled = isActive;
+                    button.classList.toggle('active', isActive);
 
-                if (activeTrigger === trigger && ! editor.hidden) {
-                    closeEditor();
-
-                    return;
-                }
-
-                setTriggerExpanded(activeTrigger, false);
-                activeTrigger = trigger;
-                setTriggerExpanded(activeTrigger, true);
-
-                form.dataset.mode = mode;
-                form.dataset.submitUrl = trigger.dataset.submitUrl;
-                form.dataset.ticketId = trigger.dataset.ticketId;
-                title.textContent = mode === 'status' ? translations.inlineStatusTitle : translations.inlinePriorityTitle;
-                ticketLabel.textContent = `${trigger.dataset.ticketNumber || translations.noNumber} · ${trigger.dataset.ticketSubject || ''}`;
-                select.name = mode === 'status' ? 'status_id' : 'priority_id';
-                submitButton.textContent = mode === 'status' ? translations.saveStatus : translations.savePriority;
-                populateOptions(mode, trigger.dataset.currentValue);
-                errorBox.hidden = true;
-                errorBox.textContent = '';
-                editor.hidden = false;
-
-                requestAnimationFrame(() => {
-                    positionEditor(trigger);
-                    select.focus();
+                    if (check) {
+                        check.hidden = ! isActive;
+                    }
                 });
             };
 
-            document.querySelectorAll('[data-ticket-inline-trigger]').forEach((trigger) => {
-                trigger.addEventListener('click', (event) => {
+            document.querySelectorAll('[data-ticket-inline-option-form]').forEach((form) => {
+                form.addEventListener('submit', async (event) => {
                     event.preventDefault();
-                    openEditor(trigger);
-                });
-            });
 
-            cancelButton.addEventListener('click', () => {
-                closeEditor();
-            });
+                    const submitter = event.submitter;
 
-            document.addEventListener('click', (event) => {
-                if (editor.hidden) {
-                    return;
-                }
-
-                if (editor.contains(event.target) || (activeTrigger && activeTrigger.contains(event.target))) {
-                    return;
-                }
-
-                closeEditor();
-            });
-
-            document.addEventListener('keydown', (event) => {
-                if (event.key === 'Escape' && ! editor.hidden) {
-                    closeEditor();
-                }
-            });
-
-            window.addEventListener('resize', () => {
-                if (! editor.hidden) {
-                    positionEditor(activeTrigger);
-                }
-            });
-
-            window.addEventListener('scroll', () => {
-                if (! editor.hidden) {
-                    positionEditor(activeTrigger);
-                }
-            }, true);
-
-            form.addEventListener('submit', async (event) => {
-                event.preventDefault();
-
-                if (! activeTrigger || ! form.dataset.submitUrl || ! select.name) {
-                    return;
-                }
-
-                const payload = new FormData();
-                payload.append('_method', 'PATCH');
-                payload.append(select.name, select.value);
-
-                setSavingState(true);
-                errorBox.hidden = true;
-                errorBox.textContent = '';
-
-                try {
-                    const response = await fetch(form.dataset.submitUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Accept': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest',
-                            ...(csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {}),
-                        },
-                        body: payload,
-                        credentials: 'same-origin',
-                    });
-
-                    const responseData = await response.json().catch(() => null);
-
-                    if (! response.ok) {
-                        const errorMessage = Object.values(responseData?.errors ?? {}).flat().join(' ') || responseData?.message || translations.genericError;
-                        errorBox.textContent = errorMessage;
-                        errorBox.hidden = false;
-
+                    if (! submitter) {
                         return;
                     }
 
-                    updateTicketDisplays(form.dataset.ticketId, responseData.ticket ?? {});
-                    activeTrigger.dataset.currentValue = String(select.value);
-                    showFeedback(responseData.message || translations.saved);
+                    const payload = new FormData(form, submitter);
 
-                    const row = document.querySelector(`tr[data-ticket-row="${form.dataset.ticketId}"]`);
-
-                    if (row) {
-                        row.classList.add('ticket-row-updated');
-
-                        window.setTimeout(() => {
-                            row.classList.remove('ticket-row-updated');
-                        }, 1600);
+                    if (requestLocale && ! payload.has('_locale')) {
+                        payload.append('_locale', requestLocale);
                     }
 
-                    closeEditor();
-                } catch (error) {
-                    errorBox.textContent = translations.genericError;
-                    errorBox.hidden = false;
-                } finally {
-                    setSavingState(false);
-                }
+                    form.querySelectorAll('button').forEach((button) => {
+                        button.disabled = true;
+                    });
+
+                    try {
+                        const response = await fetch(form.action, {
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
+                                ...(requestLocale ? { 'X-Helpdesk-Locale': requestLocale } : {}),
+                                ...(csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {}),
+                            },
+                            body: payload,
+                            credentials: 'same-origin',
+                        });
+
+                        const responseData = await response.json().catch(() => null);
+
+                        if (! response.ok) {
+                            const errorMessage = Object.values(responseData?.errors ?? {}).flat().join(' ') || responseData?.message || translations.genericError;
+                            showFeedback(errorMessage, 'error');
+
+                            return;
+                        }
+
+                        const ticketId = form.dataset.ticketId;
+                        const field = form.dataset.ticketField;
+                        const selectedValue = submitter.dataset.ticketOptionValue;
+                        updateTicketDisplays(ticketId, responseData.ticket ?? {});
+                        updateOptionStates(ticketId, field, selectedValue);
+                        showFeedback(responseData.message || translations.saved);
+
+                        const row = document.querySelector(`tr[data-ticket-row="${ticketId}"]`);
+
+                        if (row) {
+                            row.classList.add('ticket-row-updated');
+
+                            window.setTimeout(() => {
+                                row.classList.remove('ticket-row-updated');
+                            }, 1600);
+                        }
+
+                        closeMenu(form.closest('[data-ticket-inline-menu]'));
+                    } catch (error) {
+                        showFeedback(translations.genericError, 'error');
+                    } finally {
+                        const ticketId = form.dataset.ticketId;
+                        const field = form.dataset.ticketField;
+                        const activeValueNode = document.querySelector(`[data-ticket-id="${ticketId}"][data-ticket-field="${field}"][data-ticket-current-value]`);
+                        const currentValue = activeValueNode
+                            ? activeValueNode.getAttribute('data-ticket-current-value')
+                            : null;
+
+                        form.querySelectorAll('button').forEach((button) => {
+                            const shouldStayDisabled = currentValue !== null
+                                && String(button.dataset.ticketOptionValue) === String(currentValue);
+                            button.disabled = shouldStayDisabled;
+                        });
+                    }
+                });
             });
         });
     </script>
@@ -982,14 +951,6 @@
 
             return $query;
         };
-        $inlineStatusOptions = $statuses->map(fn ($status) => [
-            'id' => $status->id,
-            'name' => $status->translatedName(),
-        ])->values();
-        $inlinePriorityOptions = $priorities->map(fn ($priority) => [
-            'id' => $priority->id,
-            'name' => $priority->translatedName(),
-        ])->values();
     @endphp
 
     <div class="page-head">
@@ -1205,7 +1166,11 @@
                             <div class="pinned-ticket-meta">
                                 <div>{{ $ticket->translatedVisibilityLabel() }}</div>
                                 <div>{{ __('tickets.index.meta.requester', ['name' => $ticket->requester?->name ?? __('tickets.common.not_available')]) }}</div>
-                                <div>{{ __('tickets.index.meta.assignee', ['name' => $ticket->assignee?->name ?? __('tickets.common.unassigned')]) }}</div>
+                                <div>
+                                    {{ $ticket->assignee?->name
+                                        ? __('tickets.index.meta.assignee', ['name' => $ticket->assignee->name])
+                                        : __('tickets.index.meta.assignee_unassigned') }}
+                                </div>
                                 <div>{{ __('tickets.index.meta.updated', ['date' => $ticket->updated_at?->locale($locale)->translatedFormat($listUpdatedAtFormat) ?? __('tickets.common.not_available')]) }}</div>
                             </div>
                         </article>
@@ -1253,35 +1218,65 @@
                                         <span class="subject-meta-item">
                                             {{ $ticket->translatedVisibilityLabel() }}
                                         </span>
+                                        <span class="subject-meta-separator" aria-hidden="true">&middot;</span>
                                         <span class="subject-meta-item">
-                                            {{ __('tickets.index.meta.assignee', ['name' => $ticket->assignee?->name ?? __('tickets.common.unassigned')]) }}
+                                            {{ $ticket->assignee?->name
+                                                ? __('tickets.index.meta.assignee', ['name' => $ticket->assignee->name])
+                                                : __('tickets.index.meta.assignee_unassigned') }}
                                         </span>
+                                        <span class="subject-meta-separator" aria-hidden="true">&middot;</span>
                                         <span class="subject-meta-item">
                                             {{ trans_choice('tickets.index.meta.comments', $ticket->public_comments_count, ['count' => $ticket->public_comments_count]) }}
                                         </span>
-                                        @if ($pinningEnabled && $ticket->is_pinned)
-                                            <span class="subject-meta-item subject-meta-pill">{{ __('tickets.index.meta.pinned') }}</span>
-                                        @endif
                                     </div>
                                 </td>
                                 <td class="ticket-col-status">
                                     @if ($ticket->can_inline_status_update)
-                                        <button
-                                            class="badge badge-button list-inline-trigger {{ $ticket->status?->badgeToneClass() ?? 'badge-tone-slate' }}"
-                                            type="button"
-                                            data-ticket-inline-trigger
-                                            data-ticket-id="{{ $ticket->id }}"
-                                            data-ticket-field="status"
-                                            data-inline-mode="status"
-                                            data-submit-url="{{ route('tickets.status.update', $ticket) }}"
-                                            data-current-value="{{ $ticket->ticket_status_id }}"
-                                            data-ticket-number="{{ $ticket->ticket_number ?? __('tickets.common.not_available') }}"
-                                            data-ticket-subject="{{ $ticket->subject }}"
-                                            aria-expanded="false"
-                                        >
-                                            <span class="badge-dot"></span>
-                                            <span class="badge-label" data-ticket-field-value>{{ $ticket->status?->translatedName() ?? __('tickets.common.not_available') }}</span>
-                                        </button>
+                                        <details class="list-inline-menu" data-ticket-inline-menu>
+                                            <summary
+                                                class="badge badge-button list-inline-trigger {{ $ticket->status?->badgeToneClass() ?? 'badge-tone-slate' }}"
+                                                data-ticket-id="{{ $ticket->id }}"
+                                                data-ticket-field="status"
+                                                aria-expanded="false"
+                                            >
+                                                <span class="badge-dot"></span>
+                                                <span class="badge-label" data-ticket-field-value>{{ $ticket->status?->translatedName() ?? __('tickets.common.not_available') }}</span>
+                                                <span class="badge-caret" aria-hidden="true">▾</span>
+                                                <span class="sr-only" data-ticket-current-value="{{ $ticket->ticket_status_id }}"></span>
+                                            </summary>
+
+                                            <div class="list-inline-dropdown">
+                                                <form
+                                                    class="list-inline-option-form"
+                                                    method="post"
+                                                    action="{{ route('tickets.status.update', $ticket) }}"
+                                                    data-ticket-inline-option-form
+                                                    data-ticket-id="{{ $ticket->id }}"
+                                                    data-ticket-field="status"
+                                                >
+                                                    @csrf
+                                                    @method('patch')
+                                                    <input type="hidden" name="_locale" value="{{ $locale }}">
+
+                                                    <div class="list-inline-options">
+                                                        @foreach ($statuses as $status)
+                                                            @php($isCurrentStatus = (string) $ticket->ticket_status_id === (string) $status->id)
+                                                            <button
+                                                                class="list-inline-option{{ $isCurrentStatus ? ' active' : '' }}"
+                                                                type="submit"
+                                                                name="status_id"
+                                                                value="{{ $status->id }}"
+                                                                data-ticket-option-value="{{ $status->id }}"
+                                                                @disabled($isCurrentStatus)
+                                                            >
+                                                                <span>{{ $status->translatedName() }}</span>
+                                                                <span class="list-inline-option-check" data-ticket-option-check @if (! $isCurrentStatus) hidden @endif>✓</span>
+                                                            </button>
+                                                        @endforeach
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </details>
                                     @else
                                         <span class="badge {{ $ticket->status?->badgeToneClass() ?? 'badge-tone-slate' }}" data-ticket-id="{{ $ticket->id }}" data-ticket-field="status">
                                             <span class="badge-dot"></span>
@@ -1291,22 +1286,51 @@
                                 </td>
                                 <td class="ticket-col-priority">
                                     @if ($ticket->can_inline_priority_update)
-                                        <button
-                                            class="badge badge-button list-inline-trigger {{ $ticket->priority?->badgeToneClass() ?? 'badge-tone-slate' }}"
-                                            type="button"
-                                            data-ticket-inline-trigger
-                                            data-ticket-id="{{ $ticket->id }}"
-                                            data-ticket-field="priority"
-                                            data-inline-mode="priority"
-                                            data-submit-url="{{ route('tickets.priority.update', $ticket) }}"
-                                            data-current-value="{{ $ticket->ticket_priority_id }}"
-                                            data-ticket-number="{{ $ticket->ticket_number ?? __('tickets.common.not_available') }}"
-                                            data-ticket-subject="{{ $ticket->subject }}"
-                                            aria-expanded="false"
-                                        >
-                                            <span class="badge-dot"></span>
-                                            <span class="badge-label" data-ticket-field-value>{{ $ticket->priority?->translatedName() ?? __('tickets.common.not_available') }}</span>
-                                        </button>
+                                        <details class="list-inline-menu" data-ticket-inline-menu>
+                                            <summary
+                                                class="badge badge-button list-inline-trigger {{ $ticket->priority?->badgeToneClass() ?? 'badge-tone-slate' }}"
+                                                data-ticket-id="{{ $ticket->id }}"
+                                                data-ticket-field="priority"
+                                                aria-expanded="false"
+                                            >
+                                                <span class="badge-dot"></span>
+                                                <span class="badge-label" data-ticket-field-value>{{ $ticket->priority?->translatedName() ?? __('tickets.common.not_available') }}</span>
+                                                <span class="badge-caret" aria-hidden="true">▾</span>
+                                                <span class="sr-only" data-ticket-current-value="{{ $ticket->ticket_priority_id }}"></span>
+                                            </summary>
+
+                                            <div class="list-inline-dropdown">
+                                                <form
+                                                    class="list-inline-option-form"
+                                                    method="post"
+                                                    action="{{ route('tickets.priority.update', $ticket) }}"
+                                                    data-ticket-inline-option-form
+                                                    data-ticket-id="{{ $ticket->id }}"
+                                                    data-ticket-field="priority"
+                                                >
+                                                    @csrf
+                                                    @method('patch')
+                                                    <input type="hidden" name="_locale" value="{{ $locale }}">
+
+                                                    <div class="list-inline-options">
+                                                        @foreach ($priorities as $priority)
+                                                            @php($isCurrentPriority = (string) $ticket->ticket_priority_id === (string) $priority->id)
+                                                            <button
+                                                                class="list-inline-option{{ $isCurrentPriority ? ' active' : '' }}"
+                                                                type="submit"
+                                                                name="priority_id"
+                                                                value="{{ $priority->id }}"
+                                                                data-ticket-option-value="{{ $priority->id }}"
+                                                                @disabled($isCurrentPriority)
+                                                            >
+                                                                <span>{{ $priority->translatedName() }}</span>
+                                                                <span class="list-inline-option-check" data-ticket-option-check @if (! $isCurrentPriority) hidden @endif>✓</span>
+                                                            </button>
+                                                        @endforeach
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </details>
                                     @else
                                         <span class="badge {{ $ticket->priority?->badgeToneClass() ?? 'badge-tone-slate' }}" data-ticket-id="{{ $ticket->id }}" data-ticket-field="priority">
                                             <span class="badge-dot"></span>
@@ -1322,26 +1346,6 @@
                     </tbody>
                 </table>
             </div>
-
-            <div id="ticket-inline-editor" class="list-inline-editor" hidden>
-                <form class="list-inline-editor-form" data-inline-form>
-                    <div class="list-inline-editor-head">
-                        <div class="list-inline-editor-title" data-inline-title></div>
-                        <div class="list-inline-editor-ticket" data-inline-ticket></div>
-                    </div>
-
-                    <select class="list-inline-select" data-inline-select></select>
-                    <div class="field-error" data-inline-error hidden></div>
-
-                    <div class="list-inline-editor-actions">
-                        <button class="button button-primary button-compact" type="submit" data-inline-submit>{{ __('tickets.index.inline.save') }}</button>
-                        <button class="button button-secondary button-compact" type="button" data-inline-cancel>{{ __('tickets.index.inline.cancel') }}</button>
-                    </div>
-                </form>
-            </div>
-
-            <script id="ticket-inline-options-status" type="application/json">@json($inlineStatusOptions)</script>
-            <script id="ticket-inline-options-priority" type="application/json">@json($inlinePriorityOptions)</script>
 
             @if ($tickets->hasPages())
                 <div class="pagination-wrap">

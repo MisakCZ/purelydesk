@@ -217,8 +217,9 @@ class TicketVisibilityTest extends TestCase
         $this->get(route('tickets.index'))
             ->assertOk()
             ->assertSeeText($ticket->subject)
-            ->assertSee('data-inline-mode="status"', false)
-            ->assertSee('data-inline-mode="priority"', false);
+            ->assertSee('<details class="list-inline-menu" data-ticket-inline-menu>', false)
+            ->assertSee('data-ticket-field="status"', false)
+            ->assertSee('data-ticket-field="priority"', false);
     }
 
     public function test_regular_user_sees_passive_badges_in_ticket_list(): void
@@ -235,8 +236,7 @@ class TicketVisibilityTest extends TestCase
         $this->get(route('tickets.index'))
             ->assertOk()
             ->assertSeeText($ticket->subject)
-            ->assertDontSee('data-inline-mode="status"', false)
-            ->assertDontSee('data-inline-mode="priority"', false);
+            ->assertDontSee('<details class="list-inline-menu" data-ticket-inline-menu>', false);
     }
 
     public function test_solver_can_update_status_via_json_patch(): void
@@ -260,7 +260,7 @@ class TicketVisibilityTest extends TestCase
         ])
             ->assertOk()
             ->assertJsonPath('ticket.status.id', $inProgressStatus->id)
-            ->assertJsonPath('ticket.status.name', $inProgressStatus->name);
+            ->assertJsonPath('ticket.status.name', 'In progress');
 
         $this->assertDatabaseHas('tickets', [
             'id' => $ticket->id,
@@ -295,6 +295,54 @@ class TicketVisibilityTest extends TestCase
             'id' => $ticket->id,
             'ticket_priority_id' => $highPriority->id,
         ]);
+    }
+
+    public function test_inline_json_update_respects_current_page_locale(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $waitingUserStatus = TicketStatus::query()->create([
+            'name' => 'Waiting for User',
+            'slug' => 'waiting_user',
+            'sort_order' => 2,
+        ]);
+        $criticalPriority = TicketPriority::query()->create([
+            'name' => 'Critical',
+            'slug' => 'critical',
+            'sort_order' => 2,
+        ]);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'visibility' => Ticket::VISIBILITY_INTERNAL,
+        ]);
+
+        $this->actingAs($solver);
+
+        $this->withHeaders([
+            'Accept' => 'application/json',
+            'X-Requested-With' => 'XMLHttpRequest',
+            'X-Helpdesk-Locale' => 'cs',
+        ])->post(route('tickets.status.update', $ticket), [
+            '_method' => 'PATCH',
+            'status_id' => $waitingUserStatus->id,
+            '_locale' => 'cs',
+        ])
+            ->assertOk()
+            ->assertJsonPath('ticket.status.id', $waitingUserStatus->id)
+            ->assertJsonPath('ticket.status.name', 'Čeká na uživatele');
+
+        $this->withHeaders([
+            'Accept' => 'application/json',
+            'X-Requested-With' => 'XMLHttpRequest',
+            'X-Helpdesk-Locale' => 'cs',
+        ])->post(route('tickets.priority.update', $ticket), [
+            '_method' => 'PATCH',
+            'priority_id' => $criticalPriority->id,
+            '_locale' => 'cs',
+        ])
+            ->assertOk()
+            ->assertJsonPath('ticket.priority.id', $criticalPriority->id)
+            ->assertJsonPath('ticket.priority.name', 'Kritická');
     }
 
     public function test_public_comment_updates_ticket_updated_at_timestamp(): void
@@ -356,7 +404,9 @@ class TicketVisibilityTest extends TestCase
 
         $this->actingAs($requester);
 
-        $this->get(route('tickets.index'))
+        $this->withHeaders([
+            'Accept-Language' => 'cs-CZ,cs;q=0.9,en;q=0.8',
+        ])->get(route('tickets.index'))
             ->assertOk()
             ->assertSeeText('Seznam ticketů')
             ->assertSeeText('Vyřešeno')
@@ -393,9 +443,11 @@ class TicketVisibilityTest extends TestCase
 
         $this->actingAs($requester);
 
-        $this->get(route('tickets.index'))
+        $this->withHeaders([
+            'Accept-Language' => 'en-US,en;q=0.9,cs;q=0.8',
+        ])->get(route('tickets.index'))
             ->assertOk()
-            ->assertSeeText('Ticket List')
+            ->assertSeeText('Tickets')
             ->assertSeeText('Resolved')
             ->assertSeeText('Critical')
             ->assertSeeText('Internal')

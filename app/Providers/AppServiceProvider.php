@@ -7,6 +7,7 @@ use App\Models\Ticket;
 use App\Policies\AnnouncementPolicy;
 use App\Policies\TicketPolicy;
 use App\Support\HelpdeskAuth;
+use App\Support\LocaleManager;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\View;
@@ -31,8 +32,13 @@ class AppServiceProvider extends ServiceProvider
 
         View::composer('layouts.admin', function ($view): void {
             $currentUser = app(HelpdeskAuth::class)->user();
+            $localeManager = app(LocaleManager::class);
 
-            $view->with('canManageAnnouncements', app(AnnouncementPolicy::class)->manage($currentUser));
+            $view->with([
+                'canManageAnnouncements' => app(AnnouncementPolicy::class)->manage($currentUser),
+                'currentLocale' => app()->getLocale(),
+                'supportedLocales' => $localeManager->supportedLocales(),
+            ]);
         });
     }
 }

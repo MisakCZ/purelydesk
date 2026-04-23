@@ -532,21 +532,113 @@
             font-size: 0.92rem;
         }
 
-        .hero-admin-panels {
-            display: grid;
-            gap: 0.85rem;
+        .badge-switcher {
+            position: relative;
         }
 
-        .hero-admin-panel {
-            margin-top: 0;
-            padding: 1rem 1.05rem;
+        .badge-switcher[open] {
+            z-index: 20;
+        }
+
+        .badge-switcher[open] .badge-caret {
+            transform: rotate(180deg);
+        }
+
+        .badge-menu-toggle {
+            list-style: none;
+        }
+
+        .badge-menu-toggle::-webkit-details-marker {
+            display: none;
+        }
+
+        .badge-caret {
+            font-size: 0.72rem;
+            line-height: 1;
+            opacity: 0.7;
+            transition: transform 0.15s ease;
+        }
+
+        .badge-menu {
+            position: absolute;
+            top: calc(100% + 0.45rem);
+            left: 0;
+            min-width: 15rem;
+            max-width: min(22rem, calc(100vw - 2rem));
+            padding: 0.4rem;
             border: 1px solid #d9e0e7;
             border-radius: 0.95rem;
-            background: rgba(255, 255, 255, 0.92);
+            background: #fff;
+            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
+            display: grid;
+            gap: 0.45rem;
         }
 
-        .hero-admin-panel .comment-form-head h3 {
-            font-size: 1rem;
+        .badge-menu-form,
+        .badge-menu-options {
+            display: grid;
+            gap: 0.2rem;
+        }
+
+        .badge-menu-options {
+            max-height: 17rem;
+            overflow: auto;
+        }
+
+        .badge-menu-option {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            min-height: 2.45rem;
+            padding: 0.5rem 0.75rem;
+            border: 0;
+            border-radius: 0.75rem;
+            background: transparent;
+            color: #334155;
+            cursor: pointer;
+            font: inherit;
+            text-align: left;
+            transition: background-color 0.15s ease, color 0.15s ease;
+        }
+
+        .badge-menu-option:hover {
+            background: #f8fafc;
+            color: #13202b;
+        }
+
+        .badge-menu-option.active {
+            background: #eef6f5;
+            color: #13202b;
+            font-weight: 700;
+        }
+
+        .badge-menu-option:disabled {
+            cursor: default;
+        }
+
+        .badge-menu-check {
+            color: #0f766e;
+            font-size: 0.82rem;
+            line-height: 1;
+        }
+
+        .badge-menu-note {
+            padding: 0.55rem 0.75rem;
+            color: #64748b;
+            font-size: 0.92rem;
+            line-height: 1.5;
+        }
+
+        .badge-menu-meta {
+            display: grid;
+            gap: 0.6rem;
+            padding: 0.2rem 0.1rem 0.05rem;
+            border-top: 1px solid #edf2f7;
+        }
+
+        .badge-menu-meta .watcher-list {
+            margin-top: 0;
         }
 
         .history-panel {
@@ -924,17 +1016,49 @@
                 <div class="hero-meta-actions">
                     <div class="ticket-meta">
                         @if ($canUpdateStatus)
-                            <button
-                                class="badge badge-button {{ $ticket->status?->badgeToneClass() ?? 'badge-tone-slate' }}"
-                                type="button"
-                                data-editor-toggle="hero-status-editor"
-                                aria-controls="hero-status-editor"
-                                aria-expanded="false"
-                                title="{{ __('tickets.show.hero.status') }}"
-                            >
-                                <span class="badge-dot"></span>
-                                {{ __('tickets.show.hero.status') }}: {{ $ticket->status?->translatedName() ?? __('tickets.common.not_available') }}
-                            </button>
+                            <details class="badge-switcher" @if ($statusErrors->any()) open @endif>
+                                <summary
+                                    class="badge badge-button badge-menu-toggle {{ $ticket->status?->badgeToneClass() ?? 'badge-tone-slate' }}"
+                                    aria-expanded="{{ $statusErrors->any() ? 'true' : 'false' }}"
+                                    title="{{ __('tickets.show.hero.status') }}"
+                                >
+                                    <span class="badge-dot"></span>
+                                    {{ __('tickets.show.hero.status') }}: {{ $ticket->status?->translatedName() ?? __('tickets.common.not_available') }}
+                                    <span class="badge-caret" aria-hidden="true">▾</span>
+                                </summary>
+
+                                <div class="badge-menu">
+                                    @if ($statusErrors->any())
+                                        <ul class="field-error-list">
+                                            @foreach ($statusErrors->all() as $error)
+                                                <li>{{ $error }}</li>
+                                            @endforeach
+                                        </ul>
+                                    @endif
+
+                                    <form class="badge-menu-form" method="post" action="{{ route('tickets.status.update', $ticket) }}">
+                                        @csrf
+                                        @method('patch')
+                                        <input type="hidden" name="_locale" value="{{ $locale }}">
+
+                                        <div class="badge-menu-options">
+                                            @foreach ($statuses as $status)
+                                                @php($isCurrentStatus = (string) $ticket->ticket_status_id === (string) $status->id)
+                                                <button
+                                                    class="badge-menu-option{{ $isCurrentStatus ? ' active' : '' }}"
+                                                    type="submit"
+                                                    name="status_id"
+                                                    value="{{ $status->id }}"
+                                                    @disabled($isCurrentStatus)
+                                                >
+                                                    <span>{{ $status->translatedName() }}</span>
+                                                    <span class="badge-menu-check" @if (! $isCurrentStatus) hidden @endif>✓</span>
+                                                </button>
+                                            @endforeach
+                                        </div>
+                                    </form>
+                                </div>
+                            </details>
                         @else
                             <span class="badge {{ $ticket->status?->badgeToneClass() ?? 'badge-tone-slate' }}">
                                 <span class="badge-dot"></span>
@@ -943,17 +1067,49 @@
                         @endif
 
                         @if ($canUpdatePriority)
-                            <button
-                                class="badge badge-button {{ $ticket->priority?->badgeToneClass() ?? 'badge-tone-slate' }}"
-                                type="button"
-                                data-editor-toggle="hero-priority-editor"
-                                aria-controls="hero-priority-editor"
-                                aria-expanded="false"
-                                title="{{ __('tickets.show.hero.priority') }}"
-                            >
-                                <span class="badge-dot"></span>
-                                {{ __('tickets.show.hero.priority') }}: {{ $ticket->priority?->translatedName() ?? __('tickets.common.not_available') }}
-                            </button>
+                            <details class="badge-switcher" @if ($priorityErrors->any()) open @endif>
+                                <summary
+                                    class="badge badge-button badge-menu-toggle {{ $ticket->priority?->badgeToneClass() ?? 'badge-tone-slate' }}"
+                                    aria-expanded="{{ $priorityErrors->any() ? 'true' : 'false' }}"
+                                    title="{{ __('tickets.show.hero.priority') }}"
+                                >
+                                    <span class="badge-dot"></span>
+                                    {{ __('tickets.show.hero.priority') }}: {{ $ticket->priority?->translatedName() ?? __('tickets.common.not_available') }}
+                                    <span class="badge-caret" aria-hidden="true">▾</span>
+                                </summary>
+
+                                <div class="badge-menu">
+                                    @if ($priorityErrors->any())
+                                        <ul class="field-error-list">
+                                            @foreach ($priorityErrors->all() as $error)
+                                                <li>{{ $error }}</li>
+                                            @endforeach
+                                        </ul>
+                                    @endif
+
+                                    <form class="badge-menu-form" method="post" action="{{ route('tickets.priority.update', $ticket) }}">
+                                        @csrf
+                                        @method('patch')
+                                        <input type="hidden" name="_locale" value="{{ $locale }}">
+
+                                        <div class="badge-menu-options">
+                                            @foreach ($priorities as $priority)
+                                                @php($isCurrentPriority = (string) $ticket->ticket_priority_id === (string) $priority->id)
+                                                <button
+                                                    class="badge-menu-option{{ $isCurrentPriority ? ' active' : '' }}"
+                                                    type="submit"
+                                                    name="priority_id"
+                                                    value="{{ $priority->id }}"
+                                                    @disabled($isCurrentPriority)
+                                                >
+                                                    <span>{{ $priority->translatedName() }}</span>
+                                                    <span class="badge-menu-check" @if (! $isCurrentPriority) hidden @endif>✓</span>
+                                                </button>
+                                            @endforeach
+                                        </div>
+                                    </form>
+                                </div>
+                            </details>
                         @else
                             <span class="badge {{ $ticket->priority?->badgeToneClass() ?? 'badge-tone-slate' }}">
                                 <span class="badge-dot"></span>
@@ -962,17 +1118,49 @@
                         @endif
 
                         @if ($canUpdateVisibility)
-                            <button
-                                class="badge badge-button"
-                                type="button"
-                                data-editor-toggle="hero-visibility-editor"
-                                aria-controls="hero-visibility-editor"
-                                aria-expanded="false"
-                                title="{{ __('tickets.show.hero.visibility') }}"
-                            >
-                                <span class="badge-dot"></span>
-                                {{ __('tickets.show.hero.visibility') }}: {{ $ticket->translatedVisibilityLabel() }}
-                            </button>
+                            <details class="badge-switcher" @if ($visibilityErrors->any()) open @endif>
+                                <summary
+                                    class="badge badge-button badge-menu-toggle"
+                                    aria-expanded="{{ $visibilityErrors->any() ? 'true' : 'false' }}"
+                                    title="{{ __('tickets.show.hero.visibility') }}"
+                                >
+                                    <span class="badge-dot"></span>
+                                    {{ __('tickets.show.hero.visibility') }}: {{ $ticket->translatedVisibilityLabel() }}
+                                    <span class="badge-caret" aria-hidden="true">▾</span>
+                                </summary>
+
+                                <div class="badge-menu">
+                                    @if ($visibilityErrors->any())
+                                        <ul class="field-error-list">
+                                            @foreach ($visibilityErrors->all() as $error)
+                                                <li>{{ $error }}</li>
+                                            @endforeach
+                                        </ul>
+                                    @endif
+
+                                    <form class="badge-menu-form" method="post" action="{{ route('tickets.visibility.update', $ticket) }}">
+                                        @csrf
+                                        @method('patch')
+                                        <input type="hidden" name="_locale" value="{{ $locale }}">
+
+                                        <div class="badge-menu-options">
+                                            @foreach ($visibilityOptions as $value => $label)
+                                                @php($isCurrentVisibility = (string) $ticket->normalizedVisibility() === (string) $value)
+                                                <button
+                                                    class="badge-menu-option{{ $isCurrentVisibility ? ' active' : '' }}"
+                                                    type="submit"
+                                                    name="visibility"
+                                                    value="{{ $value }}"
+                                                    @disabled($isCurrentVisibility)
+                                                >
+                                                    <span>{{ $label }}</span>
+                                                    <span class="badge-menu-check" @if (! $isCurrentVisibility) hidden @endif>✓</span>
+                                                </button>
+                                            @endforeach
+                                        </div>
+                                    </form>
+                                </div>
+                            </details>
                         @else
                             <span class="badge">
                                 <span class="badge-dot"></span>
@@ -981,17 +1169,61 @@
                         @endif
 
                         @if ($canUpdateAssignee)
-                            <button
-                                class="badge badge-button"
-                                type="button"
-                                data-editor-toggle="hero-assignee-editor"
-                                aria-controls="hero-assignee-editor"
-                                aria-expanded="false"
-                                title="{{ __('tickets.show.hero.assignee') }}"
-                            >
-                                <span class="badge-dot"></span>
-                                {{ __('tickets.show.hero.assignee') }}: {{ $ticket->assignee?->name ?? __('tickets.common.unassigned') }}
-                            </button>
+                            <details class="badge-switcher" @if ($assigneeErrors->any()) open @endif>
+                                <summary
+                                    class="badge badge-button badge-menu-toggle"
+                                    aria-expanded="{{ $assigneeErrors->any() ? 'true' : 'false' }}"
+                                    title="{{ __('tickets.show.hero.assignee') }}"
+                                >
+                                    <span class="badge-dot"></span>
+                                    {{ __('tickets.show.hero.assignee') }}: {{ $ticket->assignee?->name ?? __('tickets.common.unassigned') }}
+                                    <span class="badge-caret" aria-hidden="true">▾</span>
+                                </summary>
+
+                                <div class="badge-menu">
+                                    @if ($assigneeErrors->any())
+                                        <ul class="field-error-list">
+                                            @foreach ($assigneeErrors->all() as $error)
+                                                <li>{{ $error }}</li>
+                                            @endforeach
+                                        </ul>
+                                    @endif
+
+                                    <form class="badge-menu-form" method="post" action="{{ route('tickets.assignee.update', $ticket) }}">
+                                        @csrf
+                                        @method('patch')
+                                        <input type="hidden" name="_locale" value="{{ $locale }}">
+
+                                        <div class="badge-menu-options">
+                                            @php($isUnassigned = $ticket->assignee_id === null)
+                                            <button
+                                                class="badge-menu-option{{ $isUnassigned ? ' active' : '' }}"
+                                                type="submit"
+                                                name="assignee_id"
+                                                value=""
+                                                @disabled($isUnassigned)
+                                            >
+                                                <span>{{ __('tickets.common.unassigned') }}</span>
+                                                <span class="badge-menu-check" @if (! $isUnassigned) hidden @endif>✓</span>
+                                            </button>
+
+                                            @foreach ($assignees as $assignee)
+                                                @php($isCurrentAssignee = (string) $ticket->assignee_id === (string) $assignee->id)
+                                                <button
+                                                    class="badge-menu-option{{ $isCurrentAssignee ? ' active' : '' }}"
+                                                    type="submit"
+                                                    name="assignee_id"
+                                                    value="{{ $assignee->id }}"
+                                                    @disabled($isCurrentAssignee)
+                                                >
+                                                    <span>{{ $assignee->name }}</span>
+                                                    <span class="badge-menu-check" @if (! $isCurrentAssignee) hidden @endif>✓</span>
+                                                </button>
+                                            @endforeach
+                                        </div>
+                                    </form>
+                                </div>
+                            </details>
                         @else
                             <span class="badge">
                                 <span class="badge-dot"></span>
@@ -1000,17 +1232,49 @@
                         @endif
 
                         @if ($canUpdateCategory)
-                            <button
-                                class="badge badge-button"
-                                type="button"
-                                data-editor-toggle="hero-category-editor"
-                                aria-controls="hero-category-editor"
-                                aria-expanded="false"
-                                title="{{ __('tickets.show.hero.category') }}"
-                            >
-                                <span class="badge-dot"></span>
-                                {{ __('tickets.show.hero.category') }}: {{ $ticket->category?->translatedName() ?? __('tickets.common.not_available') }}
-                            </button>
+                            <details class="badge-switcher" @if ($categoryErrors->any()) open @endif>
+                                <summary
+                                    class="badge badge-button badge-menu-toggle"
+                                    aria-expanded="{{ $categoryErrors->any() ? 'true' : 'false' }}"
+                                    title="{{ __('tickets.show.hero.category') }}"
+                                >
+                                    <span class="badge-dot"></span>
+                                    {{ __('tickets.show.hero.category') }}: {{ $ticket->category?->translatedName() ?? __('tickets.common.not_available') }}
+                                    <span class="badge-caret" aria-hidden="true">▾</span>
+                                </summary>
+
+                                <div class="badge-menu">
+                                    @if ($categoryErrors->any())
+                                        <ul class="field-error-list">
+                                            @foreach ($categoryErrors->all() as $error)
+                                                <li>{{ $error }}</li>
+                                            @endforeach
+                                        </ul>
+                                    @endif
+
+                                    <form class="badge-menu-form" method="post" action="{{ route('tickets.category.update', $ticket) }}">
+                                        @csrf
+                                        @method('patch')
+                                        <input type="hidden" name="_locale" value="{{ $locale }}">
+
+                                        <div class="badge-menu-options">
+                                            @foreach ($categories as $category)
+                                                @php($isCurrentCategory = (string) $ticket->ticket_category_id === (string) $category->id)
+                                                <button
+                                                    class="badge-menu-option{{ $isCurrentCategory ? ' active' : '' }}"
+                                                    type="submit"
+                                                    name="category_id"
+                                                    value="{{ $category->id }}"
+                                                    @disabled($isCurrentCategory)
+                                                >
+                                                    <span>{{ $category->translatedName() }}</span>
+                                                    <span class="badge-menu-check" @if (! $isCurrentCategory) hidden @endif>✓</span>
+                                                </button>
+                                            @endforeach
+                                        </div>
+                                    </form>
+                                </div>
+                            </details>
                         @else
                             <span class="badge">
                                 <span class="badge-dot"></span>
@@ -1019,22 +1283,46 @@
                         @endif
 
                         @if ($canUpdatePin)
-                            <button
-                                class="badge badge-button{{ $pinningEnabled && $ticket->is_pinned ? ' badge-watching' : '' }}"
-                                type="button"
-                                data-editor-toggle="hero-pin-editor"
-                                aria-controls="hero-pin-editor"
-                                aria-expanded="false"
-                                title="{{ __('tickets.show.hero.pinning') }}"
-                            >
-                                <span class="badge-dot"></span>
-                                {{ __('tickets.show.hero.pinning') }}:
-                                @if (! $pinningEnabled)
-                                    {{ __('tickets.common.unavailable') }}
-                                @else
-                                    {{ $ticket->is_pinned ? __('tickets.common.yes') : __('tickets.common.no') }}
-                                @endif
-                            </button>
+                            <details class="badge-switcher" @if ($pinErrors->any()) open @endif>
+                                <summary
+                                    class="badge badge-button badge-menu-toggle{{ $pinningEnabled && $ticket->is_pinned ? ' badge-watching' : '' }}"
+                                    aria-expanded="{{ $pinErrors->any() ? 'true' : 'false' }}"
+                                    title="{{ __('tickets.show.hero.pinning') }}"
+                                >
+                                    <span class="badge-dot"></span>
+                                    {{ __('tickets.show.hero.pinning') }}:
+                                    @if (! $pinningEnabled)
+                                        {{ __('tickets.common.unavailable') }}
+                                    @else
+                                        {{ $ticket->is_pinned ? __('tickets.common.yes') : __('tickets.common.no') }}
+                                    @endif
+                                    <span class="badge-caret" aria-hidden="true">▾</span>
+                                </summary>
+
+                                <div class="badge-menu">
+                                    @if ($pinningEnabled)
+                                        @if ($pinErrors->any())
+                                            <ul class="field-error-list">
+                                                @foreach ($pinErrors->all() as $error)
+                                                    <li>{{ $error }}</li>
+                                                @endforeach
+                                            </ul>
+                                        @endif
+
+                                        <form class="badge-menu-form" method="post" action="{{ route('tickets.pin.update', $ticket) }}">
+                                            @csrf
+                                            @method('patch')
+                                            <input type="hidden" name="_locale" value="{{ $locale }}">
+
+                                            <button class="badge-menu-option" type="submit" name="pinned" value="{{ $ticket->is_pinned ? '0' : '1' }}">
+                                                <span>{{ $ticket->is_pinned ? __('tickets.show.forms.unpin_ticket') : __('tickets.show.forms.pin_ticket') }}</span>
+                                            </button>
+                                        </form>
+                                    @else
+                                        <div class="badge-menu-note">{{ __('tickets.show.forms.pinning_unavailable') }}</div>
+                                    @endif
+                                </div>
+                            </details>
                         @else
                             <span class="badge{{ $pinningEnabled && $ticket->is_pinned ? ' badge-watching' : '' }}">
                                 <span class="badge-dot"></span>
@@ -1048,17 +1336,61 @@
                         @endif
 
                         @if ($watcherActionEnabled)
-                            <button
-                                class="badge badge-button{{ $isWatchingTicket ? ' badge-watching' : '' }}"
-                                type="button"
-                                data-editor-toggle="hero-watcher-editor"
-                                aria-controls="hero-watcher-editor"
-                                aria-expanded="false"
-                                title="{{ __('tickets.show.hero.edit_title.watching') }}"
-                            >
-                                <span class="badge-dot"></span>
-                                {{ __('tickets.show.hero.watching') }}: {{ $isWatchingTicket ? __('tickets.common.yes') : __('tickets.common.no') }}
-                            </button>
+                            <details class="badge-switcher" @if ($watcherErrors->any()) open @endif>
+                                <summary
+                                    class="badge badge-button badge-menu-toggle{{ $isWatchingTicket ? ' badge-watching' : '' }}"
+                                    aria-expanded="{{ $watcherErrors->any() ? 'true' : 'false' }}"
+                                    title="{{ __('tickets.show.hero.edit_title.watching') }}"
+                                >
+                                    <span class="badge-dot"></span>
+                                    {{ __('tickets.show.hero.watching') }}: {{ $isWatchingTicket ? __('tickets.common.yes') : __('tickets.common.no') }}
+                                    <span class="badge-caret" aria-hidden="true">▾</span>
+                                </summary>
+
+                                <div class="badge-menu">
+                                    @if ($watcherErrors->any())
+                                        <ul class="field-error-list">
+                                            @foreach ($watcherErrors->all() as $error)
+                                                <li>{{ $error }}</li>
+                                            @endforeach
+                                        </ul>
+                                    @endif
+
+                                    @if ($isWatchingTicket)
+                                        <form class="badge-menu-form" method="post" action="{{ route('tickets.watchers.destroy', $ticket) }}">
+                                            @csrf
+                                            @method('delete')
+                                            <input type="hidden" name="_locale" value="{{ $locale }}">
+
+                                            <button class="badge-menu-option" type="submit">
+                                                <span>{{ __('tickets.show.forms.watch_stop') }}</span>
+                                            </button>
+                                        </form>
+                                    @else
+                                        <form class="badge-menu-form" method="post" action="{{ route('tickets.watchers.store', $ticket) }}">
+                                            @csrf
+                                            <input type="hidden" name="_locale" value="{{ $locale }}">
+
+                                            <button class="badge-menu-option" type="submit">
+                                                <span>{{ __('tickets.show.forms.watch_start') }}</span>
+                                            </button>
+                                        </form>
+                                    @endif
+
+                                    <div class="badge-menu-meta">
+                                        <div class="badge-menu-note">{{ __('tickets.show.hero.watchers_count', ['count' => $ticket->watchers->count()]) }}</div>
+                                        @if ($ticket->watchers->isEmpty())
+                                            <div class="watcher-empty">{{ __('tickets.show.hero.watchers_empty') }}</div>
+                                        @else
+                                            <div class="watcher-list" aria-label="{{ __('tickets.show.hero.watchers_label') }}">
+                                                @foreach ($ticket->watchers as $watcher)
+                                                    <span class="watcher-pill">{{ $watcher->name }}</span>
+                                                @endforeach
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            </details>
                         @else
                             <span class="badge{{ $isWatchingTicket ? ' badge-watching' : '' }}">
                                 <span class="badge-dot"></span>
@@ -1074,398 +1406,6 @@
                     @if ($heroAdminHasErrors)
                         <div class="hero-admin-errors">{{ __('tickets.show.hero.errors') }}</div>
                     @endif
-
-                    <div class="hero-admin-panels">
-                        @if ($canUpdateStatus)
-                            <form
-                                id="hero-status-editor"
-                                class="inline-form hero-admin-panel"
-                                data-editor-panel
-                                method="post"
-                                action="{{ route('tickets.status.update', $ticket) }}"
-                                hidden
-                            >
-                                @csrf
-                                @method('patch')
-
-                                <div class="comment-form-head">
-                                    <h3>{{ __('tickets.show.forms.change_status') }}</h3>
-                                </div>
-
-                                @if ($statusErrors->any())
-                                    <ul class="field-error-list">
-                                        @foreach ($statusErrors->all() as $error)
-                                            <li>{{ $error }}</li>
-                                        @endforeach
-                                    </ul>
-                                @endif
-
-                                <div class="field">
-                                    <label class="label" for="hero_status_id">{{ __('tickets.show.hero.status') }}</label>
-                                    <div class="inline-form-row">
-                                        <select class="select" id="hero_status_id" name="status_id" required>
-                                            @foreach ($statuses as $status)
-                                                <option
-                                                    value="{{ $status->id }}"
-                                                    @selected((string) old('status_id', $ticket->ticket_status_id) === (string) $status->id)
-                                                >
-                                                    {{ $status->translatedName() }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    @if ($statusErrors->has('status_id'))
-                                        <div class="field-error">{{ $statusErrors->first('status_id') }}</div>
-                                    @endif
-                                </div>
-
-                                <div class="inline-form-actions">
-                                    <button class="button button-primary button-compact" type="submit">{{ __('tickets.show.forms.save_status') }}</button>
-                                    <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-status-editor">{{ __('tickets.show.forms.cancel') }}</button>
-                                </div>
-                            </form>
-                        @endif
-
-                        @if ($canUpdatePriority)
-                            <form
-                                id="hero-priority-editor"
-                                class="inline-form hero-admin-panel"
-                                data-editor-panel
-                                method="post"
-                                action="{{ route('tickets.priority.update', $ticket) }}"
-                                hidden
-                            >
-                                @csrf
-                                @method('patch')
-
-                            <div class="comment-form-head">
-                                <h3>{{ __('tickets.show.forms.change_priority') }}</h3>
-                            </div>
-
-                            @if ($priorityErrors->any())
-                                <ul class="field-error-list">
-                                    @foreach ($priorityErrors->all() as $error)
-                                        <li>{{ $error }}</li>
-                                    @endforeach
-                                </ul>
-                            @endif
-
-                            <div class="field">
-                                <label class="label" for="hero_priority_id">{{ __('tickets.show.hero.priority') }}</label>
-                                <div class="inline-form-row">
-                                    <select class="select" id="hero_priority_id" name="priority_id" required>
-                                        @foreach ($priorities as $priority)
-                                            <option
-                                                value="{{ $priority->id }}"
-                                                @selected((string) old('priority_id', $ticket->ticket_priority_id) === (string) $priority->id)
-                                            >
-                                                {{ $priority->translatedName() }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                @if ($priorityErrors->has('priority_id'))
-                                    <div class="field-error">{{ $priorityErrors->first('priority_id') }}</div>
-                                @endif
-                            </div>
-
-                                <div class="inline-form-actions">
-                                    <button class="button button-primary button-compact" type="submit">{{ __('tickets.show.forms.save_priority') }}</button>
-                                    <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-priority-editor">{{ __('tickets.show.forms.cancel') }}</button>
-                                </div>
-                            </form>
-                        @endif
-
-                        @if ($canUpdateVisibility)
-                            <form
-                                id="hero-visibility-editor"
-                                class="inline-form hero-admin-panel"
-                                data-editor-panel
-                                method="post"
-                                action="{{ route('tickets.visibility.update', $ticket) }}"
-                                hidden
-                            >
-                                @csrf
-                                @method('patch')
-
-                            <div class="comment-form-head">
-                                <h3>{{ __('tickets.show.forms.change_visibility') }}</h3>
-                            </div>
-
-                            @if ($visibilityErrors->any())
-                                <ul class="field-error-list">
-                                    @foreach ($visibilityErrors->all() as $error)
-                                        <li>{{ $error }}</li>
-                                    @endforeach
-                                </ul>
-                            @endif
-
-                            <div class="field">
-                                <label class="label" for="hero_visibility">{{ __('tickets.show.hero.visibility') }}</label>
-                                <div class="inline-form-row">
-                                    <select class="select" id="hero_visibility" name="visibility" required>
-                                        @foreach ($visibilityOptions as $value => $label)
-                                            <option
-                                                value="{{ $value }}"
-                                                @selected((string) old('visibility', $ticket->normalizedVisibility()) === (string) $value)
-                                            >
-                                                {{ $label }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                @if ($visibilityErrors->has('visibility'))
-                                    <div class="field-error">{{ $visibilityErrors->first('visibility') }}</div>
-                                @endif
-                            </div>
-
-                                <div class="inline-form-actions">
-                                    <button class="button button-primary button-compact" type="submit">{{ __('tickets.show.forms.save_visibility') }}</button>
-                                    <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-visibility-editor">{{ __('tickets.show.forms.cancel') }}</button>
-                                </div>
-                            </form>
-                        @endif
-
-                        @if ($canUpdateAssignee)
-                            <form
-                                id="hero-assignee-editor"
-                                class="inline-form hero-admin-panel"
-                                data-editor-panel
-                                method="post"
-                                action="{{ route('tickets.assignee.update', $ticket) }}"
-                                hidden
-                            >
-                                @csrf
-                                @method('patch')
-
-                            <div class="comment-form-head">
-                                <h3>{{ __('tickets.show.forms.change_assignee') }}</h3>
-                            </div>
-
-                            @if ($assigneeErrors->any())
-                                <ul class="field-error-list">
-                                    @foreach ($assigneeErrors->all() as $error)
-                                        <li>{{ $error }}</li>
-                                    @endforeach
-                                </ul>
-                            @endif
-
-                            <div class="field">
-                                <label class="label" for="hero_assignee_id">{{ __('tickets.show.hero.assignee') }}</label>
-                                <div class="inline-form-row">
-                                    <select class="select" id="hero_assignee_id" name="assignee_id">
-                                        <option value="">{{ __('tickets.common.unassigned') }}</option>
-                                        @foreach ($assignees as $assignee)
-                                            <option
-                                                value="{{ $assignee->id }}"
-                                                @selected((string) old('assignee_id', $ticket->assignee_id) === (string) $assignee->id)
-                                            >
-                                                {{ $assignee->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                @if ($assigneeErrors->has('assignee_id'))
-                                    <div class="field-error">{{ $assigneeErrors->first('assignee_id') }}</div>
-                                @endif
-                            </div>
-
-                                <div class="inline-form-actions">
-                                    <button class="button button-primary button-compact" type="submit">{{ __('tickets.show.forms.save_assignee') }}</button>
-                                    <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-assignee-editor">{{ __('tickets.show.forms.cancel') }}</button>
-                                </div>
-                            </form>
-                        @endif
-
-                        @if ($canUpdateCategory)
-                            <form
-                                id="hero-category-editor"
-                                class="inline-form hero-admin-panel"
-                                data-editor-panel
-                                method="post"
-                                action="{{ route('tickets.category.update', $ticket) }}"
-                                hidden
-                            >
-                                @csrf
-                                @method('patch')
-
-                            <div class="comment-form-head">
-                                <h3>{{ __('tickets.show.forms.change_category') }}</h3>
-                            </div>
-
-                            @if ($categoryErrors->any())
-                                <ul class="field-error-list">
-                                    @foreach ($categoryErrors->all() as $error)
-                                        <li>{{ $error }}</li>
-                                    @endforeach
-                                </ul>
-                            @endif
-
-                            <div class="field">
-                                <label class="label" for="hero_category_id">{{ __('tickets.show.hero.category') }}</label>
-                                <div class="inline-form-row">
-                                    <select class="select" id="hero_category_id" name="category_id" required>
-                                        @foreach ($categories as $category)
-                                            <option
-                                                value="{{ $category->id }}"
-                                                @selected((string) old('category_id', $ticket->ticket_category_id) === (string) $category->id)
-                                            >
-                                                {{ $category->translatedName() }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                @if ($categoryErrors->has('category_id'))
-                                    <div class="field-error">{{ $categoryErrors->first('category_id') }}</div>
-                                @endif
-                            </div>
-
-                                <div class="inline-form-actions">
-                                    <button class="button button-primary button-compact" type="submit">{{ __('tickets.show.forms.save_category') }}</button>
-                                    <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-category-editor">{{ __('tickets.show.forms.cancel') }}</button>
-                                </div>
-                            </form>
-                        @endif
-
-                        @if ($canUpdatePin)
-                            @if ($pinningEnabled)
-                                <form
-                                    id="hero-pin-editor"
-                                    class="inline-form hero-admin-panel"
-                                    data-editor-panel
-                                    method="post"
-                                    action="{{ route('tickets.pin.update', $ticket) }}"
-                                    hidden
-                                >
-                                    @csrf
-                                    @method('patch')
-                                    <input type="hidden" name="pinned" value="{{ $ticket->is_pinned ? '0' : '1' }}">
-
-                                    <div class="comment-form-head">
-                                        <h3>{{ __('tickets.show.forms.change_pinning') }}</h3>
-                                    </div>
-
-                                    @if ($pinErrors->any())
-                                        <ul class="field-error-list">
-                                            @foreach ($pinErrors->all() as $error)
-                                                <li>{{ $error }}</li>
-                                            @endforeach
-                                        </ul>
-                                    @endif
-
-                                    @if ($pinErrors->has('pinned'))
-                                        <div class="field-error">{{ $pinErrors->first('pinned') }}</div>
-                                    @endif
-
-                                    <div class="inline-form-actions">
-                                        <button class="button button-primary button-compact" type="submit">
-                                            {{ $ticket->is_pinned ? __('tickets.show.forms.unpin_ticket') : __('tickets.show.forms.pin_ticket') }}
-                                        </button>
-                                        <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-pin-editor">{{ __('tickets.show.forms.cancel') }}</button>
-                                    </div>
-                                </form>
-                            @else
-                                <div
-                                    id="hero-pin-editor"
-                                    class="inline-form hero-admin-panel"
-                                    data-editor-panel
-                                    hidden
-                                >
-                                    <div class="comment-form-head">
-                                        <h3>{{ __('tickets.show.forms.pinning') }}</h3>
-                                        <p>{{ __('tickets.show.forms.pinning_unavailable') }}</p>
-                                    </div>
-
-                                    <div class="inline-form-actions">
-                                        <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-pin-editor">{{ __('tickets.common.close') }}</button>
-                                    </div>
-                                </div>
-                            @endif
-                        @endif
-
-                        @if ($watcherActionEnabled)
-                            @if ($isWatchingTicket)
-                                <form
-                                    id="hero-watcher-editor"
-                                    class="inline-form hero-admin-panel"
-                                    data-editor-panel
-                                    method="post"
-                                    action="{{ route('tickets.watchers.destroy', $ticket) }}"
-                                    hidden
-                                >
-                                    @csrf
-                                    @method('delete')
-
-                                    <div class="comment-form-head">
-                                        <h3>{{ __('tickets.show.forms.watching') }}</h3>
-                                        <p>{{ __('tickets.show.hero.watchers_count', ['count' => $ticket->watchers->count()]) }}</p>
-                                    </div>
-
-                                    @if ($watcherErrors->any())
-                                        <ul class="field-error-list">
-                                            @foreach ($watcherErrors->all() as $error)
-                                                <li>{{ $error }}</li>
-                                            @endforeach
-                                        </ul>
-                                    @endif
-
-                                    <div class="inline-form-actions">
-                                        <button class="button button-secondary button-compact" type="submit">{{ __('tickets.show.forms.watch_stop') }}</button>
-                                        <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-watcher-editor">{{ __('tickets.show.forms.cancel') }}</button>
-                                    </div>
-
-                                    @if ($ticket->watchers->isEmpty())
-                                        <div class="watcher-empty">{{ __('tickets.show.hero.watchers_empty') }}</div>
-                                    @else
-                                        <div class="watcher-list" aria-label="{{ __('tickets.show.hero.watchers_label') }}">
-                                            @foreach ($ticket->watchers as $watcher)
-                                                <span class="watcher-pill">{{ $watcher->name }}</span>
-                                            @endforeach
-                                        </div>
-                                    @endif
-                                </form>
-                            @else
-                                <form
-                                    id="hero-watcher-editor"
-                                    class="inline-form hero-admin-panel"
-                                    data-editor-panel
-                                    method="post"
-                                    action="{{ route('tickets.watchers.store', $ticket) }}"
-                                    hidden
-                                >
-                                    @csrf
-
-                                    <div class="comment-form-head">
-                                        <h3>{{ __('tickets.show.forms.watching') }}</h3>
-                                        <p>{{ __('tickets.show.hero.watchers_count', ['count' => $ticket->watchers->count()]) }}</p>
-                                    </div>
-
-                                    @if ($watcherErrors->any())
-                                        <ul class="field-error-list">
-                                            @foreach ($watcherErrors->all() as $error)
-                                                <li>{{ $error }}</li>
-                                            @endforeach
-                                        </ul>
-                                    @endif
-
-                                    <div class="inline-form-actions">
-                                        <button class="button button-primary button-compact" type="submit">{{ __('tickets.show.forms.watch_start') }}</button>
-                                        <button class="button button-secondary button-compact" type="button" data-editor-cancel="hero-watcher-editor">{{ __('tickets.show.forms.cancel') }}</button>
-                                    </div>
-
-                                    @if ($ticket->watchers->isEmpty())
-                                        <div class="watcher-empty">{{ __('tickets.show.hero.watchers_empty') }}</div>
-                                    @else
-                                        <div class="watcher-list" aria-label="{{ __('tickets.show.hero.watchers_label') }}">
-                                            @foreach ($ticket->watchers as $watcher)
-                                                <span class="watcher-pill">{{ $watcher->name }}</span>
-                                            @endforeach
-                                        </div>
-                                    @endif
-                                </form>
-                            @endif
-                        @endif
-                    </div>
                 </div>
             </section>
 
@@ -1852,6 +1792,55 @@
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            const syncBadgeSwitcher = (switcher) => {
+                const summary = switcher.querySelector('summary');
+
+                if (! summary) {
+                    return;
+                }
+
+                summary.setAttribute('aria-expanded', switcher.open ? 'true' : 'false');
+            };
+
+            document.querySelectorAll('.badge-switcher').forEach((switcher) => {
+                syncBadgeSwitcher(switcher);
+
+                switcher.addEventListener('toggle', () => {
+                    syncBadgeSwitcher(switcher);
+
+                    if (! switcher.open) {
+                        return;
+                    }
+
+                    document.querySelectorAll('.badge-switcher[open]').forEach((otherSwitcher) => {
+                        if (otherSwitcher !== switcher) {
+                            otherSwitcher.open = false;
+                            syncBadgeSwitcher(otherSwitcher);
+                        }
+                    });
+                });
+            });
+
+            document.addEventListener('click', (event) => {
+                document.querySelectorAll('.badge-switcher[open]').forEach((switcher) => {
+                    if (! switcher.contains(event.target)) {
+                        switcher.open = false;
+                        syncBadgeSwitcher(switcher);
+                    }
+                });
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key !== 'Escape') {
+                    return;
+                }
+
+                document.querySelectorAll('.badge-switcher[open]').forEach((switcher) => {
+                    switcher.open = false;
+                    syncBadgeSwitcher(switcher);
+                });
+            });
+
             const openPanel = (panel) => {
                 panel.hidden = false;
                 setExpanded(panel.id, true);
