@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Role;
 use App\Models\Ticket;
 use App\Models\TicketCategory;
+use App\Models\TicketHistory;
 use App\Models\TicketPriority;
 use App\Models\TicketStatus;
 use App\Models\User;
@@ -338,6 +339,170 @@ class TicketVisibilityTest extends TestCase
             'id' => $ticket->id,
             'requester_id' => $requester->id,
         ]);
+    }
+
+    public function test_assigning_assignee_on_new_ticket_moves_status_to_assigned(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $assignee = $this->createUserWithRole($this->solverRole);
+        $assignedStatus = TicketStatus::query()->create([
+            'name' => 'Assigned',
+            'slug' => 'assigned',
+            'sort_order' => 2,
+        ]);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'status' => $this->defaultStatus,
+            'visibility' => Ticket::VISIBILITY_INTERNAL,
+        ]);
+
+        $this->actingAs($solver)
+            ->patch(route('tickets.assignee.update', $ticket), [
+                'assignee_id' => $assignee->id,
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        $ticket->refresh();
+
+        $this->assertSame($assignee->id, $ticket->assignee_id);
+        $this->assertSame($assignedStatus->id, $ticket->ticket_status_id);
+
+        $updateEntry = TicketHistory::query()
+            ->where('ticket_id', $ticket->id)
+            ->where('event', TicketHistory::EVENT_UPDATED)
+            ->latest('id')
+            ->first();
+
+        $this->assertNotNull($updateEntry);
+        $this->assertSame(['status', 'assignee'], $updateEntry->meta['changed_fields']);
+    }
+
+    public function test_assigning_assignee_on_non_new_ticket_keeps_status_unchanged(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $assignee = $this->createUserWithRole($this->solverRole);
+        $waitingUserStatus = TicketStatus::query()->create([
+            'name' => 'Waiting for User',
+            'slug' => 'waiting_user',
+            'sort_order' => 2,
+        ]);
+        TicketStatus::query()->create([
+            'name' => 'Assigned',
+            'slug' => 'assigned',
+            'sort_order' => 3,
+        ]);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'status' => $waitingUserStatus,
+            'visibility' => Ticket::VISIBILITY_INTERNAL,
+        ]);
+
+        $this->actingAs($solver)
+            ->patch(route('tickets.assignee.update', $ticket), [
+                'assignee_id' => $assignee->id,
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        $ticket->refresh();
+
+        $this->assertSame($assignee->id, $ticket->assignee_id);
+        $this->assertSame($waitingUserStatus->id, $ticket->ticket_status_id);
+    }
+
+    public function test_requester_edit_on_waiting_user_moves_status_to_assigned(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $waitingUserStatus = TicketStatus::query()->create([
+            'name' => 'Waiting for User',
+            'slug' => 'waiting_user',
+            'sort_order' => 2,
+        ]);
+        $assignedStatus = TicketStatus::query()->create([
+            'name' => 'Assigned',
+            'slug' => 'assigned',
+            'sort_order' => 3,
+        ]);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'status' => $waitingUserStatus,
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+        ]);
+
+        $this->actingAs($requester)
+            ->patch(route('tickets.update', $ticket), [
+                'subject' => 'Requester updated subject',
+                'description' => 'Requester updated description',
+                'priority_id' => $this->defaultPriority->id,
+                'category_id' => $this->defaultCategory->id,
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        $ticket->refresh();
+
+        $this->assertSame($assignedStatus->id, $ticket->ticket_status_id);
+    }
+
+    public function test_requester_public_comment_on_waiting_user_moves_status_to_assigned(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $waitingUserStatus = TicketStatus::query()->create([
+            'name' => 'Waiting for User',
+            'slug' => 'waiting_user',
+            'sort_order' => 2,
+        ]);
+        $assignedStatus = TicketStatus::query()->create([
+            'name' => 'Assigned',
+            'slug' => 'assigned',
+            'sort_order' => 3,
+        ]);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'status' => $waitingUserStatus,
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+        ]);
+
+        $this->actingAs($requester)
+            ->post(route('tickets.comments.store', $ticket), [
+                'body' => 'Requester provided additional details.',
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        $ticket->refresh();
+
+        $this->assertSame($assignedStatus->id, $ticket->ticket_status_id);
+    }
+
+    public function test_non_requester_action_on_waiting_user_keeps_status_unchanged(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $waitingUserStatus = TicketStatus::query()->create([
+            'name' => 'Waiting for User',
+            'slug' => 'waiting_user',
+            'sort_order' => 2,
+        ]);
+        TicketStatus::query()->create([
+            'name' => 'Assigned',
+            'slug' => 'assigned',
+            'sort_order' => 3,
+        ]);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'status' => $waitingUserStatus,
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+        ]);
+
+        $this->actingAs($solver)
+            ->post(route('tickets.comments.store', $ticket), [
+                'body' => 'Solver comment without requester action.',
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        $ticket->refresh();
+
+        $this->assertSame($waitingUserStatus->id, $ticket->ticket_status_id);
     }
 
     public function test_inline_json_update_respects_current_page_locale(): void

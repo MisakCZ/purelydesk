@@ -7,6 +7,8 @@ use App\Models\TicketComment;
 use App\Models\User;
 use App\Policies\TicketPolicy;
 use App\Support\ResolvesHelpdeskUser;
+use App\Services\TicketHistoryService;
+use App\Services\TicketWorkflowAutomationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -18,6 +20,7 @@ class TicketCommentController extends Controller
     public function store(Request $request, Ticket $ticket): RedirectResponse
     {
         $this->authorizeTicketAbility('commentPublic', $ticket);
+        $actor = $this->currentHelpdeskUser();
 
         $validated = $request->validateWithBag('comment', [
             'body' => ['required', 'string'],
@@ -34,6 +37,17 @@ class TicketCommentController extends Controller
             'body',
             $parentComment?->id,
         );
+
+        $workflowAttributes = $this->workflowAutomationService()->attributesForRequesterActivity($ticket, $actor);
+
+        if ($workflowAttributes !== []) {
+            $this->ticketHistoryService()->applyUpdateWithHistory(
+                $ticket,
+                $workflowAttributes,
+                'requester_public_comment',
+                $actor,
+            );
+        }
 
         return redirect()
             ->route('tickets.show', $ticket)
@@ -128,5 +142,15 @@ class TicketCommentController extends Controller
             app(TicketPolicy::class)->{$ability}($this->currentHelpdeskUser(), $ticket),
             403,
         );
+    }
+
+    private function workflowAutomationService(): TicketWorkflowAutomationService
+    {
+        return app(TicketWorkflowAutomationService::class);
+    }
+
+    private function ticketHistoryService(): TicketHistoryService
+    {
+        return app(TicketHistoryService::class);
     }
 }

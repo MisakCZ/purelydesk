@@ -21,6 +21,8 @@ use App\Models\User;
 use App\Policies\TicketPolicy;
 use App\Support\LocaleManager;
 use App\Support\ResolvesHelpdeskUser;
+use App\Services\TicketHistoryService;
+use App\Services\TicketWorkflowAutomationService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -250,10 +252,12 @@ class TicketController extends Controller
     {
         $this->authorizeTicketAbility('updateAssignee', $ticket);
 
+        $assigneeId = $request->filled('assignee_id')
+            ? (int) $request->input('assignee_id')
+            : null;
+
         return $this->applyTicketUpdateWithHistory($ticket, [
-            'assignee_id' => $request->filled('assignee_id')
-                ? (int) $request->input('assignee_id')
-                : null,
+            ...$this->workflowAutomationService()->attributesForAssigneeUpdate($ticket, $assigneeId),
         ], __('tickets.flash.assignee_updated'), 'assignee_update');
     }
 
@@ -350,7 +354,11 @@ class TicketController extends Controller
 
         return $this->applyTicketUpdateWithHistory(
             $ticket,
-            $this->buildEditableTicketAttributes($validated),
+            $this->workflowAutomationService()->attributesForRequesterActivity(
+                $ticket,
+                $this->currentHelpdeskUser(),
+                $this->buildEditableTicketAttributes($validated),
+            ),
             'Ticket byl úspěšně upraven.',
             'ticket_update',
         );
@@ -442,20 +450,12 @@ class TicketController extends Controller
         ?Request $request = null,
         ?string $jsonSuccessMessageKey = null,
     ): RedirectResponse|JsonResponse {
-        $ticket->loadMissing($this->ticketSnapshotRelations());
-
-        $oldSnapshot = $this->captureTicketSnapshot($ticket);
-
-        $this->ensureOriginalSnapshot($ticket, 'backfill_before_update');
-
-        $ticket->update($attributes);
-
-        $ticket->refresh();
-        $ticket->load($this->ticketSnapshotRelations());
-
-        $newSnapshot = $this->captureTicketSnapshot($ticket);
-
-        $this->recordSnapshotUpdate($ticket, $oldSnapshot, $newSnapshot, $action);
+        $ticket = $this->ticketHistoryService()->applyUpdateWithHistory(
+            $ticket,
+            $attributes,
+            $action,
+            $this->currentHelpdeskUser(),
+        );
 
         if ($request instanceof Request && $request->expectsJson()) {
             $responseLocale = app(LocaleManager::class)->resolveForRequest($request);
@@ -846,5 +846,15 @@ class TicketController extends Controller
     private function ensureTicketCanBeViewed(Ticket $ticket): void
     {
         $this->authorizeTicketAbility('view', $ticket);
+    }
+
+    private function workflowAutomationService(): TicketWorkflowAutomationService
+    {
+        return app(TicketWorkflowAutomationService::class);
+    }
+
+    private function ticketHistoryService(): TicketHistoryService
+    {
+        return app(TicketHistoryService::class);
     }
 }
