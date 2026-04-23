@@ -67,6 +67,22 @@
             gap: 1.5rem;
         }
 
+        .section-comments-public {
+            order: 20;
+        }
+
+        .section-comments-internal {
+            order: 21;
+        }
+
+        .section-content-meta {
+            order: 30;
+        }
+
+        .section-history {
+            order: 40;
+        }
+
         .page-head-actions {
             display: flex;
             align-items: center;
@@ -380,6 +396,46 @@
             white-space: nowrap;
         }
 
+        .badge-tone-slate {
+            background: #eef2f6;
+            color: #475569;
+        }
+
+        .badge-tone-blue {
+            background: #e6efff;
+            color: #1d4ed8;
+        }
+
+        .badge-tone-amber {
+            background: #fff4db;
+            color: #b45309;
+        }
+
+        .badge-tone-violet {
+            background: #f3e8ff;
+            color: #7c3aed;
+        }
+
+        .badge-tone-cyan {
+            background: #e6fffb;
+            color: #0f766e;
+        }
+
+        .badge-tone-green {
+            background: #e8f8ee;
+            color: #15803d;
+        }
+
+        .badge-tone-neutral {
+            background: #e5e7eb;
+            color: #111827;
+        }
+
+        .badge-tone-red {
+            background: #ffe7e7;
+            color: #b91c1c;
+        }
+
         .badge-button {
             border: 0;
             cursor: pointer;
@@ -387,8 +443,8 @@
         }
 
         .badge-button:hover {
-            background: #e2edf6;
-            color: #0f766e;
+            filter: brightness(0.98);
+            box-shadow: inset 0 0 0 1px rgba(15, 118, 110, 0.18);
         }
 
         .badge-button:focus-visible {
@@ -864,7 +920,7 @@
                     <div class="ticket-meta">
                         @if ($canUpdateStatus)
                             <button
-                                class="badge badge-button"
+                                class="badge badge-button {{ $ticket->status?->badgeToneClass() ?? 'badge-tone-slate' }}"
                                 type="button"
                                 data-editor-toggle="hero-status-editor"
                                 aria-controls="hero-status-editor"
@@ -875,7 +931,7 @@
                                 Status: {{ $ticket->status?->name ?? '—' }}
                             </button>
                         @else
-                            <span class="badge">
+                            <span class="badge {{ $ticket->status?->badgeToneClass() ?? 'badge-tone-slate' }}">
                                 <span class="badge-dot"></span>
                                 Status: {{ $ticket->status?->name ?? '—' }}
                             </span>
@@ -883,7 +939,7 @@
 
                         @if ($canUpdatePriority)
                             <button
-                                class="badge badge-button"
+                                class="badge badge-button {{ $ticket->priority?->badgeToneClass() ?? 'badge-tone-slate' }}"
                                 type="button"
                                 data-editor-toggle="hero-priority-editor"
                                 aria-controls="hero-priority-editor"
@@ -894,7 +950,7 @@
                                 Priorita: {{ $ticket->priority?->name ?? '—' }}
                             </button>
                         @else
-                            <span class="badge">
+                            <span class="badge {{ $ticket->priority?->badgeToneClass() ?? 'badge-tone-slate' }}">
                                 <span class="badge-dot"></span>
                                 Priorita: {{ $ticket->priority?->name ?? '—' }}
                             </span>
@@ -1408,7 +1464,7 @@
                 </div>
             </section>
 
-            <section class="section-panel">
+            <section class="section-panel section-content-meta">
                 <div class="section-panel-head">
                     <div>
                         <h2>Obsah a metadata</h2>
@@ -1488,7 +1544,7 @@
                 </div>
             </section>
 
-            <section class="comment-section">
+            <section class="comment-section section-comments-public">
                 <div class="page-head" id="comments">
                     <div class="page-head-bar">
                         <div>
@@ -1657,7 +1713,7 @@
             </section>
 
             @if ($canViewInternalNotes)
-                <section class="comment-section">
+                <section class="comment-section section-comments-internal">
                     <div class="page-head" id="internal-notes">
                         <div class="page-head-bar">
                             <div>
@@ -1746,7 +1802,7 @@
                 </section>
             @endif
 
-            <section class="section-panel">
+            <section class="section-panel section-history">
                 <div class="section-panel-head" id="history">
                     <div>
                         <h2>Historie změn</h2>

@@ -224,41 +224,27 @@
             border-color: #0f766e;
         }
 
-        .badge-watching {
-            background: #dff5f2;
-            color: #0f766e;
-        }
-
-        .watch-state {
-            color: #5b6b79;
-        }
-
-        .watch-state.watching {
-            color: #0f766e;
-            font-weight: 600;
-        }
-
         .table-wrap {
-            overflow-x: auto;
+            overflow: visible;
         }
 
         .ticket-table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 980px;
+            table-layout: fixed;
         }
 
         .ticket-table th,
         .ticket-table td {
-            padding: 0.9rem 1rem;
+            padding: 0.8rem 0.85rem;
             text-align: left;
             border-bottom: 1px solid #e5ebf1;
-            vertical-align: middle;
+            vertical-align: top;
         }
 
         .ticket-table th {
             color: #5b6b79;
-            font-size: 0.8rem;
+            font-size: 0.76rem;
             font-weight: 700;
             letter-spacing: 0.04em;
             text-transform: uppercase;
@@ -269,24 +255,87 @@
             background: #f8fbfc;
         }
 
-        .ticket-number {
-            font-weight: 700;
-            color: #0f172a;
+        .ticket-row-updated {
+            background: #f0fdf4 !important;
+        }
+
+        .ticket-col-number {
+            width: 7.4rem;
+        }
+
+        .ticket-col-status,
+        .ticket-col-priority {
+            width: 11rem;
+        }
+
+        .ticket-col-updated {
+            width: 7.35rem;
             white-space: nowrap;
         }
 
-        .subject {
-            min-width: 18rem;
+        .ticket-number {
+            color: #64748b;
+            font-size: 0.82rem;
+            font-weight: 500;
+            line-height: 1.35;
+            white-space: nowrap;
         }
 
-        .subject strong {
+        .ticket-updated-value {
+            color: #64748b;
+            font-size: 0.82rem;
+            font-weight: 500;
+            line-height: 1.35;
+            white-space: nowrap;
+        }
+
+        .ticket-number .ticket-link {
+            display: inline-flex;
+            align-items: center;
+            min-height: 2rem;
+        }
+
+        .subject {
+            min-width: 0;
+            padding-left: 1.45rem !important;
+        }
+
+        .subject-title {
             display: block;
             color: #13202b;
+            line-height: 1.35;
+            font-size: 1rem;
+            font-weight: 700;
+            overflow-wrap: anywhere;
         }
 
-        .subject span,
-        .muted {
+        .subject-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem 0.8rem;
+            margin-top: 0.45rem;
+            font-size: 0.84rem;
             color: #5b6b79;
+        }
+
+        .subject-meta-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            line-height: 1.4;
+        }
+
+        .subject-meta-item strong {
+            color: #334155;
+            font-weight: 600;
+        }
+
+        .subject-meta-pill {
+            padding: 0.15rem 0.5rem;
+            border-radius: 999px;
+            background: #f5f0df;
+            color: #8a5a00;
+            font-weight: 700;
         }
 
         .badge {
@@ -295,11 +344,52 @@
             gap: 0.45rem;
             padding: 0.35rem 0.7rem;
             border-radius: 999px;
-            font-size: 0.85rem;
+            font-size: 0.84rem;
             font-weight: 600;
             background: #eef2f6;
             color: #334155;
             white-space: nowrap;
+            max-width: 100%;
+        }
+
+        .badge-tone-slate {
+            background: #eef2f6;
+            color: #475569;
+        }
+
+        .badge-tone-blue {
+            background: #e6efff;
+            color: #1d4ed8;
+        }
+
+        .badge-tone-amber {
+            background: #fff4db;
+            color: #b45309;
+        }
+
+        .badge-tone-violet {
+            background: #f3e8ff;
+            color: #7c3aed;
+        }
+
+        .badge-tone-cyan {
+            background: #e6fffb;
+            color: #0f766e;
+        }
+
+        .badge-tone-green {
+            background: #e8f8ee;
+            color: #15803d;
+        }
+
+        .badge-tone-neutral {
+            background: #e5e7eb;
+            color: #111827;
+        }
+
+        .badge-tone-red {
+            background: #ffe7e7;
+            color: #b91c1c;
         }
 
         .badge-dot {
@@ -308,6 +398,36 @@
             border-radius: 999px;
             background: currentColor;
             opacity: 0.7;
+            flex: 0 0 auto;
+        }
+
+        .badge-button {
+            border: 0;
+            cursor: pointer;
+        }
+
+        .list-inline-trigger {
+            width: 100%;
+            justify-content: flex-start;
+            text-align: left;
+            transition: box-shadow 0.15s ease, filter 0.15s ease;
+        }
+
+        .list-inline-trigger:hover {
+            filter: brightness(0.98);
+            box-shadow: inset 0 0 0 1px rgba(15, 118, 110, 0.18);
+        }
+
+        .list-inline-trigger[aria-expanded="true"] {
+            filter: brightness(0.97);
+            box-shadow: inset 0 0 0 1px rgba(15, 118, 110, 0.18);
+        }
+
+        .badge-label {
+            display: inline-block;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .ticket-link {
@@ -318,6 +438,80 @@
         .ticket-link:hover {
             color: #0f766e;
             text-decoration: underline;
+        }
+
+        .muted {
+            color: #5b6b79;
+        }
+
+        .alert {
+            margin-bottom: 1rem;
+            padding: 0.9rem 1rem;
+            border-radius: 0.9rem;
+            border: 1px solid #b7e4dd;
+            background: #ecfdf8;
+            color: #0f513f;
+        }
+
+        .inline-feedback {
+            margin-top: -0.2rem;
+        }
+
+        .list-inline-editor {
+            position: fixed;
+            z-index: 40;
+            width: min(21rem, calc(100vw - 1.5rem));
+            padding: 1rem;
+            border: 1px solid #d9e0e7;
+            border-radius: 1rem;
+            background: #fff;
+            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
+        }
+
+        .list-inline-editor.is-saving {
+            opacity: 0.8;
+        }
+
+        .list-inline-editor-form {
+            display: grid;
+            gap: 0.8rem;
+        }
+
+        .list-inline-editor-head {
+            display: grid;
+            gap: 0.25rem;
+        }
+
+        .list-inline-editor-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #13202b;
+        }
+
+        .list-inline-editor-ticket {
+            color: #5b6b79;
+            font-size: 0.88rem;
+            line-height: 1.45;
+        }
+
+        .list-inline-editor-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0.65rem;
+        }
+
+        .button-compact {
+            min-height: 2.35rem;
+            padding: 0.5rem 0.8rem;
+            border-radius: 0.8rem;
+            font-size: 0.9rem;
+        }
+
+        .field-error {
+            color: #b42318;
+            font-size: 0.9rem;
+            line-height: 1.5;
         }
 
         .empty-state {
@@ -339,15 +533,6 @@
             margin: 0.75rem auto 0;
             color: #5b6b79;
             line-height: 1.6;
-        }
-
-        .alert {
-            margin-bottom: 1rem;
-            padding: 0.9rem 1rem;
-            border-radius: 0.9rem;
-            border: 1px solid #b7e4dd;
-            background: #ecfdf8;
-            color: #0f513f;
         }
 
         .pagination-wrap {
@@ -402,6 +587,27 @@
             pointer-events: none;
         }
 
+        @media (max-width: 1180px) and (min-width: 721px) {
+            .filter-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+
+            .ticket-col-status,
+            .ticket-col-priority {
+                width: 10rem;
+            }
+        }
+
+        @media (max-width: 860px) {
+            .table-wrap {
+                overflow-x: auto;
+            }
+
+            .ticket-table {
+                min-width: 760px;
+            }
+        }
+
         @media (max-width: 720px) {
             .filter-grid {
                 grid-template-columns: 1fr;
@@ -423,12 +629,6 @@
                 flex-direction: column;
             }
         }
-
-        @media (max-width: 1180px) and (min-width: 721px) {
-            .filter-grid {
-                grid-template-columns: repeat(3, minmax(0, 1fr));
-            }
-        }
     </style>
 @endpush
 
@@ -437,31 +637,328 @@
         document.addEventListener('DOMContentLoaded', () => {
             const filterForm = document.querySelector('[data-ticket-filters]');
 
-            if (! filterForm) {
-                return;
-            }
+            if (filterForm) {
+                const searchInput = filterForm.querySelector('[data-filter-search-input]');
+                const searchHidden = filterForm.querySelector('[data-filter-search-hidden]');
 
-            const searchInput = filterForm.querySelector('[data-filter-search-input]');
-            const searchHidden = filterForm.querySelector('[data-filter-search-hidden]');
-
-            filterForm.querySelectorAll('[data-filter-auto-submit]').forEach((field) => {
-                field.addEventListener('change', () => {
-                    filterForm.requestSubmit();
+                filterForm.querySelectorAll('[data-filter-auto-submit]').forEach((field) => {
+                    field.addEventListener('change', () => {
+                        filterForm.requestSubmit();
+                    });
                 });
-            });
 
-            if (! searchInput || ! searchHidden) {
+                if (searchInput && searchHidden) {
+                    searchInput.addEventListener('keydown', (event) => {
+                        if (event.key !== 'Enter') {
+                            return;
+                        }
+
+                        event.preventDefault();
+                        searchHidden.value = searchInput.value.trim();
+                        filterForm.requestSubmit();
+                    });
+                }
+            }
+
+            const editor = document.getElementById('ticket-inline-editor');
+            const feedback = document.getElementById('ticket-inline-feedback');
+
+            if (! editor) {
                 return;
             }
 
-            searchInput.addEventListener('keydown', (event) => {
-                if (event.key !== 'Enter') {
+            const form = editor.querySelector('[data-inline-form]');
+            const select = editor.querySelector('[data-inline-select]');
+            const title = editor.querySelector('[data-inline-title]');
+            const ticketLabel = editor.querySelector('[data-inline-ticket]');
+            const errorBox = editor.querySelector('[data-inline-error]');
+            const submitButton = editor.querySelector('[data-inline-submit]');
+            const cancelButton = editor.querySelector('[data-inline-cancel]');
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            const optionNodes = {
+                status: document.getElementById('ticket-inline-options-status'),
+                priority: document.getElementById('ticket-inline-options-priority'),
+            };
+            const options = Object.fromEntries(Object.entries(optionNodes).map(([key, node]) => [
+                key,
+                node ? JSON.parse(node.textContent) : [],
+            ]));
+
+            let activeTrigger = null;
+            let feedbackTimeout = null;
+
+            const hideFeedback = () => {
+                if (! feedback) {
                     return;
                 }
 
+                feedback.hidden = true;
+                feedback.textContent = '';
+            };
+
+            const showFeedback = (message) => {
+                if (! feedback || ! message) {
+                    return;
+                }
+
+                feedback.textContent = message;
+                feedback.hidden = false;
+
+                if (feedbackTimeout) {
+                    window.clearTimeout(feedbackTimeout);
+                }
+
+                feedbackTimeout = window.setTimeout(() => {
+                    hideFeedback();
+                }, 2600);
+            };
+
+            const setSavingState = (isSaving) => {
+                editor.classList.toggle('is-saving', isSaving);
+                submitButton.disabled = isSaving;
+                cancelButton.disabled = isSaving;
+                select.disabled = isSaving;
+            };
+
+            const setTriggerExpanded = (trigger, expanded) => {
+                if (! trigger) {
+                    return;
+                }
+
+                trigger.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+            };
+
+            const closeEditor = () => {
+                setTriggerExpanded(activeTrigger, false);
+                activeTrigger = null;
+                form.dataset.mode = '';
+                form.dataset.submitUrl = '';
+                form.dataset.ticketId = '';
+                select.name = '';
+                select.innerHTML = '';
+                errorBox.hidden = true;
+                errorBox.textContent = '';
+                editor.hidden = true;
+            };
+
+            const positionEditor = (trigger) => {
+                if (! trigger) {
+                    return;
+                }
+
+                const rect = trigger.getBoundingClientRect();
+                const width = editor.offsetWidth;
+                const height = editor.offsetHeight;
+                const padding = 12;
+                let top = rect.bottom + 8;
+                let left = rect.left;
+
+                if (left + width > window.innerWidth - padding) {
+                    left = window.innerWidth - width - padding;
+                }
+
+                if (left < padding) {
+                    left = padding;
+                }
+
+                if (top + height > window.innerHeight - padding) {
+                    top = Math.max(padding, rect.top - height - 8);
+                }
+
+                editor.style.top = `${top}px`;
+                editor.style.left = `${left}px`;
+            };
+
+            const populateOptions = (mode, currentValue) => {
+                select.innerHTML = '';
+
+                (options[mode] ?? []).forEach((option) => {
+                    const optionNode = document.createElement('option');
+                    optionNode.value = option.id;
+                    optionNode.textContent = option.name;
+
+                    if (String(option.id) === String(currentValue)) {
+                        optionNode.selected = true;
+                    }
+
+                    select.appendChild(optionNode);
+                });
+            };
+
+            const updateTicketDisplays = (ticketId, ticketData) => {
+                const replaceBadgeToneClass = (node, badgeClass) => {
+                    if (! node || ! badgeClass) {
+                        return;
+                    }
+
+                    Array.from(node.classList)
+                        .filter((className) => className.startsWith('badge-tone-'))
+                        .forEach((className) => node.classList.remove(className));
+
+                    node.classList.add(badgeClass);
+                };
+
+                if (ticketData.status) {
+                    document.querySelectorAll(`[data-ticket-id="${ticketId}"][data-ticket-field="status"]`).forEach((node) => {
+                        replaceBadgeToneClass(node, ticketData.status.badge_class);
+                    });
+
+                    document.querySelectorAll(`[data-ticket-id="${ticketId}"][data-ticket-field="status"] [data-ticket-field-value]`).forEach((node) => {
+                        node.textContent = ticketData.status.name;
+                    });
+                }
+
+                if (ticketData.priority) {
+                    document.querySelectorAll(`[data-ticket-id="${ticketId}"][data-ticket-field="priority"]`).forEach((node) => {
+                        replaceBadgeToneClass(node, ticketData.priority.badge_class);
+                    });
+
+                    document.querySelectorAll(`[data-ticket-id="${ticketId}"][data-ticket-field="priority"] [data-ticket-field-value]`).forEach((node) => {
+                        node.textContent = ticketData.priority.name;
+                    });
+                }
+
+                if (ticketData.updated_at_display) {
+                    document.querySelectorAll(`[data-ticket-id="${ticketId}"][data-ticket-updated-at]`).forEach((node) => {
+                        node.textContent = ticketData.updated_at_display;
+                    });
+                }
+            };
+
+            const openEditor = (trigger) => {
+                const mode = trigger.dataset.inlineMode;
+
+                if (! mode || ! options[mode]) {
+                    return;
+                }
+
+                if (activeTrigger === trigger && ! editor.hidden) {
+                    closeEditor();
+
+                    return;
+                }
+
+                setTriggerExpanded(activeTrigger, false);
+                activeTrigger = trigger;
+                setTriggerExpanded(activeTrigger, true);
+
+                form.dataset.mode = mode;
+                form.dataset.submitUrl = trigger.dataset.submitUrl;
+                form.dataset.ticketId = trigger.dataset.ticketId;
+                title.textContent = mode === 'status' ? 'Změnit stav ticketu' : 'Změnit prioritu ticketu';
+                ticketLabel.textContent = `${trigger.dataset.ticketNumber || 'Bez čísla'} · ${trigger.dataset.ticketSubject || ''}`;
+                select.name = mode === 'status' ? 'status_id' : 'priority_id';
+                submitButton.textContent = mode === 'status' ? 'Uložit stav' : 'Uložit prioritu';
+                populateOptions(mode, trigger.dataset.currentValue);
+                errorBox.hidden = true;
+                errorBox.textContent = '';
+                editor.hidden = false;
+
+                requestAnimationFrame(() => {
+                    positionEditor(trigger);
+                    select.focus();
+                });
+            };
+
+            document.querySelectorAll('[data-ticket-inline-trigger]').forEach((trigger) => {
+                trigger.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    openEditor(trigger);
+                });
+            });
+
+            cancelButton.addEventListener('click', () => {
+                closeEditor();
+            });
+
+            document.addEventListener('click', (event) => {
+                if (editor.hidden) {
+                    return;
+                }
+
+                if (editor.contains(event.target) || (activeTrigger && activeTrigger.contains(event.target))) {
+                    return;
+                }
+
+                closeEditor();
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && ! editor.hidden) {
+                    closeEditor();
+                }
+            });
+
+            window.addEventListener('resize', () => {
+                if (! editor.hidden) {
+                    positionEditor(activeTrigger);
+                }
+            });
+
+            window.addEventListener('scroll', () => {
+                if (! editor.hidden) {
+                    positionEditor(activeTrigger);
+                }
+            }, true);
+
+            form.addEventListener('submit', async (event) => {
                 event.preventDefault();
-                searchHidden.value = searchInput.value.trim();
-                filterForm.requestSubmit();
+
+                if (! activeTrigger || ! form.dataset.submitUrl || ! select.name) {
+                    return;
+                }
+
+                const payload = new FormData();
+                payload.append('_method', 'PATCH');
+                payload.append(select.name, select.value);
+
+                setSavingState(true);
+                errorBox.hidden = true;
+                errorBox.textContent = '';
+
+                try {
+                    const response = await fetch(form.dataset.submitUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            ...(csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {}),
+                        },
+                        body: payload,
+                        credentials: 'same-origin',
+                    });
+
+                    const responseData = await response.json().catch(() => null);
+
+                    if (! response.ok) {
+                        const errorMessage = Object.values(responseData?.errors ?? {}).flat().join(' ') || responseData?.message || 'Změnu se nepodařilo uložit.';
+                        errorBox.textContent = errorMessage;
+                        errorBox.hidden = false;
+
+                        return;
+                    }
+
+                    updateTicketDisplays(form.dataset.ticketId, responseData.ticket ?? {});
+                    activeTrigger.dataset.currentValue = String(select.value);
+                    showFeedback(responseData.message || 'Změna byla uložena.');
+
+                    const row = document.querySelector(`tr[data-ticket-row="${form.dataset.ticketId}"]`);
+
+                    if (row) {
+                        row.classList.add('ticket-row-updated');
+
+                        window.setTimeout(() => {
+                            row.classList.remove('ticket-row-updated');
+                        }, 1600);
+                    }
+
+                    closeEditor();
+                } catch (error) {
+                    errorBox.textContent = 'Změnu se nepodařilo uložit.';
+                    errorBox.hidden = false;
+                } finally {
+                    setSavingState(false);
+                }
             });
         });
     </script>
@@ -475,6 +972,14 @@
 
             return $query;
         };
+        $inlineStatusOptions = $statuses->map(fn ($status) => [
+            'id' => $status->id,
+            'name' => $status->name,
+        ])->values();
+        $inlinePriorityOptions = $priorities->map(fn ($priority) => [
+            'id' => $priority->id,
+            'name' => $priority->name,
+        ])->values();
     @endphp
 
     <div class="page-head">
@@ -494,6 +999,8 @@
         @if (session('status'))
             <div class="alert" role="status">{{ session('status') }}</div>
         @endif
+
+        <div id="ticket-inline-feedback" class="alert inline-feedback" role="status" aria-live="polite" hidden></div>
 
         @if ($activeAnnouncements->isNotEmpty())
             <section class="announcement-stack" aria-label="Provozní oznámení">
@@ -675,27 +1182,21 @@
                             </div>
 
                             <div class="pinned-ticket-badges">
-                                <span class="badge">
+                                <span class="badge {{ $ticket->status?->badgeToneClass() ?? 'badge-tone-slate' }}" data-ticket-id="{{ $ticket->id }}" data-ticket-field="status">
                                     <span class="badge-dot"></span>
-                                    {{ $ticket->status?->name ?? '—' }}
+                                    <span data-ticket-field-value>{{ $ticket->status?->name ?? '—' }}</span>
                                 </span>
-                                <span class="badge">
+                                <span class="badge {{ $ticket->priority?->badgeToneClass() ?? 'badge-tone-slate' }}" data-ticket-id="{{ $ticket->id }}" data-ticket-field="priority">
                                     <span class="badge-dot"></span>
-                                    {{ $ticket->priority?->name ?? '—' }}
+                                    <span data-ticket-field-value>{{ $ticket->priority?->name ?? '—' }}</span>
                                 </span>
-                                @if ($ticket->is_watched_by_current_user)
-                                    <span class="badge badge-watching">Sleduji</span>
-                                @endif
                             </div>
 
                             <div class="pinned-ticket-meta">
                                 <div>Visibility: {{ $visibilityOptions[$ticket->normalizedVisibility()] ?? ucfirst((string) $ticket->normalizedVisibility()) }}</div>
                                 <div>Requester: {{ $ticket->requester?->name ?? '—' }}</div>
                                 <div>Assignee: {{ $ticket->assignee?->name ?? '—' }}</div>
-                                <div class="{{ $ticket->is_watched_by_current_user ? 'watch-state watching' : 'watch-state' }}">
-                                    {{ $ticket->is_watched_by_current_user ? 'Sledujete' : 'Nesledujete' }}
-                                </div>
-                                <div>Updated: {{ $ticket->updated_at?->format('d.m.Y H:i') ?? '—' }}</div>
+                                <div>Updated: <span class="ticket-updated-value" data-ticket-id="{{ $ticket->id }}" data-ticket-updated-at>{{ $ticket->updated_at?->format('d.m. H:i') ?? '—' }}</span></div>
                             </div>
                         </article>
                     @endforeach
@@ -718,62 +1219,122 @@
                 <table class="ticket-table">
                     <thead>
                         <tr>
-                            <th scope="col">Ticket number</th>
+                            <th class="ticket-col-number" scope="col">Ticket number</th>
                             <th scope="col">Subject</th>
-                            <th scope="col">Status</th>
-                            <th scope="col">Priority</th>
-                            <th scope="col">Requester</th>
-                            <th scope="col">Assignee</th>
-                            <th scope="col">Comments</th>
-                            <th scope="col">Updated at</th>
+                            <th class="ticket-col-status" scope="col">Status</th>
+                            <th class="ticket-col-priority" scope="col">Priority</th>
+                            <th class="ticket-col-updated" scope="col">Updated at</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach ($tickets as $ticket)
-                            <tr>
-                                <td class="ticket-number">
+                            <tr data-ticket-row="{{ $ticket->id }}">
+                                <td class="ticket-number ticket-col-number">
                                     <a class="ticket-link" href="{{ route('tickets.show', $ticket) }}">
                                         {{ $ticket->ticket_number ?? '—' }}
                                     </a>
                                 </td>
                                 <td class="subject">
-                                    <strong>
-                                        <a class="ticket-link" href="{{ route('tickets.show', $ticket) }}">
-                                            {{ $ticket->subject }}
-                                        </a>
-                                    </strong>
-                                    <span>
-                                        {{ $visibilityOptions[$ticket->normalizedVisibility()] ?? ucfirst((string) $ticket->normalizedVisibility()) }}
-                                        @if ($pinningEnabled && $ticket->is_pinned)
-                                            · Připnuto
-                                        @endif
-                                        ·
-                                        <span class="{{ $ticket->is_watched_by_current_user ? 'watch-state watching' : 'watch-state' }}">
-                                            {{ $ticket->is_watched_by_current_user ? 'Sleduji' : 'Nesleduji' }}
+                                    <a class="ticket-link subject-title" href="{{ route('tickets.show', $ticket) }}">
+                                        {{ $ticket->subject }}
+                                    </a>
+
+                                    <div class="subject-meta">
+                                        <span class="subject-meta-item">
+                                            <strong>Visibility:</strong>
+                                            {{ $visibilityOptions[$ticket->normalizedVisibility()] ?? ucfirst((string) $ticket->normalizedVisibility()) }}
                                         </span>
-                                    </span>
+                                        <span class="subject-meta-item">
+                                            <strong>Assignee:</strong>
+                                            {{ $ticket->assignee?->name ?? 'Nepřiřazeno' }}
+                                        </span>
+                                        <span class="subject-meta-item">
+                                            <strong>Comments:</strong>
+                                            {{ $ticket->public_comments_count }}
+                                        </span>
+                                        @if ($pinningEnabled && $ticket->is_pinned)
+                                            <span class="subject-meta-item subject-meta-pill">Připnuto</span>
+                                        @endif
+                                    </div>
                                 </td>
-                                <td>
-                                    <span class="badge">
-                                        <span class="badge-dot"></span>
-                                        {{ $ticket->status?->name ?? '—' }}
-                                    </span>
+                                <td class="ticket-col-status">
+                                    @if ($ticket->can_inline_status_update)
+                                        <button
+                                            class="badge badge-button list-inline-trigger {{ $ticket->status?->badgeToneClass() ?? 'badge-tone-slate' }}"
+                                            type="button"
+                                            data-ticket-inline-trigger
+                                            data-ticket-id="{{ $ticket->id }}"
+                                            data-ticket-field="status"
+                                            data-inline-mode="status"
+                                            data-submit-url="{{ route('tickets.status.update', $ticket) }}"
+                                            data-current-value="{{ $ticket->ticket_status_id }}"
+                                            data-ticket-number="{{ $ticket->ticket_number ?? '—' }}"
+                                            data-ticket-subject="{{ $ticket->subject }}"
+                                            aria-expanded="false"
+                                        >
+                                            <span class="badge-dot"></span>
+                                            <span class="badge-label" data-ticket-field-value>{{ $ticket->status?->name ?? '—' }}</span>
+                                        </button>
+                                    @else
+                                        <span class="badge {{ $ticket->status?->badgeToneClass() ?? 'badge-tone-slate' }}" data-ticket-id="{{ $ticket->id }}" data-ticket-field="status">
+                                            <span class="badge-dot"></span>
+                                            <span class="badge-label" data-ticket-field-value>{{ $ticket->status?->name ?? '—' }}</span>
+                                        </span>
+                                    @endif
                                 </td>
-                                <td>
-                                    <span class="badge">
-                                        <span class="badge-dot"></span>
-                                        {{ $ticket->priority?->name ?? '—' }}
-                                    </span>
+                                <td class="ticket-col-priority">
+                                    @if ($ticket->can_inline_priority_update)
+                                        <button
+                                            class="badge badge-button list-inline-trigger {{ $ticket->priority?->badgeToneClass() ?? 'badge-tone-slate' }}"
+                                            type="button"
+                                            data-ticket-inline-trigger
+                                            data-ticket-id="{{ $ticket->id }}"
+                                            data-ticket-field="priority"
+                                            data-inline-mode="priority"
+                                            data-submit-url="{{ route('tickets.priority.update', $ticket) }}"
+                                            data-current-value="{{ $ticket->ticket_priority_id }}"
+                                            data-ticket-number="{{ $ticket->ticket_number ?? '—' }}"
+                                            data-ticket-subject="{{ $ticket->subject }}"
+                                            aria-expanded="false"
+                                        >
+                                            <span class="badge-dot"></span>
+                                            <span class="badge-label" data-ticket-field-value>{{ $ticket->priority?->name ?? '—' }}</span>
+                                        </button>
+                                    @else
+                                        <span class="badge {{ $ticket->priority?->badgeToneClass() ?? 'badge-tone-slate' }}" data-ticket-id="{{ $ticket->id }}" data-ticket-field="priority">
+                                            <span class="badge-dot"></span>
+                                            <span class="badge-label" data-ticket-field-value>{{ $ticket->priority?->name ?? '—' }}</span>
+                                        </span>
+                                    @endif
                                 </td>
-                                <td>{{ $ticket->requester?->name ?? '—' }}</td>
-                                <td>{{ $ticket->assignee?->name ?? '—' }}</td>
-                                <td>{{ $ticket->public_comments_count }}</td>
-                                <td class="muted">{{ $ticket->updated_at?->format('d.m.Y H:i') ?? '—' }}</td>
+                                <td class="ticket-col-updated muted">
+                                    <span class="ticket-updated-value" data-ticket-id="{{ $ticket->id }}" data-ticket-updated-at>{{ $ticket->updated_at?->format('d.m. H:i') ?? '—' }}</span>
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
             </div>
+
+            <div id="ticket-inline-editor" class="list-inline-editor" hidden>
+                <form class="list-inline-editor-form" data-inline-form>
+                    <div class="list-inline-editor-head">
+                        <div class="list-inline-editor-title" data-inline-title></div>
+                        <div class="list-inline-editor-ticket" data-inline-ticket></div>
+                    </div>
+
+                    <select class="list-inline-select" data-inline-select></select>
+                    <div class="field-error" data-inline-error hidden></div>
+
+                    <div class="list-inline-editor-actions">
+                        <button class="button button-primary button-compact" type="submit" data-inline-submit>Uložit</button>
+                        <button class="button button-secondary button-compact" type="button" data-inline-cancel>Zrušit</button>
+                    </div>
+                </form>
+            </div>
+
+            <script id="ticket-inline-options-status" type="application/json">@json($inlineStatusOptions)</script>
+            <script id="ticket-inline-options-priority" type="application/json">@json($inlinePriorityOptions)</script>
 
             @if ($tickets->hasPages())
                 <div class="pagination-wrap">

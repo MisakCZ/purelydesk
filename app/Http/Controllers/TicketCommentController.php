@@ -76,6 +76,13 @@ class TicketCommentController extends Controller
         }
 
         TicketComment::query()->create($attributes);
+
+        // Keep explicit activity tracking in sync with the touched ticket timestamp.
+        $ticket->timestamps = false;
+        $ticket->forceFill([
+            'last_activity_at' => now(),
+        ])->saveQuietly();
+        $ticket->timestamps = true;
     }
 
     private function resolveReplyParent(Ticket $ticket, mixed $parentId): ?TicketComment

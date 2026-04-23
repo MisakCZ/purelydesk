@@ -13,6 +13,10 @@ class TicketComment extends Model
 {
     use HasFactory;
 
+    protected $touches = [
+        'ticket',
+    ];
+
     protected $fillable = [
         'ticket_id',
         'user_id',

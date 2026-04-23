@@ -20,6 +20,7 @@ use App\Policies\TicketPolicy;
 use App\Support\ResolvesHelpdeskUser;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -35,11 +36,26 @@ class TicketController extends Controller
     {
         $filters = $this->resolveTicketIndexFilters($request);
         $actor = $this->currentHelpdeskUser();
+        $canUseInlineListEditing = $actor instanceof User
+            && ($actor->isAdmin() || $actor->isSolver());
 
         $tickets = $this->applyTicketFilters($this->ticketIndexQuery($actor), $filters, $actor)
             ->orderByDesc('updated_at')
             ->paginate(15)
             ->appends($this->nonEmptyTicketFilters($filters));
+
+        $tickets->getCollection()->transform(function (Ticket $ticket) use ($actor, $canUseInlineListEditing) {
+            $ticket->setAttribute(
+                'can_inline_status_update',
+                $canUseInlineListEditing && $this->ticketPolicy()->updateStatus($actor, $ticket),
+            );
+            $ticket->setAttribute(
+                'can_inline_priority_update',
+                $canUseInlineListEditing && $this->ticketPolicy()->updatePriority($actor, $ticket),
+            );
+
+            return $ticket;
+        });
 
         $pinnedTickets = collect();
 
@@ -103,7 +119,7 @@ class TicketController extends Controller
 
         $ticket->load([
             'status:id,name,color,slug,is_closed',
-            'priority:id,name,color',
+            'priority:id,name,color,slug',
             'category:id,name',
             'requester:id,name',
             'assignee:id,name',
@@ -199,7 +215,7 @@ class TicketController extends Controller
         ]);
     }
 
-    public function updateStatus(UpdateTicketStatusRequest $request, Ticket $ticket): RedirectResponse
+    public function updateStatus(UpdateTicketStatusRequest $request, Ticket $ticket): RedirectResponse|JsonResponse
     {
         $this->authorizeTicketAbility('updateStatus', $ticket);
 
@@ -211,7 +227,7 @@ class TicketController extends Controller
             'closed_at' => $selectedStatus?->is_closed
                 ? ($ticket->closed_at ?? now())
                 : null,
-        ], 'Stav ticketu byl úspěšně změněn.', 'status_update');
+        ], 'Stav ticketu byl úspěšně změněn.', 'status_update', $request);
     }
 
     public function updateAssignee(UpdateTicketAssigneeRequest $request, Ticket $ticket): RedirectResponse
@@ -225,13 +241,13 @@ class TicketController extends Controller
         ], 'Řešitel ticketu byl úspěšně změněn.', 'assignee_update');
     }
 
-    public function updatePriority(UpdateTicketPriorityRequest $request, Ticket $ticket): RedirectResponse
+    public function updatePriority(UpdateTicketPriorityRequest $request, Ticket $ticket): RedirectResponse|JsonResponse
     {
         $this->authorizeTicketAbility('updatePriority', $ticket);
 
         return $this->applyTicketUpdateWithHistory($ticket, [
             'ticket_priority_id' => $request->integer('priority_id'),
-        ], 'Priorita ticketu byla úspěšně změněna.', 'priority_update');
+        ], 'Priorita ticketu byla úspěšně změněna.', 'priority_update', $request);
     }
 
     public function updateCategory(UpdateTicketCategoryRequest $request, Ticket $ticket): RedirectResponse
@@ -407,7 +423,8 @@ class TicketController extends Controller
         array $attributes,
         string $successMessage,
         string $action,
-    ): RedirectResponse {
+        ?Request $request = null,
+    ): RedirectResponse|JsonResponse {
         $ticket->loadMissing($this->ticketSnapshotRelations());
 
         $oldSnapshot = $this->captureTicketSnapshot($ticket);
@@ -423,9 +440,40 @@ class TicketController extends Controller
 
         $this->recordSnapshotUpdate($ticket, $oldSnapshot, $newSnapshot, $action);
 
+        if ($request instanceof Request && $request->expectsJson()) {
+            return response()->json([
+                'message' => $successMessage,
+                'ticket' => $this->inlineTicketResponsePayload($ticket),
+            ]);
+        }
+
         return redirect()
             ->route('tickets.show', $ticket)
             ->with('status', $successMessage);
+    }
+
+    private function inlineTicketResponsePayload(Ticket $ticket): array
+    {
+        $ticket->loadMissing([
+            'status:id,name,slug',
+            'priority:id,name,slug',
+        ]);
+
+        return [
+            'id' => $ticket->id,
+            'status' => [
+                'id' => $ticket->ticket_status_id,
+                'name' => $ticket->status?->name ?? '—',
+                'badge_class' => $ticket->status?->badgeToneClass() ?? 'badge-tone-slate',
+            ],
+            'priority' => [
+                'id' => $ticket->ticket_priority_id,
+                'name' => $ticket->priority?->name ?? '—',
+                'badge_class' => $ticket->priority?->badgeToneClass() ?? 'badge-tone-slate',
+            ],
+            'updated_at' => $ticket->updated_at?->toIso8601String(),
+            'updated_at_display' => $ticket->updated_at?->format('d.m. H:i') ?? '—',
+        ];
     }
 
     private function resolveStatusByIdentifiers(
@@ -477,8 +525,8 @@ class TicketController extends Controller
             ->visibleTo($watcherUser)
             ->select('tickets.*')
             ->with([
-                'status:id,name,color',
-                'priority:id,name,color',
+                'status:id,name,color,slug',
+                'priority:id,name,color,slug',
                 'requester:id,name',
                 'assignee:id,name',
             ])

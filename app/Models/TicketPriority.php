@@ -10,6 +10,11 @@ class TicketPriority extends Model
 {
     use HasFactory;
 
+    public const BADGE_TONE_SLATE = 'slate';
+    public const BADGE_TONE_BLUE = 'blue';
+    public const BADGE_TONE_AMBER = 'amber';
+    public const BADGE_TONE_RED = 'red';
+
     protected $fillable = [
         'name',
         'slug',
@@ -30,5 +35,25 @@ class TicketPriority extends Model
     public function tickets(): HasMany
     {
         return $this->hasMany(Ticket::class);
+    }
+
+    public function badgeTone(): string
+    {
+        return self::badgeToneForSlug($this->slug);
+    }
+
+    public function badgeToneClass(): string
+    {
+        return 'badge-tone-'.self::badgeToneForSlug($this->slug);
+    }
+
+    public static function badgeToneForSlug(?string $slug): string
+    {
+        return match ($slug) {
+            'normal' => self::BADGE_TONE_BLUE,
+            'high' => self::BADGE_TONE_AMBER,
+            'critical' => self::BADGE_TONE_RED,
+            default => self::BADGE_TONE_SLATE,
+        };
     }
 }
