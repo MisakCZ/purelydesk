@@ -6,6 +6,8 @@ use App\Models\Role;
 use App\Models\User;
 use App\Services\Ldap\LdapAuthenticator;
 use App\Services\Ldap\LdapRoleMapper;
+use App\Services\Ldap\LdapUserData;
+use App\Services\Ldap\LdapUserSynchronizer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -118,5 +120,49 @@ class LdapAuthenticationTest extends TestCase
         ]);
 
         $this->assertSame([], (new LdapRoleMapper())->roleSlugsForGroups([]));
+    }
+
+    public function test_ldap_binary_unique_id_is_normalized_before_user_sync(): void
+    {
+        config([
+            'helpdesk.ldap.allow_default_user_role' => true,
+        ]);
+
+        $binaryGuid = "\xA1\x00\xB2\xC3\xD4\xE5\xF6\x07\x88\x99\xAA\xBB\xCC\xDD\xEE\xFF";
+
+        $user = app(LdapUserSynchronizer::class)->sync(new LdapUserData(
+            username: 'binary.guid',
+            dn: 'cn=binary.guid,o=example',
+            email: 'binary.guid@example.com',
+            displayName: 'Binary GUID',
+            externalId: $binaryGuid,
+            department: null,
+            groups: [],
+        ));
+
+        $this->assertSame('base64:'.base64_encode($binaryGuid), $user->external_id);
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'external_id' => 'base64:'.base64_encode($binaryGuid),
+        ]);
+    }
+
+    public function test_ldap_text_unique_id_stays_readable(): void
+    {
+        config([
+            'helpdesk.ldap.allow_default_user_role' => true,
+        ]);
+
+        $user = app(LdapUserSynchronizer::class)->sync(new LdapUserData(
+            username: 'text.guid',
+            dn: 'cn=text.guid,o=example',
+            email: 'text.guid@example.com',
+            displayName: 'Text GUID',
+            externalId: '2f4b0ed6-43d1-43a2-80d1-6cb011d0f58c',
+            department: null,
+            groups: [],
+        ));
+
+        $this->assertSame('2f4b0ed6-43d1-43a2-80d1-6cb011d0f58c', $user->external_id);
     }
 }

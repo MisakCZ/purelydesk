@@ -22,7 +22,8 @@ class LdapUserSynchronizer
             throw LdapAuthenticationException::notAuthorized();
         }
 
-        $user = $this->resolveUser($ldapUser);
+        $externalId = $this->normalizeExternalId($ldapUser->externalId);
+        $user = $this->resolveUser($ldapUser, $externalId);
         $displayName = $ldapUser->displayName ?: $ldapUser->username;
         $email = $ldapUser->email ?: $this->fallbackEmail($ldapUser->username);
 
@@ -32,7 +33,7 @@ class LdapUserSynchronizer
             'display_name' => $displayName,
             'email' => $email,
             'ldap_dn' => $ldapUser->dn,
-            'external_id' => $ldapUser->externalId,
+            'external_id' => $externalId,
             'department' => $ldapUser->department,
             'auth_source' => 'ldap',
             'is_active' => true,
@@ -55,10 +56,10 @@ class LdapUserSynchronizer
         return $user->refresh();
     }
 
-    private function resolveUser(LdapUserData $ldapUser): User
+    private function resolveUser(LdapUserData $ldapUser, ?string $externalId): User
     {
-        if ($ldapUser->externalId !== null && $ldapUser->externalId !== '') {
-            $user = User::query()->where('external_id', $ldapUser->externalId)->first();
+        if ($externalId !== null && $externalId !== '') {
+            $user = User::query()->where('external_id', $externalId)->first();
 
             if ($user instanceof User) {
                 return $user;
@@ -80,6 +81,21 @@ class LdapUserSynchronizer
         }
 
         return new User();
+    }
+
+    private function normalizeExternalId(?string $externalId): ?string
+    {
+        if ($externalId === null || $externalId === '') {
+            return $externalId;
+        }
+
+        // LDAP unique identifiers can be binary attributes, such as directory GUIDs.
+        // Normalize them before storing in a text column to avoid invalid UTF-8 writes.
+        if (! mb_check_encoding($externalId, 'UTF-8') || preg_match('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', $externalId)) {
+            return 'base64:'.base64_encode($externalId);
+        }
+
+        return $externalId;
     }
 
     private function fallbackEmail(string $username): string
