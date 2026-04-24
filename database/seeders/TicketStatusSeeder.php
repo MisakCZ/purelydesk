@@ -77,7 +77,7 @@ class TicketStatusSeeder extends Seeder
                 'color' => 'emerald',
                 'sort_order' => 60,
                 'is_default' => false,
-                'is_closed' => true,
+                'is_closed' => false,
                 'created_at' => $timestamp,
                 'updated_at' => $timestamp,
             ],

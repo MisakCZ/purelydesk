@@ -411,6 +411,69 @@ class TicketVisibilityTest extends TestCase
         $this->assertSame($waitingUserStatus->id, $ticket->ticket_status_id);
     }
 
+    public function test_removing_assignee_on_assigned_ticket_moves_status_to_new(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $assignee = $this->createUserWithRole($this->solverRole);
+        $assignedStatus = TicketStatus::query()->create([
+            'name' => 'Assigned',
+            'slug' => 'assigned',
+            'sort_order' => 2,
+        ]);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'assignee' => $assignee,
+            'status' => $assignedStatus,
+            'visibility' => Ticket::VISIBILITY_INTERNAL,
+        ]);
+
+        $this->actingAs($solver)
+            ->patch(route('tickets.assignee.update', $ticket), [
+                'assignee_id' => '',
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        $ticket->refresh();
+
+        $this->assertNull($ticket->assignee_id);
+        $this->assertSame($this->defaultStatus->id, $ticket->ticket_status_id);
+    }
+
+    public function test_removing_assignee_on_non_assigned_ticket_keeps_status_unchanged(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $assignee = $this->createUserWithRole($this->solverRole);
+        $waitingUserStatus = TicketStatus::query()->create([
+            'name' => 'Waiting for User',
+            'slug' => 'waiting_user',
+            'sort_order' => 2,
+        ]);
+        TicketStatus::query()->create([
+            'name' => 'Assigned',
+            'slug' => 'assigned',
+            'sort_order' => 3,
+        ]);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'assignee' => $assignee,
+            'status' => $waitingUserStatus,
+            'visibility' => Ticket::VISIBILITY_INTERNAL,
+        ]);
+
+        $this->actingAs($solver)
+            ->patch(route('tickets.assignee.update', $ticket), [
+                'assignee_id' => '',
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        $ticket->refresh();
+
+        $this->assertNull($ticket->assignee_id);
+        $this->assertSame($waitingUserStatus->id, $ticket->ticket_status_id);
+    }
+
     public function test_requester_edit_on_waiting_user_moves_status_to_assigned(): void
     {
         $requester = $this->createUserWithRole($this->userRole);
@@ -503,6 +566,125 @@ class TicketVisibilityTest extends TestCase
         $ticket->refresh();
 
         $this->assertSame($waitingUserStatus->id, $ticket->ticket_status_id);
+    }
+
+    public function test_status_change_to_resolved_sets_resolution_timestamps(): void
+    {
+        Carbon::setTestNow('2026-04-23 15:00:00');
+
+        try {
+            $requester = $this->createUserWithRole($this->userRole);
+            $solver = $this->createUserWithRole($this->solverRole);
+            $assignedStatus = TicketStatus::query()->create([
+                'name' => 'Assigned',
+                'slug' => 'assigned',
+                'sort_order' => 2,
+            ]);
+            $resolvedStatus = TicketStatus::query()->create([
+                'name' => 'Resolved',
+                'slug' => 'resolved',
+                'sort_order' => 3,
+            ]);
+            $ticket = $this->createTicket([
+                'requester' => $requester,
+                'status' => $assignedStatus,
+                'visibility' => Ticket::VISIBILITY_INTERNAL,
+            ]);
+
+            $this->actingAs($solver)
+                ->patch(route('tickets.status.update', $ticket), [
+                    'status_id' => $resolvedStatus->id,
+                ])
+                ->assertRedirect(route('tickets.show', $ticket));
+
+            $ticket->refresh();
+
+            $this->assertSame($resolvedStatus->id, $ticket->ticket_status_id);
+            $this->assertTrue($ticket->resolved_at?->equalTo(Carbon::now()) ?? false);
+            $this->assertTrue($ticket->auto_close_at?->equalTo(Carbon::now()->addDays(5)) ?? false);
+            $this->assertNull($ticket->closed_at);
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_requester_confirms_resolved_ticket_and_it_becomes_closed(): void
+    {
+        Carbon::setTestNow('2026-04-23 16:15:00');
+
+        try {
+            $requester = $this->createUserWithRole($this->userRole);
+            $resolvedStatus = TicketStatus::query()->create([
+                'name' => 'Resolved',
+                'slug' => 'resolved',
+                'sort_order' => 2,
+            ]);
+            $closedStatus = TicketStatus::query()->create([
+                'name' => 'Closed',
+                'slug' => 'closed',
+                'sort_order' => 3,
+                'is_closed' => true,
+            ]);
+            $ticket = $this->createTicket([
+                'requester' => $requester,
+                'status' => $resolvedStatus,
+                'visibility' => Ticket::VISIBILITY_PUBLIC,
+            ]);
+            $ticket->forceFill([
+                'resolved_at' => Carbon::now()->subHour(),
+                'auto_close_at' => Carbon::now()->addDays(5),
+                'closed_at' => null,
+            ])->save();
+
+            $this->actingAs($requester)
+                ->patch(route('tickets.confirm-resolution', $ticket))
+                ->assertRedirect(route('tickets.show', $ticket));
+
+            $ticket->refresh();
+
+            $this->assertSame($closedStatus->id, $ticket->ticket_status_id);
+            $this->assertNotNull($ticket->resolved_at);
+            $this->assertNull($ticket->auto_close_at);
+            $this->assertTrue($ticket->closed_at?->equalTo(Carbon::now()) ?? false);
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_requester_reports_problem_persists_and_ticket_returns_to_assigned(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $assignedStatus = TicketStatus::query()->create([
+            'name' => 'Assigned',
+            'slug' => 'assigned',
+            'sort_order' => 2,
+        ]);
+        $resolvedStatus = TicketStatus::query()->create([
+            'name' => 'Resolved',
+            'slug' => 'resolved',
+            'sort_order' => 3,
+        ]);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'status' => $resolvedStatus,
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+        ]);
+        $ticket->forceFill([
+            'resolved_at' => now()->subHour(),
+            'auto_close_at' => now()->addDays(5),
+            'closed_at' => now()->subMinutes(5),
+        ])->save();
+
+        $this->actingAs($requester)
+            ->patch(route('tickets.report-problem-persists', $ticket))
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        $ticket->refresh();
+
+        $this->assertSame($assignedStatus->id, $ticket->ticket_status_id);
+        $this->assertNull($ticket->resolved_at);
+        $this->assertNull($ticket->auto_close_at);
+        $this->assertNull($ticket->closed_at);
     }
 
     public function test_inline_json_update_respects_current_page_locale(): void

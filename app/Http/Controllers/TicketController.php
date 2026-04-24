@@ -231,12 +231,16 @@ class TicketController extends Controller
         $selectedStatusId = $request->integer('status_id');
         $selectedStatus = TicketStatus::query()->find($selectedStatusId);
 
-        return $this->applyTicketUpdateWithHistory($ticket, [
-            'ticket_status_id' => $selectedStatusId,
-            'closed_at' => $selectedStatus?->is_closed
-                ? ($ticket->closed_at ?? now())
-                : null,
-        ], __('tickets.flash.status_updated'), 'status_update', $request, 'tickets.flash.status_updated');
+        return $this->applyTicketUpdateWithHistory(
+            $ticket,
+            $selectedStatus instanceof TicketStatus
+                ? $this->workflowAutomationService()->attributesForStatusTransition($ticket, $selectedStatus)
+                : ['ticket_status_id' => $selectedStatusId],
+            __('tickets.flash.status_updated'),
+            'status_update',
+            $request,
+            'tickets.flash.status_updated',
+        );
     }
 
     public function updateRequester(UpdateTicketRequesterRequest $request, Ticket $ticket): RedirectResponse
@@ -371,13 +375,15 @@ class TicketController extends Controller
         $closedStatus = $this->resolveStatusByIdentifiers(
             ['closed'],
             'workflow',
-            'V systému chybí stav "closed". Ticket zatím nelze potvrdit jako vyřešený.',
+            __('tickets.validation.workflow_closed_status_missing'),
         );
 
-        return $this->applyTicketUpdateWithHistory($ticket, [
-            'ticket_status_id' => $closedStatus->id,
-            'closed_at' => $ticket->closed_at ?? now(),
-        ], 'Ticket byl potvrzen jako vyřešený a uzavřen.', 'requester_confirm_resolution');
+        return $this->applyTicketUpdateWithHistory(
+            $ticket,
+            $this->workflowAutomationService()->attributesForStatusTransition($ticket, $closedStatus),
+            __('tickets.flash.resolution_confirmed'),
+            'requester_confirm_resolution',
+        );
     }
 
     public function reportProblemPersists(Ticket $ticket): RedirectResponse
@@ -385,15 +391,17 @@ class TicketController extends Controller
         $this->authorizeTicketAbility('reportProblemPersists', $ticket);
 
         $reopenedStatus = $this->resolveStatusByIdentifiers(
-            ['in_progress', 'new'],
+            ['assigned'],
             'workflow',
-            'V systému chybí stav "in_progress" i náhradní stav "new". Ticket zatím nelze znovu otevřít.',
+            __('tickets.validation.workflow_assigned_status_missing'),
         );
 
-        return $this->applyTicketUpdateWithHistory($ticket, [
-            'ticket_status_id' => $reopenedStatus->id,
-            'closed_at' => null,
-        ], 'Ticket byl znovu otevřen a vrácen k řešení.', 'requester_report_problem_persists');
+        return $this->applyTicketUpdateWithHistory(
+            $ticket,
+            $this->workflowAutomationService()->attributesForStatusTransition($ticket, $reopenedStatus),
+            __('tickets.flash.problem_persists'),
+            'requester_report_problem_persists',
+        );
     }
 
     private function resolveRequester(): User

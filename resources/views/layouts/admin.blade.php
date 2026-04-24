@@ -186,6 +186,7 @@
                 border-radius: 0.9rem;
                 background: #fff;
                 box-shadow: 0 16px 32px rgba(15, 23, 42, 0.12);
+                font-size: 0.86rem;
             }
 
             .locale-form {
@@ -197,14 +198,15 @@
                 align-items: center;
                 justify-content: space-between;
                 width: 100%;
-                min-height: 2.3rem;
-                padding: 0.48rem 0.65rem;
+                min-height: 2.15rem;
+                padding: 0.44rem 0.62rem;
                 border: 0;
                 border-radius: 0.65rem;
                 background: transparent;
                 color: #475569;
                 cursor: pointer;
                 font: inherit;
+                font-size: 0.86rem;
                 text-align: left;
                 transition: background-color 0.15s ease, color 0.15s ease;
             }
@@ -221,12 +223,13 @@
             }
 
             .locale-option-label {
+                font-size: 0.86rem;
                 line-height: 1.3;
             }
 
             .locale-option-check {
                 color: var(--accent);
-                font-size: 0.82rem;
+                font-size: 0.76rem;
                 line-height: 1;
             }
 

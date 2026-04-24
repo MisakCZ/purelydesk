@@ -241,6 +241,8 @@ return [
                 'requester' => 'Žadatel',
                 'assignee' => 'Řešitel',
                 'pinned' => 'Připnutí',
+                'resolved_at' => 'Vyřešeno',
+                'auto_close_at' => 'Automatické uzavření',
                 'closed_at' => 'Uzavření',
                 'created_at' => 'Vytvořeno',
             ],
@@ -275,11 +277,15 @@ return [
         'ticket_unpinned' => 'Ticket byl úspěšně odepnut.',
         'watching_started' => 'Ticket jste začali sledovat.',
         'watching_stopped' => 'Sledování ticketu bylo zrušeno.',
+        'resolution_confirmed' => 'Ticket byl potvrzen jako vyřešený a uzavřen.',
+        'problem_persists' => 'Ticket byl vrácen k řešení.',
     ],
     'validation' => [
         'pinning_unavailable' => 'Připnutí ticketu zatím není v databázi dostupné. Spusťte migrace aplikace.',
         'initial_status_missing' => 'Nelze vytvořit ticket, protože v systému chybí výchozí stav "new". Kontaktujte administrátora.',
         'watcher_missing' => 'Sledování ticketu zatím nelze změnit, protože v databázi neexistuje žádný uživatel.',
+        'workflow_closed_status_missing' => 'V systému chybí stav "closed". Ticket zatím nelze potvrdit jako vyřešený.',
+        'workflow_assigned_status_missing' => 'V systému chybí stav "assigned". Ticket zatím nelze vrátit k řešení.',
     ],
     'values' => [
         'statuses' => [

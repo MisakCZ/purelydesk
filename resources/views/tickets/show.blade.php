@@ -34,6 +34,8 @@
         'requester' => __('tickets.show.history.fields.requester'),
         'assignee' => __('tickets.show.history.fields.assignee'),
         'pinned' => __('tickets.show.history.fields.pinned'),
+        'resolved_at' => __('tickets.show.history.fields.resolved_at'),
+        'auto_close_at' => __('tickets.show.history.fields.auto_close_at'),
         'closed_at' => __('tickets.show.history.fields.closed_at'),
         'created_at' => __('tickets.show.history.fields.created_at'),
     ];
@@ -536,6 +538,7 @@
             box-shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
             display: grid;
             gap: 0.45rem;
+            font-size: 0.88rem;
         }
 
         .badge-menu-form,
@@ -554,14 +557,15 @@
             align-items: center;
             justify-content: space-between;
             width: 100%;
-            min-height: 2.45rem;
-            padding: 0.5rem 0.75rem;
+            min-height: 2.18rem;
+            padding: 0.44rem 0.7rem;
             border: 0;
             border-radius: 0.75rem;
             background: transparent;
             color: #334155;
             cursor: pointer;
             font: inherit;
+            font-size: 0.88rem;
             text-align: left;
             transition: background-color 0.15s ease, color 0.15s ease;
         }
@@ -583,14 +587,14 @@
 
         .badge-menu-check {
             color: #0f766e;
-            font-size: 0.82rem;
+            font-size: 0.74rem;
             line-height: 1;
         }
 
         .badge-menu-note {
             padding: 0.55rem 0.75rem;
             color: #64748b;
-            font-size: 0.88rem;
+            font-size: 0.82rem;
             line-height: 1.45;
         }
 

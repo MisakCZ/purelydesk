@@ -241,6 +241,8 @@ return [
                 'requester' => 'Requester',
                 'assignee' => 'Assignee',
                 'pinned' => 'Pinning',
+                'resolved_at' => 'Resolved at',
+                'auto_close_at' => 'Auto-close at',
                 'closed_at' => 'Closed at',
                 'created_at' => 'Created at',
             ],
@@ -275,11 +277,15 @@ return [
         'ticket_unpinned' => 'Ticket was unpinned successfully.',
         'watching_started' => 'You started watching the ticket.',
         'watching_stopped' => 'Ticket watching was removed.',
+        'resolution_confirmed' => 'The ticket was confirmed as resolved and closed.',
+        'problem_persists' => 'The ticket was returned back to processing.',
     ],
     'validation' => [
         'pinning_unavailable' => 'Ticket pinning is not available in the database yet. Run the application migrations.',
         'initial_status_missing' => 'The ticket cannot be created because the default "new" status is missing in the system. Contact the administrator.',
         'watcher_missing' => 'Ticket watching cannot be changed yet because there is no user in the database.',
+        'workflow_closed_status_missing' => 'The "closed" status is missing in the system. The ticket cannot be confirmed as resolved yet.',
+        'workflow_assigned_status_missing' => 'The "assigned" status is missing in the system. The ticket cannot be returned to processing yet.',
     ],
     'values' => [
         'statuses' => [

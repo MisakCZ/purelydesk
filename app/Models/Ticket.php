@@ -33,6 +33,8 @@ class Ticket extends Model
         'ticket_category_id',
         'due_at',
         'last_activity_at',
+        'resolved_at',
+        'auto_close_at',
         'closed_at',
         'is_pinned',
         'pinned_at',
@@ -43,6 +45,8 @@ class Ticket extends Model
         return [
             'due_at' => 'datetime',
             'last_activity_at' => 'datetime',
+            'resolved_at' => 'datetime',
+            'auto_close_at' => 'datetime',
             'closed_at' => 'datetime',
             'is_pinned' => 'boolean',
             'pinned_at' => 'datetime',
