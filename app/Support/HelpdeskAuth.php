@@ -15,7 +15,11 @@ class HelpdeskAuth
             return $authenticatedUser;
         }
 
-        // Temporary fallback until authentication is integrated.
+        if (! config('helpdesk.auth.allow_temporary_user_fallback', false)) {
+            return null;
+        }
+
+        // Temporary development fallback. Must stay explicitly disabled in normal auth mode.
         return User::query()->orderBy('id')->first();
     }
 

@@ -11,6 +11,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->alias([
+            'helpdesk.auth' => \App\Http\Middleware\EnsureHelpdeskAuthenticated::class,
+        ]);
+
         $middleware->web(append: [
             \App\Http\Middleware\SetPreferredLocale::class,
         ]);

@@ -36,6 +36,7 @@ class AppServiceProvider extends ServiceProvider
 
             $view->with([
                 'canManageAnnouncements' => app(AnnouncementPolicy::class)->manage($currentUser),
+                'currentUser' => $currentUser,
                 'currentLocale' => app()->getLocale(),
                 'supportedLocales' => $localeManager->supportedLocales(),
             ]);

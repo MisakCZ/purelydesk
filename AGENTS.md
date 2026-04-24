@@ -2,7 +2,7 @@
 
 - Framework: Laravel
 - Database: MariaDB
-- Auth will later integrate with KeyShield SSO
+- Auth uses standard LDAP login
 - UI: Blade templates, no SPA
 - Keep code simple and conventional
 - Do not add new packages unless explicitly requested

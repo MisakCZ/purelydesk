@@ -15,5 +15,6 @@ return [
             'en' => 'English',
         ],
         'current' => 'Aktivní jazyk: :locale',
+        'logout' => 'Odhlásit',
     ],
 ];

@@ -46,16 +46,16 @@ class LocaleSwitchingTest extends TestCase
 
     public function test_guest_locale_selection_falls_back_to_session_and_cookie(): void
     {
-        $this->from(route('tickets.index'))
+        $this->from(route('login'))
             ->post(route('locale.update'), [
                 'locale' => 'cs',
             ])
-            ->assertRedirect(route('tickets.index'));
+            ->assertRedirect(route('login'));
 
-        $this->get(route('tickets.index'))
+        $this->get(route('login'))
             ->assertOk()
-            ->assertSeeText('Seznam ticketů')
-            ->assertDontSeeText('Tickets');
+            ->assertSeeText('Přihlášení do helpdesku')
+            ->assertDontSeeText('Sign in to helpdesk');
     }
 
     public function test_unsupported_locale_is_rejected(): void
@@ -75,19 +75,19 @@ class LocaleSwitchingTest extends TestCase
     {
         $this->withHeaders([
             'Accept-Language' => 'cs-CZ,cs;q=0.9,en;q=0.8',
-        ])->get(route('tickets.index'))
+        ])->get(route('login'))
             ->assertOk()
-            ->assertSeeText('Seznam ticketů')
-            ->assertDontSeeText('Tickets');
+            ->assertSeeText('Přihlášení do helpdesku')
+            ->assertDontSeeText('Sign in to helpdesk');
     }
 
     public function test_initial_guest_request_falls_back_to_english_for_unsupported_browser_language(): void
     {
         $this->withHeaders([
             'Accept-Language' => 'de-DE,de;q=0.9',
-        ])->get(route('tickets.index'))
+        ])->get(route('login'))
             ->assertOk()
-            ->assertSeeText('Tickets')
-            ->assertDontSeeText('Seznam ticketů');
+            ->assertSeeText('Sign in to helpdesk')
+            ->assertDontSeeText('Přihlášení do helpdesku');
     }
 }

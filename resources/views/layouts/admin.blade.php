@@ -233,6 +233,35 @@
                 line-height: 1;
             }
 
+            .session-user {
+                margin-left: 0.35rem;
+                color: var(--muted);
+                font-size: 0.82rem;
+                white-space: nowrap;
+            }
+
+            .logout-form {
+                margin: 0;
+            }
+
+            .logout-button {
+                min-height: 2.2rem;
+                padding: 0.35rem 0.65rem;
+                border: 1px solid rgba(217, 224, 231, 0.95);
+                border-radius: 999px;
+                background: rgba(255, 255, 255, 0.72);
+                color: var(--muted);
+                cursor: pointer;
+                font: inherit;
+                font-size: 0.82rem;
+                font-weight: 600;
+            }
+
+            .logout-button:hover {
+                color: var(--text);
+                background: #fff;
+            }
+
             .page-card {
                 background: var(--panel);
                 border: 1px solid rgba(217, 224, 231, 0.9);
@@ -646,6 +675,14 @@
                             @endforeach
                         </div>
                     </details>
+
+                    @auth
+                        <span class="session-user">{{ $currentUser?->display_name ?: $currentUser?->name }}</span>
+                        <form class="logout-form" method="post" action="{{ route('logout') }}">
+                            @csrf
+                            <button class="logout-button" type="submit">{{ __('layout.nav.logout') }}</button>
+                        </form>
+                    @endauth
                 </nav>
             </header>
 

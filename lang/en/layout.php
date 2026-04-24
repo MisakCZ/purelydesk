@@ -15,5 +15,6 @@ return [
             'en' => 'English',
         ],
         'current' => 'Current language: :locale',
+        'logout' => 'Sign out',
     ],
 ];
