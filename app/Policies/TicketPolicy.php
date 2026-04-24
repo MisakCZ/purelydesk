@@ -67,6 +67,11 @@ class TicketPolicy
             && $this->view($user, $ticket);
     }
 
+    public function updateExpectedResolution(?User $user, Ticket $ticket): bool
+    {
+        return $this->canManageWorkflow($user, $ticket);
+    }
+
     public function updatePin(?User $user, Ticket $ticket): bool
     {
         return $this->canManagePinnedState($user, $ticket);

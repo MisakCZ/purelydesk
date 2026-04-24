@@ -5,6 +5,10 @@
     $categoryValue = (string) old('category_id', $ticket?->ticket_category_id);
     $descriptionValue = old('description', $ticket?->description);
     $visibilityValue = (string) old('visibility', $ticket?->visibility ?? \App\Models\Ticket::VISIBILITY_PUBLIC);
+    $expectedResolutionValue = old(
+        'expected_resolution_at',
+        $ticket?->expected_resolution_at?->format('Y-m-d\TH:i'),
+    );
 @endphp
 
 <div class="form-grid">
@@ -68,6 +72,23 @@
             <div class="hint">{{ __('tickets.form.hints.visibility') }}</div>
             @if ($viewErrors->has('visibility'))
                 <div class="field-error">{{ $viewErrors->first('visibility') }}</div>
+            @endif
+        </div>
+    @endif
+
+    @if ($ticket && $canManageExpectedResolution)
+        <div class="field">
+            <label class="label" for="expected_resolution_at">{{ __('tickets.form.labels.expected_resolution_at') }}</label>
+            <input
+                class="input"
+                id="expected_resolution_at"
+                name="expected_resolution_at"
+                type="datetime-local"
+                value="{{ $expectedResolutionValue }}"
+            >
+            <div class="hint">{{ __('tickets.form.hints.expected_resolution_at') }}</div>
+            @if ($viewErrors->has('expected_resolution_at'))
+                <div class="field-error">{{ $viewErrors->first('expected_resolution_at') }}</div>
             @endif
         </div>
     @endif

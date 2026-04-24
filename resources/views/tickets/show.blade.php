@@ -34,6 +34,7 @@
         'requester' => __('tickets.show.history.fields.requester'),
         'assignee' => __('tickets.show.history.fields.assignee'),
         'pinned' => __('tickets.show.history.fields.pinned'),
+        'expected_resolution_at' => __('tickets.show.history.fields.expected_resolution_at'),
         'resolved_at' => __('tickets.show.history.fields.resolved_at'),
         'auto_close_at' => __('tickets.show.history.fields.auto_close_at'),
         'closed_at' => __('tickets.show.history.fields.closed_at'),
@@ -198,6 +199,25 @@
             border: 1px solid #edf2f7;
             border-radius: 0.95rem;
             background: #fbfdff;
+        }
+
+        .content-meta-line {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            width: fit-content;
+            padding: 0.35rem 0.62rem;
+            border: 1px solid #e5ebf1;
+            border-radius: 999px;
+            background: #f8fafc;
+            color: #475569;
+            font-size: 0.84rem;
+            font-weight: 600;
+        }
+
+        .content-meta-line strong {
+            color: #13202b;
+            font-weight: 700;
         }
 
         .hero-description-actions {
@@ -1413,6 +1433,13 @@
                         <div class="detail-value content-description">
                             {!! nl2br(e($ticket->description ?? __('tickets.common.not_available'))) !!}
                         </div>
+
+                        @if ($ticket->expected_resolution_at)
+                            <div class="content-meta-line">
+                                {{ __('tickets.show.content.expected_resolution_at') }}:
+                                <strong>{{ $ticket->expected_resolution_at->locale($locale)->translatedFormat($dateTimeFormat) }}</strong>
+                            </div>
+                        @endif
 
                         <div class="hero-description-actions">
                             @if ($pinningEnabled)

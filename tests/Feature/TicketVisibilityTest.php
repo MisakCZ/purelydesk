@@ -885,6 +885,111 @@ class TicketVisibilityTest extends TestCase
         $this->assertNull($editableTicket->pinned_at);
     }
 
+    public function test_solver_and_admin_see_expected_resolution_field_in_edit_form(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $admin = $this->createUserWithRole($this->adminRole);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'visibility' => Ticket::VISIBILITY_INTERNAL,
+        ]);
+
+        foreach ([$solver, $admin] as $actor) {
+            $this->actingAs($actor)
+                ->get(route('tickets.edit', $ticket))
+                ->assertOk()
+                ->assertSee('name="expected_resolution_at"', false);
+        }
+    }
+
+    public function test_regular_user_does_not_see_expected_resolution_field_in_edit_form(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+        ]);
+
+        $this->actingAs($requester)
+            ->get(route('tickets.edit', $ticket))
+            ->assertOk()
+            ->assertDontSee('name="expected_resolution_at"', false);
+    }
+
+    public function test_expected_resolution_is_visible_on_ticket_detail(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+        ]);
+        $ticket->forceFill([
+            'expected_resolution_at' => Carbon::parse('2026-05-04 13:30:00'),
+        ])->save();
+
+        $this->actingAs($requester)
+            ->get(route('tickets.show', $ticket))
+            ->assertOk()
+            ->assertSeeText(__('tickets.show.content.expected_resolution_at'));
+    }
+
+    public function test_regular_user_cannot_update_expected_resolution_from_edit_flow(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+        ]);
+
+        $this->actingAs($requester)
+            ->patch(route('tickets.update', $ticket), [
+                'subject' => $ticket->subject,
+                'description' => $ticket->description,
+                'priority_id' => $this->defaultPriority->id,
+                'category_id' => $this->defaultCategory->id,
+                'expected_resolution_at' => '2026-05-04T13:30',
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        $ticket->refresh();
+
+        $this->assertNull($ticket->expected_resolution_at);
+    }
+
+    public function test_solver_can_update_expected_resolution_and_history_records_it(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'visibility' => Ticket::VISIBILITY_INTERNAL,
+        ]);
+
+        $this->actingAs($solver)
+            ->patch(route('tickets.update', $ticket), [
+                'subject' => $ticket->subject,
+                'description' => $ticket->description,
+                'priority_id' => $this->defaultPriority->id,
+                'category_id' => $this->defaultCategory->id,
+                'expected_resolution_at' => '2026-05-04T13:30',
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        $ticket->refresh();
+
+        $this->assertTrue($ticket->expected_resolution_at?->equalTo(Carbon::parse('2026-05-04 13:30:00')) ?? false);
+
+        $updateEntry = TicketHistory::query()
+            ->where('ticket_id', $ticket->id)
+            ->where('event', TicketHistory::EVENT_UPDATED)
+            ->latest('id')
+            ->first();
+
+        $this->assertNotNull($updateEntry);
+        $this->assertContains('expected_resolution_at', $updateEntry->meta['changed_fields']);
+    }
+
     public function test_ticket_list_uses_czech_translations_for_system_labels_and_values(): void
     {
         $requester = $this->createUserWithRole($this->userRole);

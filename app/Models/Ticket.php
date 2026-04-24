@@ -32,6 +32,7 @@ class Ticket extends Model
         'ticket_priority_id',
         'ticket_category_id',
         'due_at',
+        'expected_resolution_at',
         'last_activity_at',
         'resolved_at',
         'auto_close_at',
@@ -44,6 +45,7 @@ class Ticket extends Model
     {
         return [
             'due_at' => 'datetime',
+            'expected_resolution_at' => 'datetime',
             'last_activity_at' => 'datetime',
             'resolved_at' => 'datetime',
             'auto_close_at' => 'datetime',
@@ -63,6 +65,17 @@ class Ticket extends Model
         }
 
         return $supportsPinning;
+    }
+
+    public static function supportsExpectedResolution(): bool
+    {
+        static $supportsExpectedResolution;
+
+        if ($supportsExpectedResolution === null) {
+            $supportsExpectedResolution = Schema::hasColumn('tickets', 'expected_resolution_at');
+        }
+
+        return $supportsExpectedResolution;
     }
 
     public static function visibilityOptions(): array

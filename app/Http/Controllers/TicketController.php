@@ -28,6 +28,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 
@@ -351,9 +352,12 @@ class TicketController extends Controller
         $this->authorizeTicketAbility('update', $ticket);
 
         $canManageVisibility = $this->ticketPolicy()->updateVisibility($this->currentHelpdeskUser(), $ticket);
+        $canManageExpectedResolution = $this->ticketPolicy()->updateExpectedResolution($this->currentHelpdeskUser(), $ticket)
+            && Ticket::supportsExpectedResolution();
         $validated = $this->validateTicketInput(
             $request,
             allowVisibility: $canManageVisibility,
+            allowExpectedResolution: $canManageExpectedResolution,
         );
 
         return $this->applyTicketUpdateWithHistory(
@@ -541,6 +545,10 @@ class TicketController extends Controller
             'canManageVisibility' => $ticket instanceof Ticket
                 ? $this->ticketPolicy()->updateVisibility($actor, $ticket)
                 : false,
+            'canManageExpectedResolution' => $ticket instanceof Ticket
+                ? $this->ticketPolicy()->updateExpectedResolution($actor, $ticket) && Ticket::supportsExpectedResolution()
+                : false,
+            'expectedResolutionEnabled' => Ticket::supportsExpectedResolution(),
         ];
     }
 
@@ -676,6 +684,7 @@ class TicketController extends Controller
     private function validateTicketInput(
         Request $request,
         bool $allowVisibility,
+        bool $allowExpectedResolution = false,
     ): array
     {
         $rules = [
@@ -687,6 +696,10 @@ class TicketController extends Controller
 
         if ($allowVisibility) {
             $rules['visibility'] = ['nullable', 'in:public,internal,private'];
+        }
+
+        if ($allowExpectedResolution) {
+            $rules['expected_resolution_at'] = ['nullable', 'date'];
         }
 
         return $request->validate($rules);
@@ -703,6 +716,12 @@ class TicketController extends Controller
 
         if (array_key_exists('visibility', $validated) && $validated['visibility'] !== null) {
             $attributes['visibility'] = $validated['visibility'];
+        }
+
+        if (array_key_exists('expected_resolution_at', $validated)) {
+            $attributes['expected_resolution_at'] = $validated['expected_resolution_at'] !== null
+                ? Carbon::parse($validated['expected_resolution_at'])
+                : null;
         }
 
         return $attributes;
@@ -802,6 +821,7 @@ class TicketController extends Controller
                     'pinned_at' => $ticket->pinned_at?->toIso8601String(),
                 ]
                 : null,
+            'expected_resolution_at' => $ticket->expected_resolution_at?->toIso8601String(),
             'closed_at' => $ticket->closed_at?->toIso8601String(),
             'created_at' => $ticket->created_at?->toIso8601String(),
         ];
