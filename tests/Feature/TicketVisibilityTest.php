@@ -465,6 +465,221 @@ class TicketVisibilityTest extends TestCase
         ]);
     }
 
+    public function test_requester_is_automatic_watcher_when_ticket_is_created(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+
+        $this->actingAs($requester);
+
+        $this->post(route('tickets.store'), [
+            'subject' => 'Automatic requester watcher',
+            'description' => 'Requester should watch own ticket automatically.',
+            'priority_id' => $this->defaultPriority->id,
+            'category_id' => $this->defaultCategory->id,
+        ])->assertRedirect(route('tickets.index'));
+
+        $ticket = Ticket::query()->where('subject', 'Automatic requester watcher')->firstOrFail();
+
+        $this->assertDatabaseHas('ticket_watchers', [
+            'ticket_id' => $ticket->id,
+            'user_id' => $requester->id,
+            'is_manual' => false,
+            'is_auto_participant' => true,
+        ]);
+    }
+
+    public function test_assignee_update_synchronizes_automatic_watchers(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $oldAssignee = $this->createUserWithRole($this->solverRole);
+        $newAssignee = $this->createUserWithRole($this->solverRole);
+        $assignedStatus = TicketStatus::query()->create([
+            'name' => 'Assigned',
+            'slug' => 'assigned',
+            'sort_order' => 2,
+        ]);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'assignee' => $oldAssignee,
+            'status' => $assignedStatus,
+            'visibility' => Ticket::VISIBILITY_INTERNAL,
+        ]);
+
+        $ticket->watcherEntries()->create([
+            'user_id' => $oldAssignee->id,
+            'is_manual' => false,
+            'is_auto_participant' => true,
+        ]);
+
+        $this->actingAs($solver)
+            ->patch(route('tickets.assignee.update', $ticket), [
+                'assignee_id' => $newAssignee->id,
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        $this->assertDatabaseHas('ticket_watchers', [
+            'ticket_id' => $ticket->id,
+            'user_id' => $requester->id,
+            'is_auto_participant' => true,
+        ]);
+        $this->assertDatabaseHas('ticket_watchers', [
+            'ticket_id' => $ticket->id,
+            'user_id' => $newAssignee->id,
+            'is_manual' => false,
+            'is_auto_participant' => true,
+        ]);
+        $this->assertDatabaseMissing('ticket_watchers', [
+            'ticket_id' => $ticket->id,
+            'user_id' => $oldAssignee->id,
+        ]);
+    }
+
+    public function test_manual_watching_is_not_removed_when_auto_participant_changes(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $oldAssignee = $this->createUserWithRole($this->solverRole);
+        $newAssignee = $this->createUserWithRole($this->solverRole);
+        $assignedStatus = TicketStatus::query()->create([
+            'name' => 'Assigned',
+            'slug' => 'assigned',
+            'sort_order' => 2,
+        ]);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'assignee' => $oldAssignee,
+            'status' => $assignedStatus,
+            'visibility' => Ticket::VISIBILITY_INTERNAL,
+        ]);
+
+        $ticket->watcherEntries()->create([
+            'user_id' => $oldAssignee->id,
+            'is_manual' => true,
+            'is_auto_participant' => true,
+        ]);
+
+        $this->actingAs($solver)
+            ->patch(route('tickets.assignee.update', $ticket), [
+                'assignee_id' => $newAssignee->id,
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        $this->assertDatabaseHas('ticket_watchers', [
+            'ticket_id' => $ticket->id,
+            'user_id' => $oldAssignee->id,
+            'is_manual' => true,
+            'is_auto_participant' => false,
+        ]);
+    }
+
+    public function test_watched_filter_includes_automatic_participant_watchers(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $otherUser = $this->createUserWithRole($this->userRole);
+        $watchedTicket = $this->createTicket([
+            'requester' => $requester,
+            'subject' => 'Automatic watched filter match',
+        ]);
+        $unwatchedTicket = $this->createTicket([
+            'requester' => $otherUser,
+            'subject' => 'Automatic watched filter miss',
+        ]);
+
+        $watchedTicket->watcherEntries()->create([
+            'user_id' => $requester->id,
+            'is_manual' => false,
+            'is_auto_participant' => true,
+        ]);
+
+        $this->actingAs($requester);
+
+        $this->get(route('tickets.index', ['watched' => '1']))
+            ->assertOk()
+            ->assertSeeText($watchedTicket->subject)
+            ->assertDontSeeText($unwatchedTicket->subject);
+    }
+
+    public function test_ticket_index_can_sort_by_visible_columns(): void
+    {
+        $admin = $this->createUserWithRole($this->adminRole);
+        $assignedStatus = TicketStatus::query()->create([
+            'name' => 'Assigned',
+            'slug' => 'assigned',
+            'sort_order' => 2,
+        ]);
+        $resolvedStatus = TicketStatus::query()->create([
+            'name' => 'Resolved',
+            'slug' => 'resolved',
+            'sort_order' => 3,
+        ]);
+        $highPriority = TicketPriority::query()->create([
+            'name' => 'High',
+            'slug' => 'high',
+            'sort_order' => 2,
+        ]);
+        $firstTicket = $this->createTicket([
+            'subject' => 'Alpha sort ticket',
+            'status' => $assignedStatus,
+            'priority' => $this->defaultPriority,
+        ]);
+        $secondTicket = $this->createTicket([
+            'subject' => 'Bravo sort ticket',
+            'status' => $resolvedStatus,
+            'priority' => $highPriority,
+        ]);
+
+        $firstTicket->forceFill([
+            'ticket_number' => '2026-001',
+            'updated_at' => Carbon::parse('2026-04-20 10:00:00'),
+        ])->save();
+        $secondTicket->forceFill([
+            'ticket_number' => '2026-002',
+            'updated_at' => Carbon::parse('2026-04-21 10:00:00'),
+        ])->save();
+
+        $this->actingAs($admin);
+
+        foreach (['number', 'subject', 'status', 'priority'] as $sort) {
+            $this->get(route('tickets.index', ['sort' => $sort, 'direction' => 'asc']))
+                ->assertOk()
+                ->assertSeeInOrder([$firstTicket->subject, $secondTicket->subject]);
+        }
+
+        $this->get(route('tickets.index', ['sort' => 'updated_at', 'direction' => 'asc']))
+            ->assertOk()
+            ->assertSeeInOrder([$firstTicket->subject, $secondTicket->subject]);
+    }
+
+    public function test_ticket_index_scope_filter_limits_open_and_finished_tickets(): void
+    {
+        $admin = $this->createUserWithRole($this->adminRole);
+        $closedStatus = TicketStatus::query()->create([
+            'name' => 'Closed',
+            'slug' => 'closed',
+            'sort_order' => 9,
+        ]);
+        $openTicket = $this->createTicket([
+            'subject' => 'Open scoped ticket',
+        ]);
+        $closedTicket = $this->createTicket([
+            'subject' => 'Finished scoped ticket',
+            'status' => $closedStatus,
+        ]);
+
+        $this->actingAs($admin);
+
+        $this->get(route('tickets.index', ['scope' => 'open']))
+            ->assertOk()
+            ->assertSeeText($openTicket->subject)
+            ->assertDontSeeText($closedTicket->subject);
+
+        $this->get(route('tickets.index', ['scope' => 'finished']))
+            ->assertOk()
+            ->assertSeeText($closedTicket->subject)
+            ->assertDontSeeText($openTicket->subject);
+    }
+
     public function test_removing_assignee_on_assigned_ticket_moves_status_to_new(): void
     {
         $requester = $this->createUserWithRole($this->userRole);

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Policies\TicketPolicy;
+use App\Services\TicketWatcherService;
 use App\Support\ResolvesHelpdeskUser;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Validation\ValidationException;
@@ -19,7 +20,7 @@ class TicketWatcherController extends Controller
 
         $user = $this->resolveWatcher();
 
-        $ticket->watchers()->syncWithoutDetaching([$user->id]);
+        app(TicketWatcherService::class)->startManualWatching($ticket, $user->id);
 
         return redirect()
             ->route('tickets.show', $ticket)
@@ -32,7 +33,7 @@ class TicketWatcherController extends Controller
 
         $user = $this->resolveWatcher();
 
-        $ticket->watchers()->detach($user->id);
+        app(TicketWatcherService::class)->stopManualWatching($ticket, $user->id);
 
         return redirect()
             ->route('tickets.show', $ticket)

@@ -163,8 +163,8 @@
 
         .filter-grid {
             display: grid;
-            grid-template-columns: minmax(12rem, 1.2fr) repeat(4, minmax(9rem, 0.88fr));
-            gap: 0.6rem;
+            grid-template-columns: minmax(11rem, 1.25fr) repeat(5, minmax(7.6rem, 0.82fr));
+            gap: 0.55rem;
             align-items: end;
         }
 
@@ -312,6 +312,34 @@
             background: #f8fafc;
         }
 
+        .sort-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.28rem;
+            color: inherit;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .sort-link:hover,
+        .sort-link.active {
+            color: #0f766e;
+        }
+
+        .sort-indicator {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 0.8rem;
+            color: #94a3b8;
+            font-size: 0.68rem;
+            line-height: 1;
+        }
+
+        .sort-link.active .sort-indicator {
+            color: currentColor;
+        }
+
         .ticket-table tbody tr:hover {
             background: #f8fbff;
         }
@@ -321,17 +349,22 @@
         }
 
         .ticket-col-number {
-            width: 7.4rem;
+            width: 6.6rem;
         }
 
         .ticket-col-status,
         .ticket-col-priority {
-            width: 11rem;
+            width: 8.85rem;
         }
 
         .ticket-col-updated {
-            width: 7.35rem;
+            width: 8.65rem;
             white-space: nowrap;
+        }
+
+        .ticket-table th.ticket-col-updated,
+        .ticket-table td.ticket-col-updated {
+            padding-right: 1.25rem;
         }
 
         .ticket-number {
@@ -358,7 +391,7 @@
 
         .subject {
             min-width: 0;
-            padding-left: 1.45rem !important;
+            padding-left: 1.15rem !important;
         }
 
         .subject-title {
@@ -697,7 +730,11 @@
 
             .ticket-col-status,
             .ticket-col-priority {
-                width: 10rem;
+                width: 8.55rem;
+            }
+
+            .ticket-col-updated {
+                width: 8.35rem;
             }
         }
 
@@ -1087,6 +1124,24 @@
 
             return $query;
         };
+        $sortQuery = static function (string $column) use ($filters): array {
+            $query = array_filter($filters, fn ($value) => $value !== '');
+            $isActiveColumn = ($filters['sort'] ?? 'updated_at') === $column;
+
+            $query['sort'] = $column;
+            $query['direction'] = $isActiveColumn && ($filters['direction'] ?? 'desc') === 'asc' ? 'desc' : 'asc';
+
+            unset($query['page']);
+
+            return $query;
+        };
+        $sortIndicator = static function (string $column) use ($filters): string {
+            if (($filters['sort'] ?? 'updated_at') !== $column) {
+                return '↕';
+            }
+
+            return ($filters['direction'] ?? 'desc') === 'asc' ? '↑' : '↓';
+        };
     @endphp
 
     <div class="page-head">
@@ -1145,6 +1200,8 @@
         <section class="filter-card" aria-label="{{ __('tickets.index.filters.section') }}">
             <form class="filter-form" method="get" action="{{ route('tickets.index') }}" data-ticket-filters>
                 <input type="hidden" name="search" value="{{ $filters['search'] }}" data-filter-search-hidden>
+                <input type="hidden" name="sort" value="{{ $filters['sort'] }}">
+                <input type="hidden" name="direction" value="{{ $filters['direction'] }}">
 
                 <div class="filter-grid">
                     <div class="filter-field">
@@ -1272,6 +1329,29 @@
                             </select>
                         </div>
                     </div>
+
+                    <div class="filter-field">
+                        <div class="filter-head">
+                            <label class="filter-label" for="scope">{{ __('tickets.index.filters.scope') }}</label>
+                            @if ($filters['scope'] !== '')
+                                <a
+                                    class="filter-clear"
+                                    href="{{ route('tickets.index', $clearFilterQuery('scope')) }}"
+                                    aria-label="{{ __('tickets.index.filters.clear_scope') }}"
+                                    title="{{ __('tickets.index.filters.clear_scope') }}"
+                                >
+                                    &times;
+                                </a>
+                            @endif
+                        </div>
+                        <div class="filter-control filter-control-select">
+                            <select class="filter-select" id="scope" name="scope" data-filter-auto-submit>
+                                <option value="">{{ __('tickets.index.filters.scope_all') }}</option>
+                                <option value="open" @selected($filters['scope'] === 'open')>{{ __('tickets.index.filters.scope_open') }}</option>
+                                <option value="finished" @selected($filters['scope'] === 'finished')>{{ __('tickets.index.filters.scope_finished') }}</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
             </form>
         </section>
@@ -1346,11 +1426,36 @@
                 <table class="ticket-table">
                     <thead>
                         <tr>
-                            <th class="ticket-col-number" scope="col">{{ __('tickets.index.table.ticket_number') }}</th>
-                            <th scope="col">{{ __('tickets.index.table.subject') }}</th>
-                            <th class="ticket-col-status" scope="col">{{ __('tickets.index.table.status') }}</th>
-                            <th class="ticket-col-priority" scope="col">{{ __('tickets.index.table.priority') }}</th>
-                            <th class="ticket-col-updated" scope="col">{{ __('tickets.index.table.updated_at') }}</th>
+                            <th class="ticket-col-number" scope="col">
+                                <a class="sort-link{{ $filters['sort'] === 'number' ? ' active' : '' }}" href="{{ route('tickets.index', $sortQuery('number')) }}" aria-label="{{ __('tickets.index.sort.toggle', ['column' => __('tickets.index.table.ticket_number')]) }}">
+                                    <span>{{ __('tickets.index.table.ticket_number') }}</span>
+                                    <span class="sort-indicator" aria-hidden="true">{{ $sortIndicator('number') }}</span>
+                                </a>
+                            </th>
+                            <th scope="col">
+                                <a class="sort-link{{ $filters['sort'] === 'subject' ? ' active' : '' }}" href="{{ route('tickets.index', $sortQuery('subject')) }}" aria-label="{{ __('tickets.index.sort.toggle', ['column' => __('tickets.index.table.subject')]) }}">
+                                    <span>{{ __('tickets.index.table.subject') }}</span>
+                                    <span class="sort-indicator" aria-hidden="true">{{ $sortIndicator('subject') }}</span>
+                                </a>
+                            </th>
+                            <th class="ticket-col-status" scope="col">
+                                <a class="sort-link{{ $filters['sort'] === 'status' ? ' active' : '' }}" href="{{ route('tickets.index', $sortQuery('status')) }}" aria-label="{{ __('tickets.index.sort.toggle', ['column' => __('tickets.index.table.status')]) }}">
+                                    <span>{{ __('tickets.index.table.status') }}</span>
+                                    <span class="sort-indicator" aria-hidden="true">{{ $sortIndicator('status') }}</span>
+                                </a>
+                            </th>
+                            <th class="ticket-col-priority" scope="col">
+                                <a class="sort-link{{ $filters['sort'] === 'priority' ? ' active' : '' }}" href="{{ route('tickets.index', $sortQuery('priority')) }}" aria-label="{{ __('tickets.index.sort.toggle', ['column' => __('tickets.index.table.priority')]) }}">
+                                    <span>{{ __('tickets.index.table.priority') }}</span>
+                                    <span class="sort-indicator" aria-hidden="true">{{ $sortIndicator('priority') }}</span>
+                                </a>
+                            </th>
+                            <th class="ticket-col-updated" scope="col">
+                                <a class="sort-link{{ $filters['sort'] === 'updated_at' ? ' active' : '' }}" href="{{ route('tickets.index', $sortQuery('updated_at')) }}" aria-label="{{ __('tickets.index.sort.toggle', ['column' => __('tickets.index.table.updated_at')]) }}">
+                                    <span>{{ __('tickets.index.table.updated_at') }}</span>
+                                    <span class="sort-indicator" aria-hidden="true">{{ $sortIndicator('updated_at') }}</span>
+                                </a>
+                            </th>
                         </tr>
                     </thead>
                     <tbody>

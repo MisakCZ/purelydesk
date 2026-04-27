@@ -99,7 +99,9 @@ class User extends Authenticatable
 
     public function watchedTickets(): BelongsToMany
     {
-        return $this->belongsToMany(Ticket::class, 'ticket_watchers')->withTimestamps();
+        return $this->belongsToMany(Ticket::class, 'ticket_watchers')
+            ->withPivot(['is_manual', 'is_auto_participant'])
+            ->withTimestamps();
     }
 
     public function ticketHistory(): HasMany

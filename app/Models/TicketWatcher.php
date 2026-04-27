@@ -13,7 +13,17 @@ class TicketWatcher extends Model
     protected $fillable = [
         'ticket_id',
         'user_id',
+        'is_manual',
+        'is_auto_participant',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'is_manual' => 'boolean',
+            'is_auto_participant' => 'boolean',
+        ];
+    }
 
     public function ticket(): BelongsTo
     {

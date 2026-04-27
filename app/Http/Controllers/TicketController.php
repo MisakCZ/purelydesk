@@ -22,6 +22,7 @@ use App\Policies\TicketPolicy;
 use App\Support\LocaleManager;
 use App\Support\ResolvesHelpdeskUser;
 use App\Services\TicketHistoryService;
+use App\Services\TicketWatcherService;
 use App\Services\TicketWorkflowAutomationService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Contracts\View\View;
@@ -37,6 +38,19 @@ class TicketController extends Controller
     use ResolvesHelpdeskUser;
 
     private const INDEX_FILTERS_SESSION_KEY = 'tickets.index.filters';
+    private const DEFAULT_INDEX_SORT = 'updated_at';
+    private const DEFAULT_INDEX_DIRECTION = 'desc';
+    private const INDEX_SORT_COLUMNS = [
+        'number',
+        'subject',
+        'status',
+        'priority',
+        'updated_at',
+    ];
+    private const INDEX_SORT_DIRECTIONS = [
+        'asc',
+        'desc',
+    ];
 
     public function index(Request $request): View
     {
@@ -45,10 +59,12 @@ class TicketController extends Controller
         $canUseInlineListEditing = $actor instanceof User
             && ($actor->isAdmin() || $actor->isSolver());
 
-        $tickets = $this->applyTicketFilters($this->ticketIndexQuery($actor), $filters, $actor)
-            ->orderByDesc('updated_at')
+        $tickets = $this->applyTicketSorting(
+            $this->applyTicketFilters($this->ticketIndexQuery($actor), $filters, $actor),
+            $filters,
+        )
             ->paginate(15)
-            ->appends($this->nonEmptyTicketFilters($filters));
+            ->appends($this->nonDefaultTicketIndexQuery($filters));
 
         $tickets->getCollection()->transform(function (Ticket $ticket) use ($actor, $canUseInlineListEditing) {
             $ticket->setAttribute(
@@ -94,7 +110,7 @@ class TicketController extends Controller
             'priorities' => TicketPriority::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name', 'slug']),
             'categories' => TicketCategory::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'slug']),
             'visibilityOptions' => Ticket::visibilityOptions(),
-            'hasActiveFilters' => collect($filters)->contains(fn ($value) => $value !== ''),
+            'hasActiveFilters' => collect($this->filterOnlyTicketState($filters))->contains(fn ($value) => $value !== ''),
             'canCreateTickets' => $this->ticketPolicy()->create($actor),
         ]);
     }
@@ -345,6 +361,7 @@ class TicketController extends Controller
         $ticket->refresh();
         $ticket->load($this->ticketSnapshotRelations());
         $this->ensureOriginalSnapshot($ticket, 'create');
+        $this->ticketWatcherService()->syncAutomaticParticipants($ticket);
 
         return redirect()
             ->route('tickets.index')
@@ -472,6 +489,7 @@ class TicketController extends Controller
             $action,
             $this->currentHelpdeskUser(),
         );
+        $this->ticketWatcherService()->syncAutomaticParticipants($ticket);
 
         if ($request instanceof Request && $request->expectsJson()) {
             $responseLocale = app(LocaleManager::class)->resolveForRequest($request);
@@ -601,6 +619,12 @@ class TicketController extends Controller
             ->when($filters['category'] !== '', function (Builder $query) use ($filters): void {
                 $query->where('ticket_category_id', (int) $filters['category']);
             })
+            ->when($filters['scope'] === 'open', function (Builder $query): void {
+                $query->whereDoesntHave('status', fn (Builder $query) => $this->whereStatusIdentifiers($query, ['closed', 'cancelled']));
+            })
+            ->when($filters['scope'] === 'finished', function (Builder $query): void {
+                $query->whereHas('status', fn (Builder $query) => $this->whereStatusIdentifiers($query, ['closed', 'cancelled']));
+            })
             ->when($filters['watched'] === '1', function (Builder $query) use ($watcherUser): void {
                 if (! $watcherUser instanceof User) {
                     $query->whereRaw('1 = 0');
@@ -610,6 +634,57 @@ class TicketController extends Controller
 
                 $query->whereHas('watchers', fn (Builder $query) => $query->whereKey($watcherUser->id));
             });
+    }
+
+    private function whereStatusIdentifiers(Builder $query, array $identifiers): void
+    {
+        $query->whereIn('slug', $identifiers);
+
+        if (Schema::hasColumn('ticket_statuses', 'code')) {
+            $query->orWhereIn('code', $identifiers);
+        }
+    }
+
+    private function applyTicketSorting(Builder $query, array $filters): Builder
+    {
+        $sort = $filters['sort'] ?? self::DEFAULT_INDEX_SORT;
+        $direction = $filters['direction'] ?? self::DEFAULT_INDEX_DIRECTION;
+
+        if (! in_array($sort, self::INDEX_SORT_COLUMNS, true)) {
+            $sort = self::DEFAULT_INDEX_SORT;
+        }
+
+        if (! in_array($direction, self::INDEX_SORT_DIRECTIONS, true)) {
+            $direction = self::DEFAULT_INDEX_DIRECTION;
+        }
+
+        if ($sort === 'status') {
+            return $query
+                ->leftJoin('ticket_statuses as sort_statuses', 'sort_statuses.id', '=', 'tickets.ticket_status_id')
+                ->orderBy('sort_statuses.sort_order', $direction)
+                ->orderBy('sort_statuses.name', $direction)
+                ->orderBy('tickets.updated_at', 'desc')
+                ->orderBy('tickets.id', 'desc');
+        }
+
+        if ($sort === 'priority') {
+            return $query
+                ->leftJoin('ticket_priorities as sort_priorities', 'sort_priorities.id', '=', 'tickets.ticket_priority_id')
+                ->orderBy('sort_priorities.sort_order', $direction)
+                ->orderBy('sort_priorities.name', $direction)
+                ->orderBy('tickets.updated_at', 'desc')
+                ->orderBy('tickets.id', 'desc');
+        }
+
+        $column = match ($sort) {
+            'number' => 'tickets.ticket_number',
+            'subject' => 'tickets.subject',
+            default => 'tickets.updated_at',
+        };
+
+        return $query
+            ->orderBy($column, $direction)
+            ->orderBy('tickets.id', 'desc');
     }
 
     private function resolveTicketIndexFilters(Request $request): array
@@ -643,24 +718,56 @@ class TicketController extends Controller
             'status' => '',
             'priority' => '',
             'category' => '',
+            'scope' => '',
             'watched' => '',
+            'sort' => self::DEFAULT_INDEX_SORT,
+            'direction' => self::DEFAULT_INDEX_DIRECTION,
         ];
     }
 
     private function normalizeTicketFilters(array $filters): array
     {
+        $sort = (string) ($filters['sort'] ?? self::DEFAULT_INDEX_SORT);
+        $direction = (string) ($filters['direction'] ?? self::DEFAULT_INDEX_DIRECTION);
+        $scope = (string) ($filters['scope'] ?? '');
+
         return [
             'search' => trim((string) ($filters['search'] ?? '')),
             'status' => (string) ($filters['status'] ?? ''),
             'priority' => (string) ($filters['priority'] ?? ''),
             'category' => (string) ($filters['category'] ?? ''),
+            'scope' => in_array($scope, ['open', 'finished'], true) ? $scope : '',
             'watched' => (string) ($filters['watched'] ?? '') === '1' ? '1' : '',
+            'sort' => in_array($sort, self::INDEX_SORT_COLUMNS, true) ? $sort : self::DEFAULT_INDEX_SORT,
+            'direction' => in_array($direction, self::INDEX_SORT_DIRECTIONS, true) ? $direction : self::DEFAULT_INDEX_DIRECTION,
         ];
     }
 
-    private function nonEmptyTicketFilters(array $filters): array
+    private function nonDefaultTicketIndexQuery(array $filters): array
     {
-        return array_filter($filters, fn (string $value) => $value !== '');
+        $query = array_filter($this->filterOnlyTicketState($filters), fn (string $value) => $value !== '');
+
+        if (($filters['sort'] ?? self::DEFAULT_INDEX_SORT) !== self::DEFAULT_INDEX_SORT) {
+            $query['sort'] = $filters['sort'];
+        }
+
+        if (($filters['direction'] ?? self::DEFAULT_INDEX_DIRECTION) !== self::DEFAULT_INDEX_DIRECTION) {
+            $query['direction'] = $filters['direction'];
+        }
+
+        return $query;
+    }
+
+    private function filterOnlyTicketState(array $filters): array
+    {
+        return [
+            'search' => (string) ($filters['search'] ?? ''),
+            'status' => (string) ($filters['status'] ?? ''),
+            'priority' => (string) ($filters['priority'] ?? ''),
+            'category' => (string) ($filters['category'] ?? ''),
+            'scope' => (string) ($filters['scope'] ?? ''),
+            'watched' => (string) ($filters['watched'] ?? ''),
+        ];
     }
 
     private function formatListUpdatedAt(?CarbonInterface $value, ?string $locale = null): string
@@ -888,5 +995,10 @@ class TicketController extends Controller
     private function ticketHistoryService(): TicketHistoryService
     {
         return app(TicketHistoryService::class);
+    }
+
+    private function ticketWatcherService(): TicketWatcherService
+    {
+        return app(TicketWatcherService::class);
     }
 }

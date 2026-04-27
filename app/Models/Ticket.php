@@ -321,7 +321,9 @@ class Ticket extends Model
 
     public function watchers(): BelongsToMany
     {
-        return $this->belongsToMany(User::class, 'ticket_watchers')->withTimestamps();
+        return $this->belongsToMany(User::class, 'ticket_watchers')
+            ->withPivot(['is_manual', 'is_auto_participant'])
+            ->withTimestamps();
     }
 
     public function watcherEntries(): HasMany
