@@ -287,6 +287,7 @@ return [
     'validation' => [
         'pinning_unavailable' => 'Připnutí ticketu zatím není v databázi dostupné. Spusťte migrace aplikace.',
         'initial_status_missing' => 'Nelze vytvořit ticket, protože v systému chybí výchozí stav "new". Kontaktujte administrátora.',
+        'assignee_must_be_solver' => 'Jako řešitele lze přiřadit pouze aktivního uživatele ve skupině řešitelů.',
         'watcher_missing' => 'Sledování ticketu zatím nelze změnit, protože v databázi neexistuje žádný uživatel.',
         'workflow_closed_status_missing' => 'V systému chybí stav "closed". Ticket zatím nelze potvrdit jako vyřešený.',
         'workflow_assigned_status_missing' => 'V systému chybí stav "assigned". Ticket zatím nelze vrátit k řešení.',

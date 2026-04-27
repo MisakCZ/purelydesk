@@ -411,6 +411,60 @@ class TicketVisibilityTest extends TestCase
         $this->assertSame($waitingUserStatus->id, $ticket->ticket_status_id);
     }
 
+    public function test_assignee_picker_lists_only_active_solvers(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $assignableSolver = $this->createUserWithRole($this->solverRole);
+        $assignableSolver->forceFill(['name' => 'Assignable Solver'])->save();
+        $regularUser = $this->createUserWithRole($this->userRole);
+        $regularUser->forceFill(['name' => 'Regular Non Solver'])->save();
+        $inactiveSolver = $this->createUserWithRole($this->solverRole);
+        $inactiveSolver->forceFill(['name' => 'Inactive Solver', 'is_active' => false])->save();
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'visibility' => Ticket::VISIBILITY_INTERNAL,
+        ]);
+
+        $response = $this->actingAs($solver)
+            ->get(route('tickets.show', $ticket))
+            ->assertOk();
+
+        preg_match(
+            sprintf('/<form class="badge-menu-form" method="post" action="[^"]*%s\\/assignee".*?<\\/form>/s', $ticket->id),
+            $response->getContent(),
+            $matches,
+        );
+
+        $assigneeForm = $matches[0] ?? '';
+
+        $this->assertStringContainsString('Assignable Solver', $assigneeForm);
+        $this->assertStringNotContainsString('Regular Non Solver', $assigneeForm);
+        $this->assertStringNotContainsString('Inactive Solver', $assigneeForm);
+    }
+
+    public function test_assignee_update_rejects_non_solver_user(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $regularUser = $this->createUserWithRole($this->userRole);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'visibility' => Ticket::VISIBILITY_INTERNAL,
+        ]);
+
+        $this->actingAs($solver)
+            ->patch(route('tickets.assignee.update', $ticket), [
+                'assignee_id' => $regularUser->id,
+            ])
+            ->assertSessionHasErrors('assignee_id', null, 'ticketAssignee');
+
+        $this->assertDatabaseHas('tickets', [
+            'id' => $ticket->id,
+            'assignee_id' => null,
+        ]);
+    }
+
     public function test_removing_assignee_on_assigned_ticket_moves_status_to_new(): void
     {
         $requester = $this->createUserWithRole($this->userRole);

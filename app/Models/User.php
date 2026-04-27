@@ -7,6 +7,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -51,6 +52,17 @@ class User extends Authenticatable
     public function isSolver(): bool
     {
         return $this->hasRole(Role::SLUG_SOLVER);
+    }
+
+    public function scopeAssignableSolvers(Builder $query): Builder
+    {
+        return $query
+            ->where(function (Builder $query): void {
+                $query
+                    ->where('is_active', true)
+                    ->orWhereNull('is_active');
+            })
+            ->whereHas('roles', fn (Builder $query) => $query->where('slug', Role::SLUG_SOLVER));
     }
 
     public function roles(): BelongsToMany

@@ -287,6 +287,7 @@ return [
     'validation' => [
         'pinning_unavailable' => 'Ticket pinning is not available in the database yet. Run the application migrations.',
         'initial_status_missing' => 'The ticket cannot be created because the default "new" status is missing in the system. Contact the administrator.',
+        'assignee_must_be_solver' => 'Only an active user in the solver group can be assigned as the ticket assignee.',
         'watcher_missing' => 'Ticket watching cannot be changed yet because there is no user in the database.',
         'workflow_closed_status_missing' => 'The "closed" status is missing in the system. The ticket cannot be confirmed as resolved yet.',
         'workflow_assigned_status_missing' => 'The "assigned" status is missing in the system. The ticket cannot be returned to processing yet.',

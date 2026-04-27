@@ -189,12 +189,16 @@ class TicketController extends Controller
         $canConfirmResolution = $this->ticketPolicy()->confirmResolution($actor, $ticket);
         $canReportProblemPersists = $this->ticketPolicy()->reportProblemPersists($actor, $ticket);
         $people = User::query()->orderBy('name')->get(['id', 'name']);
+        $assignableSolvers = User::query()
+            ->assignableSolvers()
+            ->orderBy('name')
+            ->get(['id', 'name']);
 
         return view('tickets.show', [
             'ticket' => $ticket,
             'statuses' => TicketStatus::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name', 'slug']),
             'requesters' => $people,
-            'assignees' => $people,
+            'assignees' => $assignableSolvers,
             'priorities' => TicketPriority::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name', 'slug']),
             'categories' => TicketCategory::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'slug']),
             'pinningEnabled' => Ticket::supportsPinning(),
