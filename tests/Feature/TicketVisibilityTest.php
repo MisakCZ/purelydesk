@@ -2,9 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Models\Announcement;
 use App\Models\Role;
 use App\Models\Ticket;
 use App\Models\TicketCategory;
+use App\Models\TicketComment;
 use App\Models\TicketHistory;
 use App\Models\TicketPriority;
 use App\Models\TicketStatus;
@@ -141,6 +143,28 @@ class TicketVisibilityTest extends TestCase
         }
 
         $this->actingAs($unrelatedUser);
+
+        $this->get(route('tickets.index'))
+            ->assertOk()
+            ->assertDontSeeText($ticket->subject);
+
+        $this->get(route('tickets.show', $ticket))
+            ->assertForbidden();
+    }
+
+    public function test_solver_does_not_see_private_ticket_when_not_assignee(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $assignee = $this->createUserWithRole($this->solverRole);
+        $otherSolver = $this->createUserWithRole($this->solverRole);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'assignee' => $assignee,
+            'subject' => 'Private ticket hidden from other solver',
+            'visibility' => Ticket::VISIBILITY_PRIVATE,
+        ]);
+
+        $this->actingAs($otherSolver);
 
         $this->get(route('tickets.index'))
             ->assertOk()
@@ -338,6 +362,125 @@ class TicketVisibilityTest extends TestCase
         $this->assertDatabaseHas('tickets', [
             'id' => $ticket->id,
             'requester_id' => $requester->id,
+        ]);
+    }
+
+    public function test_regular_user_cannot_update_status(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $inProgressStatus = TicketStatus::query()->create([
+            'name' => 'In Progress',
+            'slug' => 'in_progress',
+            'sort_order' => 2,
+        ]);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+        ]);
+
+        $this->actingAs($requester)
+            ->patch(route('tickets.status.update', $ticket), [
+                'status_id' => $inProgressStatus->id,
+            ])
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('tickets', [
+            'id' => $ticket->id,
+            'ticket_status_id' => $this->defaultStatus->id,
+        ]);
+    }
+
+    public function test_regular_user_cannot_update_assignee(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $assignee = $this->createUserWithRole($this->solverRole);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+        ]);
+
+        $this->actingAs($requester)
+            ->patch(route('tickets.assignee.update', $ticket), [
+                'assignee_id' => $assignee->id,
+            ])
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('tickets', [
+            'id' => $ticket->id,
+            'assignee_id' => null,
+        ]);
+    }
+
+    public function test_regular_user_cannot_update_visibility(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+        ]);
+
+        $this->actingAs($requester)
+            ->patch(route('tickets.visibility.update', $ticket), [
+                'visibility' => Ticket::VISIBILITY_PRIVATE,
+            ])
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('tickets', [
+            'id' => $ticket->id,
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+        ]);
+    }
+
+    public function test_regular_user_cannot_pin_ticket(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+        ]);
+
+        $this->actingAs($requester)
+            ->patch(route('tickets.pin.update', $ticket), [
+                'pinned' => '1',
+            ])
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('tickets', [
+            'id' => $ticket->id,
+            'is_pinned' => false,
+        ]);
+    }
+
+    public function test_regular_user_cannot_view_or_create_internal_notes(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+        ]);
+
+        TicketComment::query()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $solver->id,
+            'visibility' => 'internal',
+            'body' => 'Internal note hidden from user',
+        ]);
+
+        $this->actingAs($requester);
+
+        $this->get(route('tickets.show', $ticket))
+            ->assertOk()
+            ->assertDontSeeText(__('tickets.show.internal_notes.heading'))
+            ->assertDontSeeText('Internal note hidden from user');
+
+        $this->post(route('tickets.internal-notes.store', $ticket), [
+            'note_body' => 'User should not create internal notes',
+        ])->assertForbidden();
+
+        $this->assertDatabaseMissing('ticket_comments', [
+            'ticket_id' => $ticket->id,
+            'body' => 'User should not create internal notes',
         ]);
     }
 
@@ -1336,6 +1479,73 @@ class TicketVisibilityTest extends TestCase
             ->assertSeeText('Search subject')
             ->assertDontSeeText('Vyřešeno')
             ->assertDontSeeText('Kritická');
+    }
+
+    public function test_solver_can_manage_announcements(): void
+    {
+        $solver = $this->createUserWithRole($this->solverRole);
+
+        $this->actingAs($solver);
+
+        $this->get(route('announcements.index'))
+            ->assertOk();
+
+        $this->post(route('announcements.store'), [
+            'title' => 'Solver announcement',
+            'body' => 'Announcement created by solver.',
+            'type' => Announcement::TYPE_INFO,
+            'is_active' => '1',
+        ])->assertRedirect(route('announcements.index'));
+
+        $this->assertDatabaseHas('announcements', [
+            'title' => 'Solver announcement',
+            'author_id' => $solver->id,
+            'type' => Announcement::TYPE_INFO,
+            'visibility' => 'public',
+        ]);
+    }
+
+    public function test_regular_user_cannot_manage_announcements(): void
+    {
+        $user = $this->createUserWithRole($this->userRole);
+        $announcement = Announcement::query()->create([
+            'author_id' => $user->id,
+            'title' => 'Existing announcement',
+            'body' => 'Existing body.',
+            'type' => Announcement::TYPE_INFO,
+            'visibility' => 'public',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($user);
+
+        $this->get(route('announcements.index'))
+            ->assertForbidden();
+
+        $this->post(route('announcements.store'), [
+            'title' => 'User announcement',
+            'body' => 'User should not create this.',
+            'type' => Announcement::TYPE_INFO,
+            'is_active' => '1',
+        ])->assertForbidden();
+
+        $this->patch(route('announcements.update', $announcement), [
+            'title' => 'Updated by user',
+            'body' => 'User should not update this.',
+            'type' => Announcement::TYPE_WARNING,
+            'is_active' => '1',
+        ])->assertForbidden();
+
+        $this->delete(route('announcements.destroy', $announcement))
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('announcements', [
+            'id' => $announcement->id,
+            'title' => 'Existing announcement',
+        ]);
+        $this->assertDatabaseMissing('announcements', [
+            'title' => 'User announcement',
+        ]);
     }
 
     private function createUserWithRole(Role $role): User
