@@ -11,8 +11,10 @@ use App\Models\TicketHistory;
 use App\Models\TicketPriority;
 use App\Models\TicketStatus;
 use App\Models\User;
+use App\Notifications\TicketEventNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -629,6 +631,148 @@ class TicketVisibilityTest extends TestCase
             'is_manual' => false,
             'is_auto_participant' => true,
         ]);
+    }
+
+    public function test_new_ticket_sends_notification_to_requester(): void
+    {
+        config()->set('helpdesk.notifications.mail.enabled', true);
+        Notification::fake();
+        $requester = $this->createUserWithRole($this->userRole);
+
+        $this->actingAs($requester);
+
+        $this->post(route('tickets.store'), [
+            'subject' => 'Notification ticket',
+            'description' => 'New ticket notification body.',
+            'priority_id' => $this->defaultPriority->id,
+            'category_id' => $this->defaultCategory->id,
+        ])->assertRedirect(route('tickets.index'));
+
+        Notification::assertSentTo(
+            $requester,
+            TicketEventNotification::class,
+            fn (TicketEventNotification $notification) => $notification->event === 'created'
+                && $notification->ticket->subject === 'Notification ticket',
+        );
+    }
+
+    public function test_public_comment_notifies_authorized_requester_assignee_and_watchers(): void
+    {
+        config()->set('helpdesk.notifications.mail.enabled', true);
+        Notification::fake();
+        $requester = $this->createUserWithRole($this->userRole);
+        $assignee = $this->createUserWithRole($this->solverRole);
+        $watcher = $this->createUserWithRole($this->userRole);
+        $commenter = $this->createUserWithRole($this->userRole);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'assignee' => $assignee,
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+        ]);
+        $ticket->watcherEntries()->create([
+            'user_id' => $watcher->id,
+            'is_manual' => true,
+            'is_auto_participant' => false,
+        ]);
+
+        $this->actingAs($commenter)
+            ->post(route('tickets.comments.store', $ticket), [
+                'body' => 'A new public comment.',
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        foreach ([$requester, $assignee, $watcher] as $recipient) {
+            Notification::assertSentTo(
+                $recipient,
+                TicketEventNotification::class,
+                fn (TicketEventNotification $notification) => $notification->event === 'public_comment'
+                    && (int) $notification->ticket->id === (int) $ticket->id,
+            );
+        }
+
+        Notification::assertNotSentTo($commenter, TicketEventNotification::class);
+    }
+
+    public function test_private_ticket_comment_does_not_notify_unauthorized_watcher(): void
+    {
+        config()->set('helpdesk.notifications.mail.enabled', true);
+        Notification::fake();
+        $requester = $this->createUserWithRole($this->userRole);
+        $assignee = $this->createUserWithRole($this->solverRole);
+        $unauthorizedWatcher = $this->createUserWithRole($this->userRole);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'assignee' => $assignee,
+            'visibility' => Ticket::VISIBILITY_PRIVATE,
+        ]);
+        $ticket->watcherEntries()->create([
+            'user_id' => $unauthorizedWatcher->id,
+            'is_manual' => true,
+            'is_auto_participant' => false,
+        ]);
+
+        $this->actingAs($requester)
+            ->post(route('tickets.comments.store', $ticket), [
+                'body' => 'Private ticket public comment.',
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        Notification::assertSentTo(
+            $assignee,
+            TicketEventNotification::class,
+            fn (TicketEventNotification $notification) => $notification->event === 'public_comment',
+        );
+        Notification::assertNotSentTo($unauthorizedWatcher, TicketEventNotification::class);
+    }
+
+    public function test_assignee_change_notifies_new_assignee(): void
+    {
+        config()->set('helpdesk.notifications.mail.enabled', true);
+        Notification::fake();
+        $requester = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $newAssignee = $this->createUserWithRole($this->solverRole);
+        $assignedStatus = TicketStatus::query()->create([
+            'name' => 'Assigned',
+            'slug' => 'assigned',
+            'sort_order' => 2,
+        ]);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'status' => $assignedStatus,
+            'visibility' => Ticket::VISIBILITY_INTERNAL,
+        ]);
+
+        $this->actingAs($solver)
+            ->patch(route('tickets.assignee.update', $ticket), [
+                'assignee_id' => $newAssignee->id,
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        Notification::assertSentTo(
+            $newAssignee,
+            TicketEventNotification::class,
+            fn (TicketEventNotification $notification) => $notification->event === 'assignee_changed'
+                && (int) $notification->ticket->id === (int) $ticket->id,
+        );
+    }
+
+    public function test_disabled_mail_notifications_prevent_ticket_notification(): void
+    {
+        config()->set('helpdesk.notifications.mail.enabled', false);
+        Notification::fake();
+        $requester = $this->createUserWithRole($this->userRole);
+
+        $this->actingAs($requester);
+
+        $this->post(route('tickets.store'), [
+            'subject' => 'Disabled notification ticket',
+            'description' => 'No notification should be sent.',
+            'priority_id' => $this->defaultPriority->id,
+            'category_id' => $this->defaultCategory->id,
+        ])->assertRedirect(route('tickets.index'));
+
+        Notification::assertNothingSent();
     }
 
     public function test_assignee_update_synchronizes_automatic_watchers(): void

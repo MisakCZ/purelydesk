@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Policies\TicketPolicy;
 use App\Support\ResolvesHelpdeskUser;
 use App\Services\TicketHistoryService;
+use App\Services\TicketNotificationService;
 use App\Services\TicketWorkflowAutomationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -41,13 +42,17 @@ class TicketCommentController extends Controller
         $workflowAttributes = $this->workflowAutomationService()->attributesForRequesterActivity($ticket, $actor);
 
         if ($workflowAttributes !== []) {
-            $this->ticketHistoryService()->applyUpdateWithHistory(
+            $ticket = $this->ticketHistoryService()->applyUpdateWithHistory(
                 $ticket,
                 $workflowAttributes,
                 'requester_public_comment',
                 $actor,
             );
+        } else {
+            $ticket->refresh();
         }
+
+        $this->ticketNotificationService()->notify($ticket, 'public_comment', $actor);
 
         return redirect()
             ->route('tickets.show', $ticket)
@@ -152,5 +157,10 @@ class TicketCommentController extends Controller
     private function ticketHistoryService(): TicketHistoryService
     {
         return app(TicketHistoryService::class);
+    }
+
+    private function ticketNotificationService(): TicketNotificationService
+    {
+        return app(TicketNotificationService::class);
     }
 }

@@ -22,6 +22,7 @@ use App\Policies\TicketPolicy;
 use App\Support\LocaleManager;
 use App\Support\ResolvesHelpdeskUser;
 use App\Services\TicketHistoryService;
+use App\Services\TicketNotificationService;
 use App\Services\TicketWatcherService;
 use App\Services\TicketWorkflowAutomationService;
 use Illuminate\Database\Eloquent\Builder;
@@ -362,6 +363,7 @@ class TicketController extends Controller
         $ticket->load($this->ticketSnapshotRelations());
         $this->ensureOriginalSnapshot($ticket, 'create');
         $this->ticketWatcherService()->syncAutomaticParticipants($ticket);
+        $this->ticketNotificationService()->notify($ticket, 'created', $actor, excludeActor: false);
 
         return redirect()
             ->route('tickets.index')
@@ -483,13 +485,16 @@ class TicketController extends Controller
         ?Request $request = null,
         ?string $jsonSuccessMessageKey = null,
     ): RedirectResponse|JsonResponse {
+        $actor = $this->currentHelpdeskUser();
+        $beforeNotificationSnapshot = $this->ticketNotificationSnapshot($ticket);
         $ticket = $this->ticketHistoryService()->applyUpdateWithHistory(
             $ticket,
             $attributes,
             $action,
-            $this->currentHelpdeskUser(),
+            $actor,
         );
         $this->ticketWatcherService()->syncAutomaticParticipants($ticket);
+        $this->sendTicketUpdateNotification($ticket, $action, $actor, $beforeNotificationSnapshot);
 
         if ($request instanceof Request && $request->expectsJson()) {
             $responseLocale = app(LocaleManager::class)->resolveForRequest($request);
@@ -529,6 +534,66 @@ class TicketController extends Controller
             'updated_at' => $ticket->updated_at?->toIso8601String(),
             'updated_at_display' => $this->formatListUpdatedAt($ticket->updated_at, $locale),
         ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function ticketNotificationSnapshot(Ticket $ticket): array
+    {
+        return [
+            'assignee_id' => $ticket->assignee_id !== null ? (int) $ticket->assignee_id : null,
+            'ticket_status_id' => $ticket->ticket_status_id !== null ? (int) $ticket->ticket_status_id : null,
+            'expected_resolution_at' => $ticket->expected_resolution_at?->toIso8601String(),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $before
+     */
+    private function sendTicketUpdateNotification(Ticket $ticket, string $action, ?User $actor, array $before): void
+    {
+        $ticket->loadMissing([
+            'status:id,name,slug',
+            'assignee:id,name,email,preferred_locale',
+        ]);
+
+        $event = match ($action) {
+            'assignee_update' => (int) ($before['assignee_id'] ?? 0) !== (int) ($ticket->assignee_id ?? 0)
+                ? 'assignee_changed'
+                : null,
+            'status_update' => (int) ($before['ticket_status_id'] ?? 0) !== (int) ($ticket->ticket_status_id ?? 0)
+                ? $this->ticketStatusNotificationEvent($ticket)
+                : null,
+            'requester_confirm_resolution' => 'closed',
+            'requester_report_problem_persists' => 'problem_persists',
+            default => null,
+        };
+
+        if ($event === null && (int) ($before['ticket_status_id'] ?? 0) !== (int) ($ticket->ticket_status_id ?? 0)) {
+            $event = $this->ticketStatusNotificationEvent($ticket);
+        }
+
+        if ($event === null && $action === 'ticket_update' && ($before['expected_resolution_at'] ?? null) !== $ticket->expected_resolution_at?->toIso8601String()) {
+            $event = 'expected_resolution_changed';
+        }
+
+        if ($event === null) {
+            return;
+        }
+
+        $this->ticketNotificationService()->notify($ticket, $event, $actor, [
+            'assignee' => $ticket->assignee?->name ?? __('tickets.common.unassigned'),
+        ]);
+    }
+
+    private function ticketStatusNotificationEvent(Ticket $ticket): string
+    {
+        return match ($ticket->status?->slug) {
+            'resolved' => 'resolved',
+            'closed' => 'closed',
+            default => 'status_changed',
+        };
     }
 
     private function resolveStatusByIdentifiers(
@@ -995,6 +1060,11 @@ class TicketController extends Controller
     private function ticketHistoryService(): TicketHistoryService
     {
         return app(TicketHistoryService::class);
+    }
+
+    private function ticketNotificationService(): TicketNotificationService
+    {
+        return app(TicketNotificationService::class);
     }
 
     private function ticketWatcherService(): TicketWatcherService

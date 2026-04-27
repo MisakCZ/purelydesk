@@ -40,6 +40,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Helpdesk Notifications
+    |--------------------------------------------------------------------------
+    |
+    | Outgoing helpdesk mail notifications use Laravel's standard mail
+    | configuration. In production this can point to local Postfix via
+    | MAIL_MAILER=smtp, MAIL_HOST=127.0.0.1 and MAIL_PORT=25.
+    |
+    */
+    'notifications' => [
+        'mail' => [
+            'enabled' => env('HELPDESK_MAIL_NOTIFICATIONS', false),
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | LDAP Authentication
     |--------------------------------------------------------------------------
     |
