@@ -21,7 +21,7 @@ class TicketNotificationService
             return;
         }
 
-        $recipients = $this->recipients->forTicket($ticket, $actor, $excludeActor);
+        $recipients = $this->recipients->forTicket($ticket, $event, $actor, $excludeActor);
 
         if ($recipients->isEmpty()) {
             return;

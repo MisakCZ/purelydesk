@@ -34,8 +34,7 @@ class TicketEventNotification extends Notification
         $number = $this->ticket->ticket_number ?? __('tickets.common.no_number', [], $locale);
         $eventLabel = __("notifications.ticket.events.{$this->event}", [], $locale);
 
-        return (new MailMessage)
-            ->locale($locale)
+        $message = (new MailMessage)
             ->subject(__('notifications.ticket.subject', [
                 'number' => $number,
                 'event' => mb_strtolower($eventLabel),
@@ -45,6 +44,16 @@ class TicketEventNotification extends Notification
             ->line(__('notifications.ticket.lines.number', ['number' => $number], $locale))
             ->line(__('notifications.ticket.lines.subject', ['subject' => $this->ticket->subject], $locale))
             ->line($this->description($locale))
+            ->line(__('notifications.ticket.lines.ticket_description', [], $locale))
+            ->line($this->ticket->description ?: __('tickets.common.not_available', [], $locale));
+
+        if ($this->event === 'public_comment') {
+            $message
+                ->line(__('notifications.ticket.lines.comment_body', [], $locale))
+                ->line((string) ($this->context['comment_body'] ?? __('tickets.common.not_available', [], $locale)));
+        }
+
+        return $message
             ->action(__('notifications.ticket.action', [], $locale), route('tickets.show', $this->ticket))
             ->line(__('notifications.ticket.lines.footer', [], $locale));
     }

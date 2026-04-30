@@ -122,6 +122,212 @@
                 border-color: rgba(15, 118, 110, 0.12);
             }
 
+            .attachment-queue {
+                display: grid;
+                gap: 0.4rem;
+                margin-top: 0.45rem;
+            }
+
+            .attachment-queue-empty,
+            .attachment-queue-error {
+                font-size: 0.8rem;
+                font-weight: 600;
+                line-height: 1.35;
+            }
+
+            .attachment-queue-empty {
+                color: #64748b;
+            }
+
+            .attachment-queue-error {
+                color: #b91c1c;
+            }
+
+            .attachment-queue-list {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.45rem;
+                margin: 0;
+                padding: 0;
+                list-style: none;
+            }
+
+            .attachment-queue-item {
+                display: inline-flex;
+                align-items: center;
+                max-width: 100%;
+                gap: 0.45rem;
+                padding: 0.35rem 0.45rem;
+                border: 1px solid #dbe4ee;
+                border-radius: 0.7rem;
+                background: #f8fafc;
+                color: #334155;
+                font-size: 0.8rem;
+                font-weight: 650;
+            }
+
+            .attachment-queue-name {
+                max-width: 15rem;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .attachment-queue-size {
+                color: #64748b;
+                font-size: 0.74rem;
+                font-weight: 600;
+                white-space: nowrap;
+            }
+
+            .attachment-queue-remove {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 1.35rem;
+                height: 1.35rem;
+                padding: 0;
+                border: 0;
+                border-radius: 999px;
+                background: #fee2e2;
+                color: #991b1b;
+                cursor: pointer;
+                font-size: 0.9rem;
+                font-weight: 900;
+                line-height: 1;
+            }
+
+            .attachment-lightbox {
+                position: fixed;
+                inset: 0;
+                z-index: 1000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 1.25rem;
+                background: rgba(15, 23, 42, 0.76);
+            }
+
+            .attachment-lightbox[hidden] {
+                display: none !important;
+            }
+
+            .attachment-lightbox-dialog {
+                position: relative;
+                display: grid;
+                gap: 0.65rem;
+                max-width: min(96vw, 1180px);
+                max-height: 94vh;
+            }
+
+            .attachment-lightbox-image {
+                max-width: min(96vw, 1180px);
+                max-height: calc(94vh - 4rem);
+                border-radius: 0.8rem;
+                background: #fff;
+                object-fit: contain;
+                box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
+            }
+
+            .attachment-lightbox-caption {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 1rem;
+                color: #e2e8f0;
+                font-size: 0.86rem;
+                font-weight: 650;
+            }
+
+            .attachment-lightbox-download {
+                color: #bfdbfe;
+                text-decoration: none;
+            }
+
+            .attachment-lightbox-close {
+                position: absolute;
+                top: -0.85rem;
+                right: -0.85rem;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 2rem;
+                height: 2rem;
+                border: 0;
+                border-radius: 999px;
+                background: #fff;
+                color: #0f172a;
+                cursor: pointer;
+                font-size: 1.3rem;
+                font-weight: 800;
+                line-height: 1;
+            }
+
+            .attachment-lightbox-nav {
+                position: absolute;
+                top: 50%;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 2.65rem;
+                height: 2.65rem;
+                border: 0;
+                border-radius: 999px;
+                background: rgba(255, 255, 255, 0.92);
+                color: #0f172a;
+                cursor: pointer;
+                font-size: 1.8rem;
+                font-weight: 800;
+                line-height: 1;
+                transform: translateY(-50%);
+                box-shadow: 0 16px 34px rgba(0, 0, 0, 0.22);
+            }
+
+            .attachment-lightbox-nav:disabled {
+                cursor: default;
+                opacity: 0.35;
+            }
+
+            .attachment-lightbox-prev {
+                left: -1.1rem;
+            }
+
+            .attachment-lightbox-next {
+                right: -1.1rem;
+            }
+
+            .attachment-lightbox-position {
+                color: #cbd5e1;
+                font-size: 0.82rem;
+                font-weight: 750;
+                white-space: nowrap;
+            }
+
+            @media (max-width: 700px) {
+                .attachment-lightbox {
+                    padding: 0.8rem;
+                }
+
+                .attachment-lightbox-nav {
+                    width: 2.25rem;
+                    height: 2.25rem;
+                    font-size: 1.45rem;
+                }
+
+                .attachment-lightbox-prev {
+                    left: 0.35rem;
+                }
+
+                .attachment-lightbox-next {
+                    right: 0.35rem;
+                }
+
+                .attachment-lightbox-close {
+                    top: 0.35rem;
+                    right: 0.35rem;
+                }
+            }
+
             .locale-switcher {
                 margin-left: 0.55rem;
                 padding-left: 0.75rem;
@@ -677,7 +883,7 @@
                     </details>
 
                     @auth
-                        <span class="session-user">{{ $currentUser?->display_name ?: $currentUser?->name }}</span>
+                        <span class="session-user">{{ $currentUser?->loginName() }}</span>
                         <form class="logout-form" method="post" action="{{ route('logout') }}">
                             @csrf
                             <button class="logout-button" type="submit">{{ __('layout.nav.logout') }}</button>
@@ -691,6 +897,275 @@
             </main>
         </div>
 
+        <div
+            class="attachment-lightbox"
+            data-attachment-lightbox-modal
+            role="dialog"
+            aria-modal="true"
+            aria-label="{{ __('tickets.attachments.lightbox_label') }}"
+            hidden
+        >
+            <div class="attachment-lightbox-dialog">
+                <button
+                    class="attachment-lightbox-close"
+                    type="button"
+                    data-attachment-lightbox-close
+                    aria-label="{{ __('tickets.attachments.lightbox_close') }}"
+                >×</button>
+                <button
+                    class="attachment-lightbox-nav attachment-lightbox-prev"
+                    type="button"
+                    data-attachment-lightbox-prev
+                    aria-label="{{ __('tickets.attachments.lightbox_previous') }}"
+                >‹</button>
+                <img class="attachment-lightbox-image" data-attachment-lightbox-image alt="">
+                <button
+                    class="attachment-lightbox-nav attachment-lightbox-next"
+                    type="button"
+                    data-attachment-lightbox-next
+                    aria-label="{{ __('tickets.attachments.lightbox_next') }}"
+                >›</button>
+                <div class="attachment-lightbox-caption">
+                    <span data-attachment-lightbox-title></span>
+                    <span class="attachment-lightbox-position" data-attachment-lightbox-position></span>
+                    <a class="attachment-lightbox-download" data-attachment-lightbox-download href="#">
+                        {{ __('tickets.attachments.download') }}
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const formatFileSize = (bytes) => {
+                    if (bytes < 1024) {
+                        return `${bytes} B`;
+                    }
+
+                    if (bytes < 1024 * 1024) {
+                        return `${(bytes / 1024).toFixed(1).replace('.', ',')} KB`;
+                    }
+
+                    return `${(bytes / 1024 / 1024).toFixed(1).replace('.', ',')} MB`;
+                };
+
+                document.querySelectorAll('[data-attachment-input]').forEach((input) => {
+                    const queue = input.parentElement?.querySelector('[data-attachment-queue]');
+
+                    if (! queue || typeof DataTransfer === 'undefined') {
+                        return;
+                    }
+
+                    const files = [];
+                    const maxFiles = Number(input.dataset.maxFiles || 10);
+                    const maxSize = Number(input.dataset.maxSize || 0);
+                    const allowedExtensions = (input.dataset.allowedExtensions || '')
+                        .split(',')
+                        .map((extension) => extension.trim().toLowerCase())
+                        .filter(Boolean);
+
+                    const fileKey = (file) => `${file.name}:${file.size}:${file.lastModified}`;
+                    const isAllowedType = (file) => {
+                        if (allowedExtensions.length === 0) {
+                            return true;
+                        }
+
+                        const extension = file.name.includes('.')
+                            ? file.name.split('.').pop().toLowerCase()
+                            : '';
+
+                        return allowedExtensions.includes(extension);
+                    };
+                    const syncInput = () => {
+                        const transfer = new DataTransfer();
+                        files.forEach((file) => transfer.items.add(file));
+                        input.files = transfer.files;
+                    };
+                    const render = (message = '') => {
+                        queue.innerHTML = '';
+
+                        if (message !== '') {
+                            const error = document.createElement('div');
+                            error.className = 'attachment-queue-error';
+                            error.textContent = message;
+                            queue.appendChild(error);
+                        }
+
+                        if (files.length === 0) {
+                            const empty = document.createElement('div');
+                            empty.className = 'attachment-queue-empty';
+                            empty.textContent = input.dataset.labelEmpty || '';
+                            queue.appendChild(empty);
+
+                            return;
+                        }
+
+                        const list = document.createElement('ul');
+                        list.className = 'attachment-queue-list';
+
+                        files.forEach((file, index) => {
+                            const item = document.createElement('li');
+                            item.className = 'attachment-queue-item';
+
+                            const name = document.createElement('span');
+                            name.className = 'attachment-queue-name';
+                            name.textContent = file.name;
+
+                            const size = document.createElement('span');
+                            size.className = 'attachment-queue-size';
+                            size.textContent = formatFileSize(file.size);
+
+                            const remove = document.createElement('button');
+                            remove.className = 'attachment-queue-remove';
+                            remove.type = 'button';
+                            remove.title = input.dataset.labelRemove || '';
+                            remove.setAttribute('aria-label', input.dataset.labelRemove || '');
+                            remove.textContent = '×';
+                            remove.addEventListener('click', () => {
+                                files.splice(index, 1);
+                                syncInput();
+                                render();
+                            });
+
+                            item.append(name, size, remove);
+                            list.appendChild(item);
+                        });
+
+                        queue.appendChild(list);
+                    };
+
+                    input.addEventListener('change', () => {
+                        let message = '';
+                        const knownFiles = new Set(files.map(fileKey));
+
+                        Array.from(input.files).forEach((file) => {
+                            if (files.length >= maxFiles) {
+                                message = input.dataset.labelTooMany || '';
+                                return;
+                            }
+
+                            if (maxSize > 0 && file.size > maxSize) {
+                                message = input.dataset.labelTooLarge || '';
+                                return;
+                            }
+
+                            if (! isAllowedType(file)) {
+                                message = input.dataset.labelType || '';
+                                return;
+                            }
+
+                            const key = fileKey(file);
+
+                            if (! knownFiles.has(key)) {
+                                files.push(file);
+                                knownFiles.add(key);
+                            }
+                        });
+
+                        syncInput();
+                        render(message);
+                    });
+
+                    render();
+                });
+
+                const lightbox = document.querySelector('[data-attachment-lightbox-modal]');
+
+                if (lightbox) {
+                    const image = lightbox.querySelector('[data-attachment-lightbox-image]');
+                    const title = lightbox.querySelector('[data-attachment-lightbox-title]');
+                    const download = lightbox.querySelector('[data-attachment-lightbox-download]');
+                    const position = lightbox.querySelector('[data-attachment-lightbox-position]');
+                    const previousButton = lightbox.querySelector('[data-attachment-lightbox-prev]');
+                    const nextButton = lightbox.querySelector('[data-attachment-lightbox-next]');
+                    const triggers = Array.from(document.querySelectorAll('[data-attachment-lightbox]'));
+                    let currentIndex = 0;
+                    let lastFocusedTrigger = null;
+
+                    const showImage = (index) => {
+                        if (triggers.length === 0) {
+                            return;
+                        }
+
+                        currentIndex = (index + triggers.length) % triggers.length;
+
+                        const trigger = triggers[currentIndex];
+                        const previewUrl = trigger.dataset.previewUrl;
+                        const downloadUrl = trigger.dataset.downloadUrl || trigger.href;
+                        const attachmentTitle = trigger.dataset.title || '';
+
+                        image.src = previewUrl;
+                        image.alt = attachmentTitle;
+                        title.textContent = attachmentTitle;
+                        download.href = downloadUrl;
+                        position.textContent = `${currentIndex + 1} / ${triggers.length}`;
+
+                        const hasMultipleImages = triggers.length > 1;
+                        previousButton.hidden = ! hasMultipleImages;
+                        nextButton.hidden = ! hasMultipleImages;
+                        previousButton.disabled = ! hasMultipleImages;
+                        nextButton.disabled = ! hasMultipleImages;
+                    };
+
+                    const close = () => {
+                        lightbox.hidden = true;
+                        image.removeAttribute('src');
+                        image.removeAttribute('alt');
+
+                        if (lastFocusedTrigger instanceof HTMLElement) {
+                            lastFocusedTrigger.focus();
+                        }
+                    };
+
+                    const open = (index, trigger) => {
+                        lastFocusedTrigger = trigger;
+                        showImage(index);
+                        lightbox.hidden = false;
+                        lightbox.querySelector('[data-attachment-lightbox-close]')?.focus();
+                    };
+
+                    const previous = () => showImage(currentIndex - 1);
+                    const next = () => showImage(currentIndex + 1);
+
+                    triggers.forEach((trigger, index) => {
+                        trigger.addEventListener('click', (event) => {
+                            event.preventDefault();
+                            open(index, trigger);
+                        });
+                    });
+
+                    lightbox.addEventListener('click', (event) => {
+                        if (event.target === lightbox) {
+                            close();
+                        }
+                    });
+
+                    lightbox.querySelector('[data-attachment-lightbox-close]')?.addEventListener('click', close);
+                    previousButton?.addEventListener('click', previous);
+                    nextButton?.addEventListener('click', next);
+
+                    document.addEventListener('keydown', (event) => {
+                        if (lightbox.hidden) {
+                            return;
+                        }
+
+                        if (event.key === 'Escape') {
+                            close();
+                        }
+
+                        if (event.key === 'ArrowLeft' && triggers.length > 1) {
+                            event.preventDefault();
+                            previous();
+                        }
+
+                        if (event.key === 'ArrowRight' && triggers.length > 1) {
+                            event.preventDefault();
+                            next();
+                        }
+                    });
+                }
+            });
+        </script>
         @stack('scripts')
     </body>
 </html>

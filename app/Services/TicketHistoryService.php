@@ -44,8 +44,9 @@ class TicketHistoryService
             'status:id,name',
             'priority:id,name',
             'category:id,name',
-            'requester:id,name',
-            'assignee:id,name',
+            'requester:id,name,display_name,username',
+            'assignee:id,name,display_name,username',
+            'archivedBy:id,name,display_name,username',
         ];
     }
 
@@ -75,12 +76,12 @@ class TicketHistoryService
             ],
             'requester' => [
                 'id' => $ticket->requester_id,
-                'name' => $ticket->requester?->name,
+                'name' => $ticket->requester?->displayName(),
             ],
             'assignee' => $ticket->assignee_id
                 ? [
                     'id' => $ticket->assignee_id,
-                    'name' => $ticket->assignee?->name,
+                    'name' => $ticket->assignee?->displayName(),
                 ]
                 : null,
             'pinned' => Ticket::supportsPinning()
@@ -93,6 +94,15 @@ class TicketHistoryService
             'resolved_at' => $ticket->resolved_at?->toIso8601String(),
             'auto_close_at' => $ticket->auto_close_at?->toIso8601String(),
             'closed_at' => $ticket->closed_at?->toIso8601String(),
+            'archived_at' => Ticket::supportsArchiving()
+                ? $ticket->archived_at?->toIso8601String()
+                : null,
+            'archived_by' => Ticket::supportsArchiving() && $ticket->archived_by_user_id
+                ? [
+                    'id' => $ticket->archived_by_user_id,
+                    'name' => $ticket->archivedBy?->displayName(),
+                ]
+                : null,
             'created_at' => $ticket->created_at?->toIso8601String(),
         ];
     }

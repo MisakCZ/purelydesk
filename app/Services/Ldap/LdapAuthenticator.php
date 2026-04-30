@@ -42,11 +42,13 @@ class LdapAuthenticator
             throw LdapAuthenticationException::invalidCredentials();
         }
 
+        $ldapUsername = $this->entryValue($entry, config('helpdesk.ldap.username_attribute', 'uid')) ?? $username;
+
         return $this->synchronizer->sync(new LdapUserData(
-            username: $this->entryValue($entry, config('helpdesk.ldap.username_attribute', 'uid')) ?? $username,
+            username: $ldapUsername,
             dn: $userDn,
             email: $this->entryValue($entry, config('helpdesk.ldap.email_attribute', 'mail')),
-            displayName: $this->entryValue($entry, config('helpdesk.ldap.display_name_attribute', 'cn')),
+            displayName: $this->entryDisplayName($entry, $ldapUsername),
             externalId: $this->entryValue($entry, config('helpdesk.ldap.unique_id_attribute', 'guid')),
             department: $this->entryValue($entry, config('helpdesk.ldap.department_attribute', 'department')),
             groups: $this->resolveGroups($serviceConnection, $entry),
@@ -124,7 +126,7 @@ class LdapAuthenticator
         $attributes = array_values(array_unique(array_filter([
             config('helpdesk.ldap.username_attribute', 'uid'),
             config('helpdesk.ldap.email_attribute', 'mail'),
-            config('helpdesk.ldap.display_name_attribute', 'cn'),
+            ...$this->displayNameAttributes(),
             config('helpdesk.ldap.unique_id_attribute', 'guid'),
             config('helpdesk.ldap.department_attribute', 'department'),
             ...$this->configuredList('user_group_attributes'),
@@ -246,6 +248,30 @@ class LdapAuthenticator
 
     /**
      * @param  array<string, mixed>  $entry
+     */
+    private function entryDisplayName(array $entry, string $username): ?string
+    {
+        $firstValue = null;
+
+        foreach ($this->displayNameAttributes() as $attribute) {
+            $value = $this->entryValue($entry, $attribute);
+
+            if ($value === null || trim($value) === '') {
+                continue;
+            }
+
+            $firstValue ??= $value;
+
+            if (strcasecmp(trim($value), trim($username)) !== 0) {
+                return $value;
+            }
+        }
+
+        return $firstValue;
+    }
+
+    /**
+     * @param  array<string, mixed>  $entry
      * @return array<int, string>
      */
     private function entryValues(array $entry, string $attribute): array
@@ -277,6 +303,20 @@ class LdapAuthenticator
             'trim',
             preg_split('/[,;]/', (string) config('helpdesk.ldap.'.$key, '')) ?: [],
         )));
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function displayNameAttributes(): array
+    {
+        return array_values(array_unique(array_filter([
+            (string) config('helpdesk.ldap.display_name_attribute', 'cn'),
+            ...$this->configuredList('display_name_attributes'),
+            'displayName',
+            'fullName',
+            'cn',
+        ])));
     }
 
     private function escapeFilterValue(string $value): string

@@ -62,8 +62,15 @@ class TicketPolicy
 
     public function updateVisibility(?User $user, Ticket $ticket): bool
     {
-        return $user instanceof User
-            && $user->isAdmin()
+        if (! $user instanceof User) {
+            return false;
+        }
+
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        return $user->isSolver()
             && $this->view($user, $ticket);
     }
 
@@ -110,10 +117,29 @@ class TicketPolicy
         return $this->canManageInternalNotes($user, $ticket);
     }
 
+    public function deleteAttachment(?User $user, Ticket $ticket): bool
+    {
+        return $user instanceof User
+            && $this->view($user, $ticket)
+            && ($user->isAdmin() || $user->isSolver());
+    }
+
     public function watch(?User $user, Ticket $ticket): bool
     {
         return $user instanceof User
             && $this->view($user, $ticket);
+    }
+
+    public function archive(?User $user, Ticket $ticket): bool
+    {
+        return $this->canManageArchive($user, $ticket)
+            && ! $ticket->isArchived();
+    }
+
+    public function restore(?User $user, Ticket $ticket): bool
+    {
+        return $this->canManageArchive($user, $ticket)
+            && $ticket->isArchived();
     }
 
     public function confirmResolution(?User $user, Ticket $ticket): bool
@@ -146,6 +172,13 @@ class TicketPolicy
         return $user instanceof User
             && $this->view($user, $ticket)
             && ($user->isAdmin() || $user->isSolver());
+    }
+
+    private function canManageArchive(?User $user, Ticket $ticket): bool
+    {
+        return $user instanceof User
+            && $user->isAdmin()
+            && Ticket::supportsArchiving();
     }
 
     private function isRequester(User $user, Ticket $ticket): bool

@@ -51,7 +51,33 @@ return [
     'notifications' => [
         'mail' => [
             'enabled' => env('HELPDESK_MAIL_NOTIFICATIONS', false),
+            'notify_solvers_on_new_tickets' => env('HELPDESK_NOTIFY_SOLVERS_ON_NEW_TICKETS', true),
+            'notify_admins_on_new_tickets' => env('HELPDESK_NOTIFY_ADMINS_ON_NEW_TICKETS', false),
         ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Ticket Attachments
+    |--------------------------------------------------------------------------
+    |
+    | Attachments are stored on a non-public Laravel disk and served only
+    | through authorized controller actions.
+    |
+    */
+    'attachments' => [
+        'disk' => env('HELPDESK_ATTACHMENT_DISK', 'local'),
+        'path' => env('HELPDESK_ATTACHMENT_PATH', 'ticket-attachments'),
+        'max_size_mb' => (int) env('HELPDESK_ATTACHMENT_MAX_SIZE_MB', 20),
+        'max_files' => (int) env('HELPDESK_ATTACHMENT_MAX_FILES', 10),
+        'allowed_extensions' => array_filter(array_map('trim', explode(',', env(
+            'HELPDESK_ATTACHMENT_ALLOWED_EXTENSIONS',
+            'jpg,jpeg,png,gif,webp,pdf,txt,csv,doc,docx,xls,xlsx,ppt,pptx,odt,ods,odp,rtf,zip',
+        )))),
+        'allowed_mime_types' => array_filter(array_map('trim', explode(',', env(
+            'HELPDESK_ATTACHMENT_ALLOWED_MIME_TYPES',
+            'image/jpeg,image/png,image/gif,image/webp,application/pdf,text/plain,text/csv,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.oasis.opendocument.text,application/vnd.oasis.opendocument.spreadsheet,application/vnd.oasis.opendocument.presentation,application/rtf,application/zip,application/x-zip-compressed',
+        )))),
     ],
 
     /*
@@ -75,6 +101,7 @@ return [
         'username_attribute' => env('LDAP_USERNAME_ATTRIBUTE', 'uid'),
         'email_attribute' => env('LDAP_EMAIL_ATTRIBUTE', 'mail'),
         'display_name_attribute' => env('LDAP_DISPLAY_NAME_ATTRIBUTE', 'cn'),
+        'display_name_attributes' => env('LDAP_DISPLAY_NAME_ATTRIBUTES', 'displayName,fullName,cn'),
         'unique_id_attribute' => env('LDAP_UNIQUE_ID_ATTRIBUTE', 'guid'),
         'department_attribute' => env('LDAP_DEPARTMENT_ATTRIBUTE', 'department'),
         'user_group_attributes' => env('LDAP_USER_GROUP_ATTRIBUTES', 'memberOf,groupMembership'),

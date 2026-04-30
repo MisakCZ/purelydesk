@@ -66,6 +66,19 @@
             line-height: 1.45;
         }
 
+        .ticket-form-panel .checkbox-title {
+            display: block;
+            margin-bottom: 0.15rem;
+            font-size: 0.9rem;
+            font-weight: 700;
+            line-height: 1.35;
+        }
+
+        .ticket-form-panel .checkbox-field .hint {
+            display: block;
+            font-weight: 500;
+        }
+
         .ticket-form-panel .actions {
             gap: 0.65rem;
             padding-top: 0.15rem;
@@ -93,7 +106,7 @@
 
     <div class="page-body">
         <section class="ticket-form-panel">
-            <form class="form-layout" method="post" action="{{ route('tickets.store') }}">
+            <form class="form-layout" method="post" action="{{ route('tickets.store') }}" enctype="multipart/form-data">
                 @csrf
 
                 @if ($viewErrors->any())

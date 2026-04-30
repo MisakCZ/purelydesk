@@ -5,6 +5,7 @@
     $categoryValue = (string) old('category_id', $ticket?->ticket_category_id);
     $descriptionValue = old('description', $ticket?->description);
     $visibilityValue = (string) old('visibility', $ticket?->visibility ?? \App\Models\Ticket::VISIBILITY_PUBLIC);
+    $isSensitiveValue = filter_var(old('is_sensitive', false), FILTER_VALIDATE_BOOLEAN);
     $expectedResolutionValue = old(
         'expected_resolution_at',
         $ticket?->expected_resolution_at?->format('Y-m-d\TH:i'),
@@ -59,6 +60,27 @@
         @endif
     </div>
 
+    @if (! $ticket)
+        <div class="field field-full">
+            <label class="checkbox-field" for="is_sensitive">
+                <input
+                    id="is_sensitive"
+                    name="is_sensitive"
+                    type="checkbox"
+                    value="1"
+                    @checked($isSensitiveValue)
+                >
+                <span>
+                    <span class="checkbox-title">{{ __('tickets.form.labels.sensitive') }}</span>
+                    <span class="hint">{{ __('tickets.form.hints.sensitive') }}</span>
+                </span>
+            </label>
+            @if ($viewErrors->has('is_sensitive'))
+                <div class="field-error">{{ $viewErrors->first('is_sensitive') }}</div>
+            @endif
+        </div>
+    @endif
+
     @if ($ticket && $canManageVisibility)
         <div class="field">
             <label class="label" for="visibility">{{ __('tickets.form.labels.visibility') }}</label>
@@ -101,4 +123,13 @@
             <div class="field-error">{{ $viewErrors->first('description') }}</div>
         @endif
     </div>
+
+    @if (! $ticket)
+        <div class="field field-full">
+            @include('tickets._attachment_input', [
+                'id' => 'attachments',
+                'errors' => $viewErrors,
+            ])
+        </div>
+    @endif
 </div>

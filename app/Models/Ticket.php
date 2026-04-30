@@ -37,6 +37,8 @@ class Ticket extends Model
         'resolved_at',
         'auto_close_at',
         'closed_at',
+        'archived_at',
+        'archived_by_user_id',
         'is_pinned',
         'pinned_at',
     ];
@@ -50,6 +52,7 @@ class Ticket extends Model
             'resolved_at' => 'datetime',
             'auto_close_at' => 'datetime',
             'closed_at' => 'datetime',
+            'archived_at' => 'datetime',
             'is_pinned' => 'boolean',
             'pinned_at' => 'datetime',
         ];
@@ -76,6 +79,18 @@ class Ticket extends Model
         }
 
         return $supportsExpectedResolution;
+    }
+
+    public static function supportsArchiving(): bool
+    {
+        static $supportsArchiving;
+
+        if ($supportsArchiving === null) {
+            $supportsArchiving = Schema::hasColumn('tickets', 'archived_at')
+                && Schema::hasColumn('tickets', 'archived_by_user_id');
+        }
+
+        return $supportsArchiving;
     }
 
     public static function visibilityOptions(): array
@@ -168,6 +183,10 @@ class Ticket extends Model
             return false;
         }
 
+        if ($this->isArchived() && ! $user->isAdmin()) {
+            return false;
+        }
+
         $visibility = $this->normalizedVisibility();
 
         if ($user->isAdmin()) {
@@ -254,6 +273,12 @@ class Ticket extends Model
         ]);
     }
 
+    public function isArchived(): bool
+    {
+        return self::supportsArchiving()
+            && $this->archived_at !== null;
+    }
+
     private function privateVisibilityValues(): array
     {
         return [
@@ -275,6 +300,11 @@ class Ticket extends Model
     public function assignee(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assignee_id');
+    }
+
+    public function archivedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'archived_by_user_id');
     }
 
     public function status(): BelongsTo
@@ -317,6 +347,11 @@ class Ticket extends Model
     public function attachments(): HasMany
     {
         return $this->hasMany(TicketAttachment::class);
+    }
+
+    public function directAttachments(): HasMany
+    {
+        return $this->attachments()->whereNull('ticket_comment_id');
     }
 
     public function watchers(): BelongsToMany

@@ -22,6 +22,7 @@ use App\Policies\TicketPolicy;
 use App\Support\LocaleManager;
 use App\Support\ResolvesHelpdeskUser;
 use App\Services\TicketHistoryService;
+use App\Services\TicketAttachmentService;
 use App\Services\TicketNotificationService;
 use App\Services\TicketWatcherService;
 use App\Services\TicketWorkflowAutomationService;
@@ -55,13 +56,16 @@ class TicketController extends Controller
 
     public function index(Request $request): View
     {
-        $filters = $this->resolveTicketIndexFilters($request);
         $actor = $this->currentHelpdeskUser();
+        $filters = $this->resolveTicketIndexFilters($request, $actor);
         $canUseInlineListEditing = $actor instanceof User
             && ($actor->isAdmin() || $actor->isSolver());
+        $canViewArchivedTickets = $actor instanceof User
+            && $actor->isAdmin()
+            && Ticket::supportsArchiving();
 
         $tickets = $this->applyTicketSorting(
-            $this->applyTicketFilters($this->ticketIndexQuery($actor), $filters, $actor),
+            $this->applyTicketFilters($this->ticketIndexQuery($actor, $filters['archive']), $filters, $actor),
             $filters,
         )
             ->paginate(15)
@@ -82,7 +86,7 @@ class TicketController extends Controller
 
         $pinnedTickets = collect();
 
-        if (Ticket::supportsPinning()) {
+        if (Ticket::supportsPinning() && $filters['archive'] !== 'archived') {
             $pinnedTickets = $this->applyTicketFilters($this->ticketIndexQuery($actor), $filters, $actor)
                 ->where('is_pinned', true)
                 ->orderByDesc('pinned_at')
@@ -113,6 +117,7 @@ class TicketController extends Controller
             'visibilityOptions' => Ticket::visibilityOptions(),
             'hasActiveFilters' => collect($this->filterOnlyTicketState($filters))->contains(fn ($value) => $value !== ''),
             'canCreateTickets' => $this->ticketPolicy()->create($actor),
+            'canViewArchivedTickets' => $canViewArchivedTickets,
         ]);
     }
 
@@ -144,18 +149,22 @@ class TicketController extends Controller
             'status:id,name,color,slug,is_closed',
             'priority:id,name,color,slug',
             'category:id,name',
-            'requester:id,name',
-            'assignee:id,name',
+            'requester:id,name,display_name,username',
+            'assignee:id,name,display_name,username',
+            'archivedBy:id,name,display_name,username',
+            'directAttachments' => fn ($query) => $query
+                ->with('uploader:id,name,display_name,username')
+                ->orderBy('created_at'),
             'watchers' => fn ($query) => $query->orderBy('users.name'),
             'history' => fn ($query) => $query
-                ->with('user:id,name')
+                ->with('user:id,name,display_name,username')
                 ->latest('id'),
         ]);
 
         if ($canViewInternalNotes) {
             $ticket->load([
                 'internalComments' => fn ($query) => $query
-                    ->with('user:id,name')
+                    ->with('user:id,name,display_name,username')
                     ->orderBy('created_at'),
             ]);
         } else {
@@ -166,9 +175,17 @@ class TicketController extends Controller
             $ticket->load([
                 'publicRootComments' => fn ($query) => $query
                     ->with([
-                        'user:id,name',
+                        'user:id,name,display_name,username',
+                        'attachments' => fn ($attachmentQuery) => $attachmentQuery
+                            ->with('uploader:id,name,display_name,username')
+                            ->orderBy('created_at'),
                         'publicReplies' => fn ($replyQuery) => $replyQuery
-                            ->with('user:id,name')
+                            ->with([
+                                'user:id,name,display_name,username',
+                                'attachments' => fn ($attachmentQuery) => $attachmentQuery
+                                    ->with('uploader:id,name,display_name,username')
+                                    ->orderBy('created_at'),
+                            ])
                             ->orderBy('created_at'),
                     ])
                     ->orderBy('created_at'),
@@ -178,7 +195,12 @@ class TicketController extends Controller
         } else {
             $ticket->load([
                 'publicComments' => fn ($query) => $query
-                    ->with('user:id,name')
+                    ->with([
+                        'user:id,name,display_name,username',
+                        'attachments' => fn ($attachmentQuery) => $attachmentQuery
+                            ->with('uploader:id,name,display_name,username')
+                            ->orderBy('created_at'),
+                    ])
                     ->orderBy('created_at'),
             ]);
 
@@ -202,14 +224,17 @@ class TicketController extends Controller
         $canWatchTicket = $this->ticketPolicy()->watch($actor, $ticket);
         $canCommentPublic = $this->ticketPolicy()->commentPublic($actor, $ticket);
         $canCreateInternalNote = $this->ticketPolicy()->commentInternal($actor, $ticket);
+        $canDeleteAttachments = $this->ticketPolicy()->deleteAttachment($actor, $ticket);
         $canEditTicket = $this->ticketPolicy()->update($actor, $ticket);
         $canConfirmResolution = $this->ticketPolicy()->confirmResolution($actor, $ticket);
         $canReportProblemPersists = $this->ticketPolicy()->reportProblemPersists($actor, $ticket);
-        $people = User::query()->orderBy('name')->get(['id', 'name']);
+        $canArchiveTicket = $this->ticketPolicy()->archive($actor, $ticket);
+        $canRestoreTicket = $this->ticketPolicy()->restore($actor, $ticket);
+        $people = User::query()->orderBy('name')->get(['id', 'name', 'display_name', 'username']);
         $assignableSolvers = User::query()
             ->assignableSolvers()
             ->orderBy('name')
-            ->get(['id', 'name']);
+            ->get(['id', 'name', 'display_name', 'username']);
 
         return view('tickets.show', [
             'ticket' => $ticket,
@@ -241,8 +266,11 @@ class TicketController extends Controller
             'canCommentPublic' => $canCommentPublic,
             'canViewInternalNotes' => $canViewInternalNotes,
             'canCreateInternalNote' => $canCreateInternalNote,
+            'canDeleteAttachments' => $canDeleteAttachments,
             'canConfirmResolution' => $canConfirmResolution,
             'canReportProblemPersists' => $canReportProblemPersists,
+            'canArchiveTicket' => $canArchiveTicket,
+            'canRestoreTicket' => $canRestoreTicket,
         ]);
     }
 
@@ -334,6 +362,26 @@ class TicketController extends Controller
             : __('tickets.flash.ticket_unpinned'), 'pin_update');
     }
 
+    public function archive(Ticket $ticket): RedirectResponse
+    {
+        $this->authorizeTicketAbility('archive', $ticket);
+
+        return $this->applyTicketUpdateWithHistory($ticket, [
+            'archived_at' => now(),
+            'archived_by_user_id' => $this->currentHelpdeskUser()?->id,
+        ], __('tickets.flash.ticket_archived'), 'ticket_archive');
+    }
+
+    public function restore(Ticket $ticket): RedirectResponse
+    {
+        $this->authorizeTicketAbility('restore', $ticket);
+
+        return $this->applyTicketUpdateWithHistory($ticket, [
+            'archived_at' => null,
+            'archived_by_user_id' => null,
+        ], __('tickets.flash.ticket_restored'), 'ticket_restore');
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $actor = $this->currentHelpdeskUser();
@@ -342,12 +390,15 @@ class TicketController extends Controller
         $validated = $this->validateTicketInput(
             $request,
             allowVisibility: false,
+            allowSensitiveVisibility: true,
         );
 
         $initialStatus = $this->resolveInitialStatus();
         $attributes = [
             ...$this->buildEditableTicketAttributes($validated),
-            'visibility' => Ticket::VISIBILITY_PUBLIC,
+            'visibility' => $request->boolean('is_sensitive')
+                ? Ticket::VISIBILITY_INTERNAL
+                : Ticket::VISIBILITY_PUBLIC,
             'requester_id' => $this->resolveRequester()->id,
             'assignee_id' => null,
             'ticket_status_id' => $initialStatus->id,
@@ -362,6 +413,12 @@ class TicketController extends Controller
         $ticket->refresh();
         $ticket->load($this->ticketSnapshotRelations());
         $this->ensureOriginalSnapshot($ticket, 'create');
+        $this->ticketAttachmentService()->storeMany(
+            $ticket,
+            $request->file('attachments', []),
+            $actor,
+            visibility: 'public',
+        );
         $this->ticketWatcherService()->syncAutomaticParticipants($ticket);
         $this->ticketNotificationService()->notify($ticket, 'created', $actor, excludeActor: false);
 
@@ -555,7 +612,7 @@ class TicketController extends Controller
     {
         $ticket->loadMissing([
             'status:id,name,slug',
-            'assignee:id,name,email,preferred_locale',
+            'assignee:id,name,display_name,username,email,preferred_locale',
         ]);
 
         $event = match ($action) {
@@ -583,7 +640,7 @@ class TicketController extends Controller
         }
 
         $this->ticketNotificationService()->notify($ticket, $event, $actor, [
-            'assignee' => $ticket->assignee?->name ?? __('tickets.common.unassigned'),
+            'assignee' => $ticket->assignee?->displayName() ?? __('tickets.common.unassigned'),
         ]);
     }
 
@@ -639,7 +696,7 @@ class TicketController extends Controller
         ];
     }
 
-    private function ticketIndexQuery(?User $watcherUser = null): Builder
+    private function ticketIndexQuery(?User $watcherUser = null, string $archiveFilter = ''): Builder
     {
         $query = Ticket::query()
             ->visibleTo($watcherUser)
@@ -647,8 +704,8 @@ class TicketController extends Controller
             ->with([
                 'status:id,name,color,slug',
                 'priority:id,name,color,slug',
-                'requester:id,name',
-                'assignee:id,name',
+                'requester:id,name,display_name,username',
+                'assignee:id,name,display_name,username',
             ])
             ->withCount('publicComments');
 
@@ -658,6 +715,14 @@ class TicketController extends Controller
             ]);
         } else {
             $query->selectRaw('0 as is_watched_by_current_user');
+        }
+
+        if (Ticket::supportsArchiving()) {
+            if ($watcherUser instanceof User && $watcherUser->isAdmin() && $archiveFilter === 'archived') {
+                $query->whereNotNull('archived_at');
+            } else {
+                $query->whereNull('archived_at');
+            }
         }
 
         return $query;
@@ -752,7 +817,7 @@ class TicketController extends Controller
             ->orderBy('tickets.id', 'desc');
     }
 
-    private function resolveTicketIndexFilters(Request $request): array
+    private function resolveTicketIndexFilters(Request $request, ?User $actor): array
     {
         $filterKeys = array_keys($this->defaultTicketFilters());
         $hasFilterQuery = false;
@@ -766,14 +831,15 @@ class TicketController extends Controller
 
         if ($hasFilterQuery) {
             $filters = $this->normalizeTicketFilters($request->only($filterKeys));
+            $filters = $this->removeUnauthorizedArchiveFilter($filters, $actor);
             $request->session()->put(self::INDEX_FILTERS_SESSION_KEY, $filters);
 
             return $filters;
         }
 
-        return $this->normalizeTicketFilters(
+        return $this->removeUnauthorizedArchiveFilter($this->normalizeTicketFilters(
             (array) $request->session()->get(self::INDEX_FILTERS_SESSION_KEY, $this->defaultTicketFilters()),
-        );
+        ), $actor);
     }
 
     private function defaultTicketFilters(): array
@@ -785,6 +851,7 @@ class TicketController extends Controller
             'category' => '',
             'scope' => '',
             'watched' => '',
+            'archive' => '',
             'sort' => self::DEFAULT_INDEX_SORT,
             'direction' => self::DEFAULT_INDEX_DIRECTION,
         ];
@@ -795,6 +862,7 @@ class TicketController extends Controller
         $sort = (string) ($filters['sort'] ?? self::DEFAULT_INDEX_SORT);
         $direction = (string) ($filters['direction'] ?? self::DEFAULT_INDEX_DIRECTION);
         $scope = (string) ($filters['scope'] ?? '');
+        $archive = (string) ($filters['archive'] ?? '');
 
         return [
             'search' => trim((string) ($filters['search'] ?? '')),
@@ -803,9 +871,19 @@ class TicketController extends Controller
             'category' => (string) ($filters['category'] ?? ''),
             'scope' => in_array($scope, ['open', 'finished'], true) ? $scope : '',
             'watched' => (string) ($filters['watched'] ?? '') === '1' ? '1' : '',
+            'archive' => $archive === 'archived' ? 'archived' : '',
             'sort' => in_array($sort, self::INDEX_SORT_COLUMNS, true) ? $sort : self::DEFAULT_INDEX_SORT,
             'direction' => in_array($direction, self::INDEX_SORT_DIRECTIONS, true) ? $direction : self::DEFAULT_INDEX_DIRECTION,
         ];
+    }
+
+    private function removeUnauthorizedArchiveFilter(array $filters, ?User $actor): array
+    {
+        if (! $actor instanceof User || ! $actor->isAdmin() || ! Ticket::supportsArchiving()) {
+            $filters['archive'] = '';
+        }
+
+        return $filters;
     }
 
     private function nonDefaultTicketIndexQuery(array $filters): array
@@ -832,6 +910,7 @@ class TicketController extends Controller
             'category' => (string) ($filters['category'] ?? ''),
             'scope' => (string) ($filters['scope'] ?? ''),
             'watched' => (string) ($filters['watched'] ?? ''),
+            'archive' => (string) ($filters['archive'] ?? ''),
         ];
     }
 
@@ -852,14 +931,16 @@ class TicketController extends Controller
             'status:id,name',
             'priority:id,name',
             'category:id,name',
-            'requester:id,name',
-            'assignee:id,name',
+            'requester:id,name,display_name,username',
+            'assignee:id,name,display_name,username',
+            'archivedBy:id,name,display_name,username',
         ];
     }
 
     private function validateTicketInput(
         Request $request,
         bool $allowVisibility,
+        bool $allowSensitiveVisibility = false,
         bool $allowExpectedResolution = false,
     ): array
     {
@@ -874,8 +955,19 @@ class TicketController extends Controller
             $rules['visibility'] = ['nullable', 'in:public,internal,private'];
         }
 
+        if ($allowSensitiveVisibility) {
+            $rules['is_sensitive'] = ['nullable', 'boolean'];
+        }
+
         if ($allowExpectedResolution) {
             $rules['expected_resolution_at'] = ['nullable', 'date'];
+        }
+
+        if ($allowSensitiveVisibility) {
+            $rules = [
+                ...$rules,
+                ...$this->ticketAttachmentService()->validationRules(),
+            ];
         }
 
         return $request->validate($rules);
@@ -983,12 +1075,12 @@ class TicketController extends Controller
             ],
             'requester' => [
                 'id' => $ticket->requester_id,
-                'name' => $ticket->requester?->name,
+                'name' => $ticket->requester?->displayName(),
             ],
             'assignee' => $ticket->assignee_id
                 ? [
                     'id' => $ticket->assignee_id,
-                    'name' => $ticket->assignee?->name,
+                    'name' => $ticket->assignee?->displayName(),
                 ]
                 : null,
             'pinned' => Ticket::supportsPinning()
@@ -999,6 +1091,15 @@ class TicketController extends Controller
                 : null,
             'expected_resolution_at' => $ticket->expected_resolution_at?->toIso8601String(),
             'closed_at' => $ticket->closed_at?->toIso8601String(),
+            'archived_at' => Ticket::supportsArchiving()
+                ? $ticket->archived_at?->toIso8601String()
+                : null,
+            'archived_by' => Ticket::supportsArchiving() && $ticket->archived_by_user_id
+                ? [
+                    'id' => $ticket->archived_by_user_id,
+                    'name' => $ticket->archivedBy?->displayName(),
+                ]
+                : null,
             'created_at' => $ticket->created_at?->toIso8601String(),
         ];
     }
@@ -1065,6 +1166,11 @@ class TicketController extends Controller
     private function ticketNotificationService(): TicketNotificationService
     {
         return app(TicketNotificationService::class);
+    }
+
+    private function ticketAttachmentService(): TicketAttachmentService
+    {
+        return app(TicketAttachmentService::class);
     }
 
     private function ticketWatcherService(): TicketWatcherService

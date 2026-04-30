@@ -33,6 +33,21 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    public function displayName(): string
+    {
+        return $this->display_name
+            ?: $this->name
+            ?: $this->username
+            ?: (string) $this->email;
+    }
+
+    public function loginName(): string
+    {
+        return $this->username
+            ?: $this->name
+            ?: $this->displayName();
+    }
+
     public function hasRole(string $roleSlug): bool
     {
         if ($this->relationLoaded('roles')) {

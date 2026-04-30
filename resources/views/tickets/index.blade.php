@@ -163,7 +163,7 @@
 
         .filter-grid {
             display: grid;
-            grid-template-columns: minmax(11rem, 1.25fr) repeat(5, minmax(7.6rem, 0.82fr));
+            grid-template-columns: minmax(11rem, 1.25fr) repeat(auto-fit, minmax(7.6rem, 0.82fr));
             gap: 0.55rem;
             align-items: end;
         }
@@ -352,7 +352,10 @@
             width: 6.6rem;
         }
 
-        .ticket-col-status,
+        .ticket-col-status {
+            width: 17.7rem;
+        }
+
         .ticket-col-priority {
             width: 8.85rem;
         }
@@ -728,7 +731,10 @@
                 grid-template-columns: repeat(3, minmax(0, 1fr));
             }
 
-            .ticket-col-status,
+            .ticket-col-status {
+                width: 17.1rem;
+            }
+
             .ticket-col-priority {
                 width: 8.55rem;
             }
@@ -1352,6 +1358,30 @@
                             </select>
                         </div>
                     </div>
+
+                    @if ($canViewArchivedTickets)
+                        <div class="filter-field">
+                            <div class="filter-head">
+                                <label class="filter-label" for="archive">{{ __('tickets.index.filters.archive') }}</label>
+                                @if ($filters['archive'] !== '')
+                                    <a
+                                        class="filter-clear"
+                                        href="{{ route('tickets.index', $clearFilterQuery('archive')) }}"
+                                        aria-label="{{ __('tickets.index.filters.clear_archive') }}"
+                                        title="{{ __('tickets.index.filters.clear_archive') }}"
+                                    >
+                                        &times;
+                                    </a>
+                                @endif
+                            </div>
+                            <div class="filter-control filter-control-select">
+                                <select class="filter-select" id="archive" name="archive" data-filter-auto-submit>
+                                    <option value="">{{ __('tickets.index.filters.archive_active') }}</option>
+                                    <option value="archived" @selected($filters['archive'] === 'archived')>{{ __('tickets.index.filters.archive_archived') }}</option>
+                                </select>
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </form>
         </section>
@@ -1397,10 +1427,10 @@
 
                             <div class="pinned-ticket-meta">
                                 <div>{{ $ticket->translatedVisibilityLabel() }}</div>
-                                <div>{{ __('tickets.index.meta.requester', ['name' => $ticket->requester?->name ?? __('tickets.common.not_available')]) }}</div>
+                                <div>{{ __('tickets.index.meta.requester', ['name' => $ticket->requester?->displayName() ?? __('tickets.common.not_available')]) }}</div>
                                 <div>
-                                    {{ $ticket->assignee?->name
-                                        ? __('tickets.index.meta.assignee', ['name' => $ticket->assignee->name])
+                                    {{ $ticket->assignee
+                                        ? __('tickets.index.meta.assignee', ['name' => $ticket->assignee->displayName()])
                                         : __('tickets.index.meta.assignee_unassigned') }}
                                 </div>
                                 <div>{{ __('tickets.index.meta.updated', ['date' => $ticket->updated_at?->locale($locale)->translatedFormat($listUpdatedAtFormat) ?? __('tickets.common.not_available')]) }}</div>
@@ -1477,8 +1507,8 @@
                                         </span>
                                         <span class="subject-meta-separator" aria-hidden="true">&middot;</span>
                                         <span class="subject-meta-item">
-                                            {{ $ticket->assignee?->name
-                                                ? __('tickets.index.meta.assignee', ['name' => $ticket->assignee->name])
+                                            {{ $ticket->assignee
+                                                ? __('tickets.index.meta.assignee', ['name' => $ticket->assignee->displayName()])
                                                 : __('tickets.index.meta.assignee_unassigned') }}
                                         </span>
                                         <span class="subject-meta-separator" aria-hidden="true">&middot;</span>

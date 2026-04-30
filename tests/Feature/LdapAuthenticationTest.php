@@ -165,4 +165,28 @@ class LdapAuthenticationTest extends TestCase
 
         $this->assertSame('2f4b0ed6-43d1-43a2-80d1-6cb011d0f58c', $user->external_id);
     }
+
+    public function test_ldap_display_name_prefers_full_name_over_login_like_common_name(): void
+    {
+        config([
+            'helpdesk.ldap.display_name_attribute' => 'cn',
+            'helpdesk.ldap.display_name_attributes' => 'displayName,fullName,cn',
+        ]);
+
+        $method = new \ReflectionMethod(LdapAuthenticator::class, 'entryDisplayName');
+        $method->setAccessible(true);
+
+        $displayName = $method->invoke(app(LdapAuthenticator::class), [
+            'cn' => [
+                'count' => 1,
+                0 => 'michal',
+            ],
+            'fullname' => [
+                'count' => 1,
+                0 => 'Michal Hradecký',
+            ],
+        ], 'michal');
+
+        $this->assertSame('Michal Hradecký', $displayName);
+    }
 }

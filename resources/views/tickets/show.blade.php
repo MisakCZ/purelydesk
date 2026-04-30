@@ -38,6 +38,9 @@
         'resolved_at' => __('tickets.show.history.fields.resolved_at'),
         'auto_close_at' => __('tickets.show.history.fields.auto_close_at'),
         'closed_at' => __('tickets.show.history.fields.closed_at'),
+        'archived_at' => __('tickets.show.history.fields.archived_at'),
+        'archived_by' => __('tickets.show.history.fields.archived_by'),
+        'attachments' => __('tickets.show.history.fields.attachments'),
         'created_at' => __('tickets.show.history.fields.created_at'),
     ];
     $describeHistoryEntry = function ($entry) use ($historyFieldLabels) {
@@ -88,6 +91,22 @@
             align-items: center;
             gap: 0.75rem;
             flex-wrap: wrap;
+        }
+
+        .button-danger {
+            background: #fff1f1;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .button-danger:hover {
+            background: #fee2e2;
+        }
+
+        .archive-alert {
+            border-color: #fde68a;
+            background: #fffbeb;
+            color: #92400e;
         }
 
         .ticket-hero {
@@ -752,6 +771,105 @@
             line-height: 1.7;
         }
 
+        .attachments-block {
+            display: grid;
+            gap: 0.45rem;
+            margin-top: 0.75rem;
+        }
+
+        .attachments-heading {
+            color: #64748b;
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.045em;
+            text-transform: uppercase;
+        }
+
+        .attachments-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.55rem;
+            margin-top: 0.65rem;
+        }
+
+        .attachment-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            max-width: 100%;
+            padding: 0.45rem 0.55rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            background: #f8fafc;
+        }
+
+        .attachment-thumb {
+            display: inline-flex;
+            width: 3.2rem;
+            height: 3.2rem;
+            flex: 0 0 auto;
+            overflow: hidden;
+            border-radius: 0.6rem;
+            background: #e2e8f0;
+        }
+
+        .attachment-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .attachment-icon {
+            display: inline-flex;
+            width: 1.8rem;
+            height: 1.8rem;
+            flex: 0 0 auto;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+        }
+
+        .attachment-icon svg {
+            width: 1.15rem;
+            height: 1.15rem;
+        }
+
+        .attachment-body {
+            display: grid;
+            min-width: 0;
+            gap: 0.05rem;
+        }
+
+        .attachment-name {
+            max-width: 18rem;
+            overflow: hidden;
+            color: #0f172a;
+            font-size: 0.84rem;
+            font-weight: 700;
+            text-decoration: none;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .attachment-name:hover {
+            color: #2563eb;
+        }
+
+        .attachment-meta {
+            color: #64748b;
+            font-size: 0.74rem;
+            font-weight: 600;
+        }
+
+        .attachment-delete {
+            border: 0;
+            background: transparent;
+            color: #b91c1c;
+            cursor: pointer;
+            font-size: 0.74rem;
+            font-weight: 800;
+        }
+
         .comment-actions {
             display: flex;
             align-items: center;
@@ -955,6 +1073,20 @@
                 @if ($canEditTicket)
                     <a class="button button-secondary" href="{{ route('tickets.edit', $ticket) }}">{{ __('tickets.show.actions.edit') }}</a>
                 @endif
+                @if ($canArchiveTicket)
+                    <form method="post" action="{{ route('tickets.archive', $ticket) }}">
+                        @csrf
+                        @method('patch')
+                        <button class="button button-danger" type="submit">{{ __('tickets.show.actions.archive') }}</button>
+                    </form>
+                @endif
+                @if ($canRestoreTicket)
+                    <form method="post" action="{{ route('tickets.restore', $ticket) }}">
+                        @csrf
+                        @method('patch')
+                        <button class="button button-secondary" type="submit">{{ __('tickets.show.actions.restore') }}</button>
+                    </form>
+                @endif
                 <a class="button button-secondary" href="{{ route('tickets.index') }}">{{ __('tickets.show.actions.back') }}</a>
             </div>
         </div>
@@ -964,6 +1096,15 @@
         <div class="ticket-detail">
             @if (session('status'))
                 <div class="alert" role="status">{{ session('status') }}</div>
+            @endif
+
+            @if ($ticket->isArchived())
+                <div class="alert archive-alert" role="status">
+                    {{ __('tickets.show.archive.notice', [
+                        'date' => $ticket->archived_at?->locale($locale)->translatedFormat($dateTimeFormat) ?? __('tickets.common.not_available'),
+                        'user' => $ticket->archivedBy?->displayName() ?? __('tickets.common.not_available'),
+                    ]) }}
+                </div>
             @endif
 
             @if ($hasOriginalVersionChanges && $originalSnapshot)
@@ -1275,7 +1416,7 @@
                                             @else
                                                 <div class="watcher-list" aria-label="{{ __('tickets.show.hero.watchers_label') }}">
                                                     @foreach ($ticket->watchers as $watcher)
-                                                        <span class="watcher-pill">{{ $watcher->name }}</span>
+                                                        <span class="watcher-pill">{{ $watcher->displayName() }}</span>
                                                     @endforeach
                                                 </div>
                                             @endif
@@ -1299,7 +1440,7 @@
                                         title="{{ __('tickets.show.forms.change_requester') }}"
                                     >
                                         <span class="badge-dot"></span>
-                                        {{ __('tickets.show.hero.requester') }}: {{ $ticket->requester?->name ?? __('tickets.common.not_available') }}
+                                        {{ __('tickets.show.hero.requester') }}: {{ $ticket->requester?->displayName() ?? __('tickets.common.not_available') }}
                                         <span class="badge-caret" aria-hidden="true">▾</span>
                                     </summary>
 
@@ -1327,7 +1468,7 @@
                                                         value="{{ $requester->id }}"
                                                         @disabled($isCurrentRequester)
                                                     >
-                                                        <span>{{ $requester->name }}</span>
+                                                        <span>{{ $requester->displayName() }}</span>
                                                         <span class="badge-menu-check" @if (! $isCurrentRequester) hidden @endif>✓</span>
                                                     </button>
                                                 @endforeach
@@ -1338,7 +1479,7 @@
                             @else
                                 <span class="badge">
                                     <span class="badge-dot"></span>
-                                    {{ __('tickets.show.hero.requester') }}: {{ $ticket->requester?->name ?? __('tickets.common.not_available') }}
+                                    {{ __('tickets.show.hero.requester') }}: {{ $ticket->requester?->displayName() ?? __('tickets.common.not_available') }}
                                 </span>
                             @endif
 
@@ -1350,7 +1491,7 @@
                                         title="{{ __('tickets.show.hero.assignee') }}"
                                     >
                                         <span class="badge-dot"></span>
-                                        {{ __('tickets.show.hero.assignee') }}: {{ $ticket->assignee?->name ?? __('tickets.common.unassigned') }}
+                                        {{ __('tickets.show.hero.assignee') }}: {{ $ticket->assignee?->displayName() ?? __('tickets.common.unassigned') }}
                                         <span class="badge-caret" aria-hidden="true">▾</span>
                                     </summary>
 
@@ -1390,7 +1531,7 @@
                                                         value="{{ $assignee->id }}"
                                                         @disabled($isCurrentAssignee)
                                                     >
-                                                        <span>{{ $assignee->name }}</span>
+                                                        <span>{{ $assignee->displayName() }}</span>
                                                         <span class="badge-menu-check" @if (! $isCurrentAssignee) hidden @endif>✓</span>
                                                     </button>
                                                 @endforeach
@@ -1401,7 +1542,7 @@
                             @else
                                 <span class="badge">
                                     <span class="badge-dot"></span>
-                                    {{ __('tickets.show.hero.assignee') }}: {{ $ticket->assignee?->name ?? __('tickets.common.unassigned') }}
+                                    {{ __('tickets.show.hero.assignee') }}: {{ $ticket->assignee?->displayName() ?? __('tickets.common.unassigned') }}
                                 </span>
                             @endif
                         </div>
@@ -1433,6 +1574,16 @@
                         <div class="detail-value content-description">
                             {!! nl2br(e($ticket->description ?? __('tickets.common.not_available'))) !!}
                         </div>
+
+                        @if ($ticket->directAttachments->isNotEmpty())
+                            <div class="attachments-block">
+                                <div class="attachments-heading">{{ __('tickets.attachments.heading') }}</div>
+                                @include('tickets._attachments', [
+                                    'attachments' => $ticket->directAttachments,
+                                    'canDelete' => $canDeleteAttachments,
+                                ])
+                            </div>
+                        @endif
 
                         @if ($ticket->expected_resolution_at)
                             <div class="content-meta-line">
@@ -1549,12 +1700,17 @@
                         @foreach ($publicCommentThreads as $comment)
                             <article class="comment-card">
                                 <div class="comment-head">
-                                    <div class="comment-author">{{ $comment->user?->name ?? __('tickets.common.unknown_user') }}</div>
+                                    <div class="comment-author">{{ $comment->user?->displayName() ?? __('tickets.common.unknown_user') }}</div>
                                     <div class="comment-time">{{ $comment->created_at?->locale($locale)->translatedFormat($dateTimeFormat) ?? __('tickets.common.not_available') }}</div>
                                 </div>
                                 <div class="comment-body">
                                     {!! nl2br(e($comment->body)) !!}
                                 </div>
+
+                                @include('tickets._attachments', [
+                                    'attachments' => $comment->attachments,
+                                    'canDelete' => $canDeleteAttachments,
+                                ])
 
                                 @if ($commentThreadingEnabled && $canCommentPublic)
                                     <div class="comment-actions">
@@ -1575,6 +1731,7 @@
                                         data-editor-panel
                                         method="post"
                                         action="{{ route('tickets.comments.store', $ticket) }}"
+                                        enctype="multipart/form-data"
                                         hidden
                                     >
                                         @csrf
@@ -1603,6 +1760,14 @@
                                             @endif
                                         </div>
 
+                                        <div>
+                                            @include('tickets._attachment_input', [
+                                                'id' => 'reply-attachments-'.$comment->id,
+                                                'errors' => $commentErrors,
+                                                'showErrors' => $replyParentId === (string) $comment->id,
+                                            ])
+                                        </div>
+
                                         <div class="comment-form-actions">
                                             <button class="button button-primary" type="submit">{{ __('tickets.show.comments.reply_submit') }}</button>
                                             <button class="button button-secondary" type="button" data-editor-cancel="reply-editor-{{ $comment->id }}">{{ __('tickets.common.close') }}</button>
@@ -1615,12 +1780,16 @@
                                         @foreach ($comment->publicReplies as $reply)
                                             <article class="comment-card reply-card">
                                                 <div class="comment-head">
-                                                    <div class="comment-author">{{ $reply->user?->name ?? __('tickets.common.unknown_user') }}</div>
+                                                    <div class="comment-author">{{ $reply->user?->displayName() ?? __('tickets.common.unknown_user') }}</div>
                                                     <div class="comment-time">{{ $reply->created_at?->locale($locale)->translatedFormat($dateTimeFormat) ?? __('tickets.common.not_available') }}</div>
                                                 </div>
                                                 <div class="comment-body">
                                                     {!! nl2br(e($reply->body)) !!}
                                                 </div>
+                                                @include('tickets._attachments', [
+                                                    'attachments' => $reply->attachments,
+                                                    'canDelete' => $canDeleteAttachments,
+                                                ])
                                             </article>
                                         @endforeach
                                     </div>
@@ -1637,6 +1806,7 @@
                         data-editor-panel
                         method="post"
                         action="{{ route('tickets.comments.store', $ticket) }}"
+                        enctype="multipart/form-data"
                         hidden
                     >
                         @csrf
@@ -1659,6 +1829,14 @@
                             @if ($commentErrors->has('body'))
                                 <div class="field-error">{{ $commentErrors->first('body') }}</div>
                             @endif
+                        </div>
+
+                        <div>
+                            @include('tickets._attachment_input', [
+                                'id' => 'comment-attachments',
+                                'errors' => $commentErrors,
+                                'showErrors' => $replyParentId === '',
+                            ])
                         </div>
 
                         <div class="comment-form-actions">
@@ -1708,7 +1886,7 @@
                             @foreach ($ticket->internalComments as $note)
                                 <article class="comment-card internal-note-card">
                                     <div class="comment-head">
-                                        <div class="comment-author">{{ $note->user?->name ?? __('tickets.common.unknown_user') }}</div>
+                                        <div class="comment-author">{{ $note->user?->displayName() ?? __('tickets.common.unknown_user') }}</div>
                                         <div class="comment-time">{{ $note->created_at?->locale($locale)->translatedFormat($dateTimeFormat) ?? __('tickets.common.not_available') }}</div>
                                     </div>
                                     <div class="comment-body">
@@ -1785,7 +1963,7 @@
                             @foreach ($ticket->history as $historyEntry)
                                 <article class="comment-card">
                                     <div class="comment-head">
-                                        <div class="comment-author">{{ $historyEntry->user?->name ?? __('tickets.show.history.system_user') }}</div>
+                                        <div class="comment-author">{{ $historyEntry->user?->displayName() ?? __('tickets.show.history.system_user') }}</div>
                                         <div class="comment-time">{{ $historyEntry->created_at?->locale($locale)->translatedFormat($dateTimeFormat) ?? __('tickets.common.not_available') }}</div>
                                     </div>
                                     <div class="comment-body">

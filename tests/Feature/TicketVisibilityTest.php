@@ -433,6 +433,51 @@ class TicketVisibilityTest extends TestCase
         ]);
     }
 
+    public function test_solver_can_update_visibility_for_visible_ticket(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'visibility' => Ticket::VISIBILITY_INTERNAL,
+        ]);
+
+        $this->actingAs($solver)
+            ->patch(route('tickets.visibility.update', $ticket), [
+                'visibility' => Ticket::VISIBILITY_PRIVATE,
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        $ticket->refresh();
+
+        $this->assertSame(Ticket::VISIBILITY_PRIVATE, $ticket->visibility);
+        $this->assertTrue(TicketHistory::query()
+            ->where('ticket_id', $ticket->id)
+            ->get()
+            ->contains(fn (TicketHistory $entry) => ($entry->meta['action'] ?? null) === 'visibility_update'));
+    }
+
+    public function test_admin_can_update_visibility(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $admin = $this->createUserWithRole($this->adminRole);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'visibility' => Ticket::VISIBILITY_PRIVATE,
+        ]);
+
+        $this->actingAs($admin)
+            ->patch(route('tickets.visibility.update', $ticket), [
+                'visibility' => Ticket::VISIBILITY_PUBLIC,
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        $this->assertDatabaseHas('tickets', [
+            'id' => $ticket->id,
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+        ]);
+    }
+
     public function test_regular_user_cannot_pin_ticket(): void
     {
         $requester = $this->createUserWithRole($this->userRole);
@@ -451,6 +496,118 @@ class TicketVisibilityTest extends TestCase
             'id' => $ticket->id,
             'is_pinned' => false,
         ]);
+    }
+
+    public function test_only_admin_can_archive_ticket(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $admin = $this->createUserWithRole($this->adminRole);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+        ]);
+
+        $this->actingAs($requester)
+            ->patch(route('tickets.archive', $ticket))
+            ->assertForbidden();
+
+        $this->actingAs($solver)
+            ->patch(route('tickets.archive', $ticket))
+            ->assertForbidden();
+
+        $this->actingAs($admin)
+            ->patch(route('tickets.archive', $ticket))
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        $ticket->refresh();
+
+        $this->assertNotNull($ticket->archived_at);
+        $this->assertSame($admin->id, $ticket->archived_by_user_id);
+        $this->assertTrue(TicketHistory::query()
+            ->where('ticket_id', $ticket->id)
+            ->get()
+            ->contains(fn (TicketHistory $entry) => ($entry->meta['action'] ?? null) === 'ticket_archive'));
+    }
+
+    public function test_archived_ticket_is_hidden_from_regular_list_and_visible_only_to_admin_archive(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $otherUser = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $admin = $this->createUserWithRole($this->adminRole);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'subject' => 'Archived ticket hidden from main list',
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+        ]);
+
+        $ticket->forceFill([
+            'archived_at' => now(),
+            'archived_by_user_id' => $admin->id,
+        ])->save();
+
+        foreach ([$requester, $otherUser, $solver, $admin] as $actor) {
+            $this->actingAs($actor)
+                ->get(route('tickets.index'))
+                ->assertOk()
+                ->assertDontSeeText($ticket->subject);
+        }
+
+        foreach ([$requester, $otherUser, $solver] as $actor) {
+            $this->actingAs($actor)
+                ->get(route('tickets.index', ['archive' => 'archived']))
+                ->assertOk()
+                ->assertDontSeeText($ticket->subject);
+
+            $this->actingAs($actor)
+                ->get(route('tickets.show', $ticket))
+                ->assertForbidden();
+        }
+
+        $this->actingAs($admin)
+            ->get(route('tickets.index', ['archive' => 'archived']))
+            ->assertOk()
+            ->assertSeeText($ticket->subject);
+
+        $this->actingAs($admin)
+            ->get(route('tickets.show', $ticket))
+            ->assertOk()
+            ->assertSeeText($ticket->subject);
+    }
+
+    public function test_admin_can_restore_archived_ticket(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $admin = $this->createUserWithRole($this->adminRole);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'subject' => 'Restored archived ticket',
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+        ]);
+
+        $ticket->forceFill([
+            'archived_at' => now(),
+            'archived_by_user_id' => $admin->id,
+        ])->save();
+
+        $this->actingAs($admin)
+            ->patch(route('tickets.restore', $ticket))
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        $ticket->refresh();
+
+        $this->assertNull($ticket->archived_at);
+        $this->assertNull($ticket->archived_by_user_id);
+        $this->assertTrue(TicketHistory::query()
+            ->where('ticket_id', $ticket->id)
+            ->get()
+            ->contains(fn (TicketHistory $entry) => ($entry->meta['action'] ?? null) === 'ticket_restore'));
+
+        $this->actingAs($requester)
+            ->get(route('tickets.index'))
+            ->assertOk()
+            ->assertSeeText($ticket->subject);
     }
 
     public function test_regular_user_cannot_view_or_create_internal_notes(): void
@@ -638,6 +795,8 @@ class TicketVisibilityTest extends TestCase
         config()->set('helpdesk.notifications.mail.enabled', true);
         Notification::fake();
         $requester = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $admin = $this->createUserWithRole($this->adminRole);
 
         $this->actingAs($requester);
 
@@ -651,8 +810,129 @@ class TicketVisibilityTest extends TestCase
         Notification::assertSentTo(
             $requester,
             TicketEventNotification::class,
+            function (TicketEventNotification $notification) use ($requester): bool {
+                $mailMessage = $notification->toMail($requester);
+
+                return $notification->event === 'created'
+                    && $notification->ticket->subject === 'Notification ticket'
+                    && $mailMessage->subject === '[Helpdesk] '.$notification->ticket->ticket_number.': new ticket'
+                    && in_array('Ticket description:', $mailMessage->introLines, true)
+                    && in_array('New ticket notification body.', $mailMessage->introLines, true);
+            },
+        );
+        Notification::assertSentTo($solver, TicketEventNotification::class);
+        Notification::assertNotSentTo($admin, TicketEventNotification::class);
+    }
+
+    public function test_new_internal_ticket_notifies_requester_and_solvers_but_not_admins_by_default(): void
+    {
+        config()->set('helpdesk.notifications.mail.enabled', true);
+        Notification::fake();
+        $requester = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $admin = $this->createUserWithRole($this->adminRole);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'visibility' => Ticket::VISIBILITY_INTERNAL,
+            'subject' => 'Internal created notification ticket',
+        ]);
+
+        app(\App\Services\TicketNotificationService::class)->notify($ticket, 'created', $requester, excludeActor: false);
+
+        foreach ([$requester, $solver] as $recipient) {
+            Notification::assertSentTo(
+                $recipient,
+                TicketEventNotification::class,
+                fn (TicketEventNotification $notification) => $notification->event === 'created'
+                    && (int) $notification->ticket->id === (int) $ticket->id,
+            );
+        }
+
+        Notification::assertNotSentTo($admin, TicketEventNotification::class);
+    }
+
+    public function test_new_ticket_recipient_deduplication_when_requester_is_solver(): void
+    {
+        config()->set('helpdesk.notifications.mail.enabled', true);
+        Notification::fake();
+        $requesterSolver = $this->createUserWithRole($this->solverRole);
+
+        $this->actingAs($requesterSolver);
+
+        $this->post(route('tickets.store'), [
+            'subject' => 'Requester solver notification ticket',
+            'description' => 'Requester is also a solver.',
+            'priority_id' => $this->defaultPriority->id,
+            'category_id' => $this->defaultCategory->id,
+        ])->assertRedirect(route('tickets.index'));
+
+        Notification::assertSentToTimes($requesterSolver, TicketEventNotification::class, 1);
+    }
+
+    public function test_new_private_ticket_does_not_notify_unassigned_solver_or_admin_by_default(): void
+    {
+        config()->set('helpdesk.notifications.mail.enabled', true);
+        Notification::fake();
+        $requester = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $admin = $this->createUserWithRole($this->adminRole);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'visibility' => Ticket::VISIBILITY_PRIVATE,
+            'subject' => 'Private created notification ticket',
+        ]);
+
+        app(\App\Services\TicketNotificationService::class)->notify($ticket, 'created', $requester, excludeActor: false);
+
+        Notification::assertSentTo($requester, TicketEventNotification::class);
+        Notification::assertNotSentTo($solver, TicketEventNotification::class);
+        Notification::assertNotSentTo($admin, TicketEventNotification::class);
+    }
+
+    public function test_new_private_ticket_notifies_assignee(): void
+    {
+        config()->set('helpdesk.notifications.mail.enabled', true);
+        Notification::fake();
+        $requester = $this->createUserWithRole($this->userRole);
+        $assignee = $this->createUserWithRole($this->solverRole);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'assignee' => $assignee,
+            'visibility' => Ticket::VISIBILITY_PRIVATE,
+            'subject' => 'Private assigned created notification ticket',
+        ]);
+
+        app(\App\Services\TicketNotificationService::class)->notify($ticket, 'created', $requester, excludeActor: false);
+
+        Notification::assertSentTo($requester, TicketEventNotification::class);
+        Notification::assertSentTo(
+            $assignee,
+            TicketEventNotification::class,
             fn (TicketEventNotification $notification) => $notification->event === 'created'
-                && $notification->ticket->subject === 'Notification ticket',
+                && (int) $notification->ticket->id === (int) $ticket->id,
+        );
+    }
+
+    public function test_new_ticket_can_notify_admins_when_enabled(): void
+    {
+        config()->set('helpdesk.notifications.mail.enabled', true);
+        config()->set('helpdesk.notifications.mail.notify_admins_on_new_tickets', true);
+        Notification::fake();
+        $requester = $this->createUserWithRole($this->userRole);
+        $admin = $this->createUserWithRole($this->adminRole);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'visibility' => Ticket::VISIBILITY_PRIVATE,
+            'subject' => 'Private admin enabled notification ticket',
+        ]);
+
+        app(\App\Services\TicketNotificationService::class)->notify($ticket, 'created', $requester, excludeActor: false);
+
+        Notification::assertSentTo(
+            $admin,
+            TicketEventNotification::class,
+            fn (TicketEventNotification $notification) => $notification->event === 'created'
+                && (int) $notification->ticket->id === (int) $ticket->id,
         );
     }
 
@@ -685,8 +965,16 @@ class TicketVisibilityTest extends TestCase
             Notification::assertSentTo(
                 $recipient,
                 TicketEventNotification::class,
-                fn (TicketEventNotification $notification) => $notification->event === 'public_comment'
-                    && (int) $notification->ticket->id === (int) $ticket->id,
+                function (TicketEventNotification $notification) use ($recipient, $ticket): bool {
+                    $mailMessage = $notification->toMail($recipient);
+
+                    return $notification->event === 'public_comment'
+                        && (int) $notification->ticket->id === (int) $ticket->id
+                        && in_array('Ticket description:', $mailMessage->introLines, true)
+                        && in_array($ticket->description, $mailMessage->introLines, true)
+                        && in_array('Comment content:', $mailMessage->introLines, true)
+                        && in_array('A new public comment.', $mailMessage->introLines, true);
+                },
             );
         }
 
@@ -723,6 +1011,50 @@ class TicketVisibilityTest extends TestCase
             fn (TicketEventNotification $notification) => $notification->event === 'public_comment',
         );
         Notification::assertNotSentTo($unauthorizedWatcher, TicketEventNotification::class);
+    }
+
+    public function test_internal_ticket_comment_is_not_visible_or_notified_to_unauthorized_regular_user(): void
+    {
+        config()->set('helpdesk.notifications.mail.enabled', true);
+        Notification::fake();
+        $requester = $this->createUserWithRole($this->userRole);
+        $assignee = $this->createUserWithRole($this->solverRole);
+        $unauthorizedWatcher = $this->createUserWithRole($this->userRole);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'assignee' => $assignee,
+            'visibility' => Ticket::VISIBILITY_INTERNAL,
+            'description' => 'Internal ticket description visible only to allowed users.',
+        ]);
+        $ticket->watcherEntries()->create([
+            'user_id' => $unauthorizedWatcher->id,
+            'is_manual' => true,
+            'is_auto_participant' => false,
+        ]);
+
+        $this->actingAs($requester)
+            ->post(route('tickets.comments.store', $ticket), [
+                'body' => 'Internal ticket comment content.',
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        Notification::assertSentTo(
+            $assignee,
+            TicketEventNotification::class,
+            function (TicketEventNotification $notification) use ($assignee): bool {
+                $mailMessage = $notification->toMail($assignee);
+
+                return $notification->event === 'public_comment'
+                    && in_array('A new comment was added to the ticket.', $mailMessage->introLines, true)
+                    && ! in_array('A new public comment was added to the ticket.', $mailMessage->introLines, true)
+                    && in_array('Internal ticket comment content.', $mailMessage->introLines, true);
+            },
+        );
+        Notification::assertNotSentTo($unauthorizedWatcher, TicketEventNotification::class);
+
+        $this->actingAs($unauthorizedWatcher)
+            ->get(route('tickets.show', $ticket))
+            ->assertForbidden();
     }
 
     public function test_assignee_change_notifies_new_assignee(): void
@@ -1380,6 +1712,132 @@ class TicketVisibilityTest extends TestCase
         }
     }
 
+    public function test_regular_user_creates_public_ticket_without_sensitive_option(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+
+        $this->actingAs($requester)
+            ->post(route('tickets.store'), [
+                'subject' => 'Public create flow ticket',
+                'description' => 'Ticket should stay public.',
+                'priority_id' => $this->defaultPriority->id,
+                'category_id' => $this->defaultCategory->id,
+            ])
+            ->assertRedirect(route('tickets.index'));
+
+        $ticket = Ticket::query()->where('subject', 'Public create flow ticket')->firstOrFail();
+
+        $this->assertSame(Ticket::VISIBILITY_PUBLIC, $ticket->visibility);
+        $this->assertSame($requester->id, $ticket->requester_id);
+    }
+
+    public function test_regular_user_creates_internal_ticket_with_sensitive_option(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+
+        $this->actingAs($requester)
+            ->post(route('tickets.store'), [
+                'subject' => 'Sensitive create flow ticket',
+                'description' => 'Ticket should become internal.',
+                'priority_id' => $this->defaultPriority->id,
+                'category_id' => $this->defaultCategory->id,
+                'is_sensitive' => '1',
+            ])
+            ->assertRedirect(route('tickets.index'));
+
+        $ticket = Ticket::query()->where('subject', 'Sensitive create flow ticket')->firstOrFail();
+
+        $this->assertSame(Ticket::VISIBILITY_INTERNAL, $ticket->visibility);
+        $this->assertSame($requester->id, $ticket->requester_id);
+    }
+
+    public function test_regular_user_cannot_forge_private_visibility_when_creating_ticket(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+
+        $this->actingAs($requester)
+            ->post(route('tickets.store'), [
+                'subject' => 'Forged private create flow ticket',
+                'description' => 'Submitted visibility must be ignored on create.',
+                'priority_id' => $this->defaultPriority->id,
+                'category_id' => $this->defaultCategory->id,
+                'visibility' => Ticket::VISIBILITY_PRIVATE,
+            ])
+            ->assertRedirect(route('tickets.index'));
+
+        $ticket = Ticket::query()->where('subject', 'Forged private create flow ticket')->firstOrFail();
+
+        $this->assertSame(Ticket::VISIBILITY_PUBLIC, $ticket->visibility);
+
+        $this->actingAs($requester)
+            ->post(route('tickets.store'), [
+                'subject' => 'Forged private sensitive create flow ticket',
+                'description' => 'Submitted private visibility must be ignored even when sensitive.',
+                'priority_id' => $this->defaultPriority->id,
+                'category_id' => $this->defaultCategory->id,
+                'is_sensitive' => '1',
+                'visibility' => Ticket::VISIBILITY_PRIVATE,
+            ])
+            ->assertRedirect(route('tickets.index'));
+
+        $sensitiveTicket = Ticket::query()->where('subject', 'Forged private sensitive create flow ticket')->firstOrFail();
+
+        $this->assertSame(Ticket::VISIBILITY_INTERNAL, $sensitiveTicket->visibility);
+    }
+
+    public function test_created_internal_ticket_is_visible_to_requester_and_solver_but_not_other_regular_user(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $otherUser = $this->createUserWithRole($this->userRole);
+
+        $this->actingAs($requester)
+            ->post(route('tickets.store'), [
+                'subject' => 'Created internal access ticket',
+                'description' => 'Sensitive ticket visibility should follow internal rules.',
+                'priority_id' => $this->defaultPriority->id,
+                'category_id' => $this->defaultCategory->id,
+                'is_sensitive' => '1',
+            ])
+            ->assertRedirect(route('tickets.index'));
+
+        $ticket = Ticket::query()->where('subject', 'Created internal access ticket')->firstOrFail();
+
+        foreach ([$requester, $solver] as $authorizedUser) {
+            $this->actingAs($authorizedUser)
+                ->get(route('tickets.index'))
+                ->assertOk()
+                ->assertSeeText($ticket->subject);
+
+            $this->actingAs($authorizedUser)
+                ->get(route('tickets.show', $ticket))
+                ->assertOk()
+                ->assertSeeText($ticket->subject);
+        }
+
+        $this->actingAs($otherUser)
+            ->get(route('tickets.index'))
+            ->assertOk()
+            ->assertDontSeeText($ticket->subject);
+
+        $this->actingAs($otherUser)
+            ->get(route('tickets.show', $ticket))
+            ->assertForbidden();
+    }
+
+    public function test_create_form_renders_sensitive_request_checkbox(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+
+        $this->actingAs($requester)
+            ->get(route('tickets.create'))
+            ->assertOk()
+            ->assertSee('name="is_sensitive"', false)
+            ->assertSeeText(__('tickets.form.labels.sensitive'))
+            ->assertSeeText(__('tickets.form.hints.sensitive'))
+            ->assertDontSee('name="visibility"', false);
+    }
+
     public function test_create_and_edit_forms_do_not_render_pinning_controls(): void
     {
         $requester = $this->createUserWithRole($this->userRole);
@@ -1625,6 +2083,53 @@ class TicketVisibilityTest extends TestCase
             ->assertDontSeeText('Kritická');
     }
 
+    public function test_ticket_views_use_ldap_display_names_but_top_bar_uses_login(): void
+    {
+        $viewer = $this->createUserWithRole($this->adminRole, [
+            'name' => 'viewer.login',
+            'username' => 'viewer.login',
+            'display_name' => 'Viewer Full Name',
+        ]);
+        $requester = $this->createUserWithRole($this->userRole, [
+            'name' => 'requester.login',
+            'username' => 'requester.login',
+            'display_name' => 'Requester Full Name',
+        ]);
+        $assignee = $this->createUserWithRole($this->solverRole, [
+            'name' => 'solver.login',
+            'username' => 'solver.login',
+            'display_name' => 'Solver Full Name',
+        ]);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'assignee' => $assignee,
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+            'subject' => 'Display name ticket',
+        ]);
+        $ticket->comments()->create([
+            'user_id' => $requester->id,
+            'visibility' => 'public',
+            'body' => 'Comment with display name author.',
+        ]);
+
+        $this->actingAs($viewer)
+            ->get(route('tickets.index'))
+            ->assertOk()
+            ->assertSeeText('viewer.login')
+            ->assertDontSeeText('Viewer Full Name')
+            ->assertSeeText('Solver Full Name')
+            ->assertDontSeeText('solver.login');
+
+        $this->actingAs($viewer)
+            ->get(route('tickets.show', $ticket))
+            ->assertOk()
+            ->assertSeeText('viewer.login')
+            ->assertSeeText('Requester Full Name')
+            ->assertSeeText('Solver Full Name')
+            ->assertDontSeeText('requester.login')
+            ->assertDontSeeText('solver.login');
+    }
+
     public function test_solver_can_manage_announcements(): void
     {
         $solver = $this->createUserWithRole($this->solverRole);
@@ -1692,9 +2197,9 @@ class TicketVisibilityTest extends TestCase
         ]);
     }
 
-    private function createUserWithRole(Role $role): User
+    private function createUserWithRole(Role $role, array $attributes = []): User
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create($attributes);
         $user->roles()->attach($role->id);
 
         return $user;

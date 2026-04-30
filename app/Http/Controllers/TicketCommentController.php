@@ -7,6 +7,7 @@ use App\Models\TicketComment;
 use App\Models\User;
 use App\Policies\TicketPolicy;
 use App\Support\ResolvesHelpdeskUser;
+use App\Services\TicketAttachmentService;
 use App\Services\TicketHistoryService;
 use App\Services\TicketNotificationService;
 use App\Services\TicketWorkflowAutomationService;
@@ -26,17 +27,26 @@ class TicketCommentController extends Controller
         $validated = $request->validateWithBag('comment', [
             'body' => ['required', 'string'],
             'parent_id' => ['nullable', 'integer'],
+            ...$this->ticketAttachmentService()->validationRules(),
         ]);
 
         $parentComment = $this->resolveReplyParent($ticket, $validated['parent_id'] ?? null);
 
-        $this->createComment(
+        $comment = $this->createComment(
             $ticket,
             $validated['body'],
             'public',
             'comment',
             'body',
             $parentComment?->id,
+        );
+
+        $this->ticketAttachmentService()->storeMany(
+            $ticket,
+            $request->file('attachments', []),
+            $actor,
+            $comment,
+            'public',
         );
 
         $workflowAttributes = $this->workflowAutomationService()->attributesForRequesterActivity($ticket, $actor);
@@ -52,7 +62,9 @@ class TicketCommentController extends Controller
             $ticket->refresh();
         }
 
-        $this->ticketNotificationService()->notify($ticket, 'public_comment', $actor);
+        $this->ticketNotificationService()->notify($ticket, 'public_comment', $actor, [
+            'comment_body' => $comment->body,
+        ]);
 
         return redirect()
             ->route('tickets.show', $ticket)
@@ -81,7 +93,7 @@ class TicketCommentController extends Controller
         string $errorBag,
         string $errorKey = 'body',
         ?int $parentId = null,
-    ): void
+    ): TicketComment
     {
         $attributes = [
             'ticket_id' => $ticket->id,
@@ -94,7 +106,7 @@ class TicketCommentController extends Controller
             $attributes['parent_id'] = $parentId;
         }
 
-        TicketComment::query()->create($attributes);
+        $comment = TicketComment::query()->create($attributes);
 
         // Keep explicit activity tracking in sync with the touched ticket timestamp.
         $ticket->timestamps = false;
@@ -102,6 +114,8 @@ class TicketCommentController extends Controller
             'last_activity_at' => now(),
         ])->saveQuietly();
         $ticket->timestamps = true;
+
+        return $comment;
     }
 
     private function resolveReplyParent(Ticket $ticket, mixed $parentId): ?TicketComment
@@ -162,5 +176,10 @@ class TicketCommentController extends Controller
     private function ticketNotificationService(): TicketNotificationService
     {
         return app(TicketNotificationService::class);
+    }
+
+    private function ticketAttachmentService(): TicketAttachmentService
+    {
+        return app(TicketAttachmentService::class);
     }
 }
