@@ -14,6 +14,7 @@ The application uses local user profiles synchronized from LDAP, while authentic
 - Ticket visibility levels: `public`, `internal`, and `private`.
 - Sensitive request option during ticket creation.
 - Ticket comments and separate internal notes.
+- Resolved-ticket workflow with requester confirmation and automatic closing.
 - Attachments for tickets and public comments.
 - Protected attachment preview and download through Laravel controllers.
 - Image attachment lightbox gallery.
@@ -61,6 +62,7 @@ The most important configuration areas are:
 - `DB_*` for MariaDB/MySQL connection settings.
 - `LDAP_*` for LDAP login and role mapping.
 - `MAIL_*` and `HELPDESK_MAIL_NOTIFICATIONS` for outgoing e-mail notifications.
+- `HELPDESK_RESOLVED_AUTO_CLOSE_DAYS` for automatic closing of resolved tickets.
 - `HELPDESK_ATTACHMENT_*` for attachment limits and storage path.
 - `APP_LOCALE` and `APP_FALLBACK_LOCALE` for the default UI language.
 

@@ -314,6 +314,17 @@ return [
             'confirm_resolved' => 'Potvrdit vyřešeno',
             'problem_persists' => 'Problém trvá',
         ],
+        'resolution' => [
+            'heading' => 'Ticket je označen jako vyřešený.',
+            'requester_body' => 'Můžete potvrdit vyřešení, nebo oznámit, že problém trvá.',
+            'solver_body' => 'Ticket čeká na potvrzení zadavatelem.',
+            'auto_close_at' => 'Pokud nebude reakce zadavatele do :date, ticket bude automaticky uzavřen.',
+        ],
+    ],
+    'console' => [
+        'close_resolved' => [
+            'finished' => 'Automaticky uzavřeno ticketů: :count',
+        ],
     ],
     'flash' => [
         'status_updated' => 'Stav ticketu byl úspěšně změněn.',
@@ -338,7 +349,7 @@ return [
         'assignee_must_be_solver' => 'Jako řešitele lze přiřadit pouze aktivního uživatele ve skupině řešitelů.',
         'watcher_missing' => 'Sledování ticketu zatím nelze změnit, protože v databázi neexistuje žádný uživatel.',
         'workflow_closed_status_missing' => 'V systému chybí stav "closed". Ticket zatím nelze potvrdit jako vyřešený.',
-        'workflow_assigned_status_missing' => 'V systému chybí stav "assigned". Ticket zatím nelze vrátit k řešení.',
+        'workflow_assigned_status_missing' => 'V systému chybí vhodný aktivní stav. Ticket zatím nelze vrátit k řešení.',
     ],
     'values' => [
         'statuses' => [

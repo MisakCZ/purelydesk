@@ -314,6 +314,17 @@ return [
             'confirm_resolved' => 'Confirm resolved',
             'problem_persists' => 'Problem persists',
         ],
+        'resolution' => [
+            'heading' => 'The ticket is marked as resolved.',
+            'requester_body' => 'You can confirm the resolution or report that the problem still persists.',
+            'solver_body' => 'The ticket is waiting for requester confirmation.',
+            'auto_close_at' => 'If the requester does not respond by :date, the ticket will be closed automatically.',
+        ],
+    ],
+    'console' => [
+        'close_resolved' => [
+            'finished' => 'Automatically closed tickets: :count',
+        ],
     ],
     'flash' => [
         'status_updated' => 'Ticket status was updated successfully.',
@@ -338,7 +349,7 @@ return [
         'assignee_must_be_solver' => 'Only an active user in the solver group can be assigned as the ticket assignee.',
         'watcher_missing' => 'Ticket watching cannot be changed yet because there is no user in the database.',
         'workflow_closed_status_missing' => 'The "closed" status is missing in the system. The ticket cannot be confirmed as resolved yet.',
-        'workflow_assigned_status_missing' => 'The "assigned" status is missing in the system. The ticket cannot be returned to processing yet.',
+        'workflow_assigned_status_missing' => 'A suitable active status is missing in the system. The ticket cannot be returned to processing yet.',
     ],
     'values' => [
         'statuses' => [

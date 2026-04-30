@@ -144,14 +144,19 @@ class TicketPolicy
 
     public function confirmResolution(?User $user, Ticket $ticket): bool
     {
-        return $user instanceof User
-            && $this->isRequester($user, $ticket)
-            && $ticket->hasStatusSlug('resolved');
+        if (! $user instanceof User || ! $ticket->hasStatusSlug('resolved')) {
+            return false;
+        }
+
+        return $user->isAdmin()
+            || $this->isRequester($user, $ticket);
     }
 
     public function reportProblemPersists(?User $user, Ticket $ticket): bool
     {
-        return $this->confirmResolution($user, $ticket);
+        return $user instanceof User
+            && $this->isRequester($user, $ticket)
+            && $ticket->hasStatusSlug('resolved');
     }
 
     private function canManageWorkflow(?User $user, Ticket $ticket): bool

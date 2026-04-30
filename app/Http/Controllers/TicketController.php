@@ -475,7 +475,9 @@ class TicketController extends Controller
         $this->authorizeTicketAbility('reportProblemPersists', $ticket);
 
         $reopenedStatus = $this->resolveStatusByIdentifiers(
-            ['assigned'],
+            $ticket->assignee_id !== null
+                ? ['in_progress', 'assigned']
+                : ['new'],
             'workflow',
             __('tickets.validation.workflow_assigned_status_missing'),
         );
@@ -610,7 +612,7 @@ class TicketController extends Controller
      */
     private function sendTicketUpdateNotification(Ticket $ticket, string $action, ?User $actor, array $before): void
     {
-        $ticket->loadMissing([
+        $ticket->load([
             'status:id,name,slug',
             'assignee:id,name,display_name,username,email,preferred_locale',
         ]);

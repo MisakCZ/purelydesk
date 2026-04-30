@@ -28,7 +28,7 @@ return [
             'public_comment' => 'K ticketu byl přidán nový komentář.',
             'assignee_changed' => 'Řešitel ticketu byl změněn na: :assignee.',
             'status_changed' => 'Status ticketu byl změněn na: :status.',
-            'resolved' => 'Ticket byl označen jako vyřešený.',
+            'resolved' => 'Ticket byl označen jako vyřešený. V detailu můžete potvrdit vyřešení, nebo oznámit, že problém trvá.',
             'problem_persists' => 'Zadavatel označil, že problém stále trvá.',
             'closed' => 'Ticket byl uzavřen.',
             'expected_resolution_changed' => 'Předpokládané vyřešení bylo změněno na: :expected_resolution_at.',

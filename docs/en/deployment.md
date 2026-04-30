@@ -121,12 +121,14 @@ HELPDESK_ATTACHMENT_MAX_FILES=10
 
 ## Deployment Commands
 
-After changing configuration or updating code, run:
+After changing `.env` or another configuration file, always clear Laravel's cached configuration. Otherwise the application may continue using old values:
 
 ```bash
 php artisan config:clear
 php artisan optimize:clear
 ```
+
+Run the same commands after updating code when cached framework files may contain stale configuration, routes, views, or services.
 
 After deploying new code with migrations:
 
@@ -138,6 +140,81 @@ For production dependency installation:
 
 ```bash
 composer install --no-dev --optimize-autoloader
+```
+
+## Scheduler
+
+Laravel's scheduler should run regularly in production. Add a cron entry for the PHP user that runs the application:
+
+```cron
+* * * * * cd /var/www/helpdesk && php artisan schedule:run >> /dev/null 2>&1
+```
+
+Use the same operating system user that normally runs PHP-FPM or otherwise has equivalent permissions for the application. This user must be able to read the project files and write to `storage` and `bootstrap/cache`. On many systems this user is named `www-data`, `apache`, `nginx`, or a distribution-specific equivalent.
+
+Example:
+
+```bash
+sudo crontab -u www-data -e
+```
+
+Replace `www-data` with the actual web/PHP user on your server and adjust `/var/www/helpdesk` to your deployment path.
+
+If your system does not use cron, you can run Laravel's scheduler with a systemd timer instead.
+
+Example service unit:
+
+```ini
+# /etc/systemd/system/helpdesk-scheduler.service
+[Unit]
+Description=Run Helpdesk Laravel scheduler
+
+[Service]
+Type=oneshot
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/helpdesk
+ExecStart=/usr/bin/php artisan schedule:run
+```
+
+Example timer unit:
+
+```ini
+# /etc/systemd/system/helpdesk-scheduler.timer
+[Unit]
+Description=Run Helpdesk Laravel scheduler every minute
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=1min
+Unit=helpdesk-scheduler.service
+
+[Install]
+WantedBy=timers.target
+```
+
+Enable it with:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now helpdesk-scheduler.timer
+sudo systemctl list-timers helpdesk-scheduler.timer
+```
+
+Replace `www-data`, the group, `/var/www/helpdesk`, and `/usr/bin/php` according to your server.
+
+The application schedules `helpdesk:close-resolved-tickets` hourly. This command closes resolved tickets after their `auto_close_at` deadline, writes a history record, and sends the standard ticket notification if mail notifications are enabled.
+
+You can run it manually for testing:
+
+```bash
+php artisan helpdesk:close-resolved-tickets
+```
+
+The grace period for resolved tickets is configured with:
+
+```env
+HELPDESK_RESOLVED_AUTO_CLOSE_DAYS=5
 ```
 
 ## Backups

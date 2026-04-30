@@ -28,7 +28,7 @@ return [
             'public_comment' => 'A new comment was added to the ticket.',
             'assignee_changed' => 'The ticket assignee was changed to: :assignee.',
             'status_changed' => 'The ticket status was changed to: :status.',
-            'resolved' => 'The ticket was marked as resolved.',
+            'resolved' => 'The ticket was marked as resolved. In the ticket detail you can confirm the resolution or report that the problem still persists.',
             'problem_persists' => 'The requester marked that the problem still persists.',
             'closed' => 'The ticket was closed.',
             'expected_resolution_changed' => 'The expected resolution was changed to: :expected_resolution_at.',

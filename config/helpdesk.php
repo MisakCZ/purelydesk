@@ -58,6 +58,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Ticket Workflow
+    |--------------------------------------------------------------------------
+    |
+    | Workflow-related operational defaults. Resolved tickets can be closed
+    | automatically after the requester has had time to confirm the resolution.
+    |
+    */
+    'workflow' => [
+        'resolved_auto_close_days' => (int) env('HELPDESK_RESOLVED_AUTO_CLOSE_DAYS', 5),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Ticket Attachments
     |--------------------------------------------------------------------------
     |

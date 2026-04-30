@@ -121,12 +121,14 @@ HELPDESK_ATTACHMENT_MAX_FILES=10
 
 ## Příkazy při nasazení
 
-Po změně konfigurace nebo aktualizaci kódu spusťte:
+Po změně `.env` nebo jiného konfiguračního souboru vždy vyčistěte Laravel cache konfigurace. Jinak může aplikace dál používat staré hodnoty:
 
 ```bash
 php artisan config:clear
 php artisan optimize:clear
 ```
+
+Stejné příkazy spusťte také po aktualizaci kódu, pokud mohou být ve framework cache zastaralé konfigurace, routy, view nebo služby.
 
 Po nasazení nového kódu s migracemi:
 
@@ -138,6 +140,81 @@ Pro produkční instalaci závislostí:
 
 ```bash
 composer install --no-dev --optimize-autoloader
+```
+
+## Scheduler
+
+V produkci má pravidelně běžet Laravel scheduler. Přidejte cron záznam pro uživatele, pod kterým běží aplikace:
+
+```cron
+* * * * * cd /var/www/helpdesk && php artisan schedule:run >> /dev/null 2>&1
+```
+
+Použijte stejného systémového uživatele, pod kterým běží PHP-FPM, případně uživatele se stejnými právy k aplikaci. Tento uživatel musí umět číst soubory projektu a zapisovat do `storage` a `bootstrap/cache`. Na různých systémech se může jmenovat například `www-data`, `apache`, `nginx` nebo jinak podle distribuce.
+
+Příklad:
+
+```bash
+sudo crontab -u www-data -e
+```
+
+`www-data` nahraďte skutečným web/PHP uživatelem na serveru a cestu `/var/www/helpdesk` upravte podle skutečného umístění aplikace.
+
+Pokud systém nepoužívá cron, můžete Laravel scheduler spouštět také přes systemd timer.
+
+Příklad service unity:
+
+```ini
+# /etc/systemd/system/helpdesk-scheduler.service
+[Unit]
+Description=Run Helpdesk Laravel scheduler
+
+[Service]
+Type=oneshot
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/helpdesk
+ExecStart=/usr/bin/php artisan schedule:run
+```
+
+Příklad timer unity:
+
+```ini
+# /etc/systemd/system/helpdesk-scheduler.timer
+[Unit]
+Description=Run Helpdesk Laravel scheduler every minute
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=1min
+Unit=helpdesk-scheduler.service
+
+[Install]
+WantedBy=timers.target
+```
+
+Zapnutí:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now helpdesk-scheduler.timer
+sudo systemctl list-timers helpdesk-scheduler.timer
+```
+
+`www-data`, skupinu, `/var/www/helpdesk` a `/usr/bin/php` nahraďte hodnotami odpovídajícími vašemu serveru.
+
+Aplikace plánuje příkaz `helpdesk:close-resolved-tickets` každou hodinu. Příkaz uzavírá vyřešené tickety po dosažení `auto_close_at`, zapíše historii a odešle standardní ticket notifikaci, pokud jsou e-mailové notifikace zapnuté.
+
+Pro test ho lze spustit ručně:
+
+```bash
+php artisan helpdesk:close-resolved-tickets
+```
+
+Lhůta pro vyřešené tickety se nastavuje pomocí:
+
+```env
+HELPDESK_RESOLVED_AUTO_CLOSE_DAYS=5
 ```
 
 ## Zálohy

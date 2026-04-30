@@ -1594,9 +1594,103 @@ class TicketVisibilityTest extends TestCase
             $this->assertTrue($ticket->resolved_at?->equalTo(Carbon::now()) ?? false);
             $this->assertTrue($ticket->auto_close_at?->equalTo(Carbon::now()->addDays(5)) ?? false);
             $this->assertNull($ticket->closed_at);
+            $this->assertTrue($ticket->history()
+                ->get()
+                ->contains(fn (TicketHistory $entry) => ($entry->meta['action'] ?? null) === 'status_update'));
         } finally {
             Carbon::setTestNow();
         }
+    }
+
+    public function test_resolved_status_change_sends_notification_when_enabled(): void
+    {
+        Notification::fake();
+        config(['helpdesk.notifications.mail.enabled' => true]);
+
+        $requester = $this->createUserWithRole($this->userRole, ['email' => 'requester@example.org']);
+        $solver = $this->createUserWithRole($this->solverRole, ['email' => 'solver@example.org']);
+        $resolvedStatus = TicketStatus::query()->create([
+            'name' => 'Resolved',
+            'slug' => 'resolved',
+            'sort_order' => 2,
+        ]);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'status' => $this->defaultStatus,
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+        ]);
+
+        $this->actingAs($solver)
+            ->patch(route('tickets.status.update', $ticket), [
+                'status_id' => $resolvedStatus->id,
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        Notification::assertSentTo(
+            $requester,
+            TicketEventNotification::class,
+            fn (TicketEventNotification $notification) => $notification->event === 'resolved',
+        );
+    }
+
+    public function test_regular_user_cannot_mark_ticket_as_resolved(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $resolvedStatus = TicketStatus::query()->create([
+            'name' => 'Resolved',
+            'slug' => 'resolved',
+            'sort_order' => 2,
+        ]);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+        ]);
+
+        $this->actingAs($requester)
+            ->patch(route('tickets.status.update', $ticket), [
+                'status_id' => $resolvedStatus->id,
+            ])
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('tickets', [
+            'id' => $ticket->id,
+            'ticket_status_id' => $this->defaultStatus->id,
+        ]);
+    }
+
+    public function test_requester_sees_resolution_actions_and_other_user_is_denied(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $otherUser = $this->createUserWithRole($this->userRole);
+        $resolvedStatus = TicketStatus::query()->create([
+            'name' => 'Resolved',
+            'slug' => 'resolved',
+            'sort_order' => 2,
+        ]);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'status' => $resolvedStatus,
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+        ]);
+
+        $this->actingAs($requester)
+            ->get(route('tickets.show', $ticket))
+            ->assertOk()
+            ->assertSeeText(__('tickets.show.resolution.heading'))
+            ->assertSeeText(__('tickets.show.metadata.confirm_resolved'))
+            ->assertSeeText(__('tickets.show.metadata.problem_persists'));
+
+        $this->actingAs($otherUser)
+            ->get(route('tickets.show', $ticket))
+            ->assertOk()
+            ->assertDontSeeText(__('tickets.show.metadata.confirm_resolved'))
+            ->assertDontSeeText(__('tickets.show.metadata.problem_persists'));
+
+        $this->patch(route('tickets.confirm-resolution', $ticket))
+            ->assertForbidden();
+
+        $this->patch(route('tickets.report-problem-persists', $ticket))
+            ->assertForbidden();
     }
 
     public function test_requester_confirms_resolved_ticket_and_it_becomes_closed(): void
@@ -1637,17 +1731,52 @@ class TicketVisibilityTest extends TestCase
             $this->assertNotNull($ticket->resolved_at);
             $this->assertNull($ticket->auto_close_at);
             $this->assertTrue($ticket->closed_at?->equalTo(Carbon::now()) ?? false);
+            $this->assertTrue($ticket->history()
+                ->get()
+                ->contains(fn (TicketHistory $entry) => ($entry->meta['action'] ?? null) === 'requester_confirm_resolution'));
         } finally {
             Carbon::setTestNow();
         }
     }
 
-    public function test_requester_reports_problem_persists_and_ticket_returns_to_assigned(): void
+    public function test_admin_can_confirm_resolved_ticket(): void
     {
         $requester = $this->createUserWithRole($this->userRole);
-        $assignedStatus = TicketStatus::query()->create([
-            'name' => 'Assigned',
-            'slug' => 'assigned',
+        $admin = $this->createUserWithRole($this->adminRole);
+        $resolvedStatus = TicketStatus::query()->create([
+            'name' => 'Resolved',
+            'slug' => 'resolved',
+            'sort_order' => 2,
+        ]);
+        $closedStatus = TicketStatus::query()->create([
+            'name' => 'Closed',
+            'slug' => 'closed',
+            'sort_order' => 3,
+            'is_closed' => true,
+        ]);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'status' => $resolvedStatus,
+            'visibility' => Ticket::VISIBILITY_PRIVATE,
+        ]);
+
+        $this->actingAs($admin)
+            ->patch(route('tickets.confirm-resolution', $ticket))
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        $this->assertDatabaseHas('tickets', [
+            'id' => $ticket->id,
+            'ticket_status_id' => $closedStatus->id,
+        ]);
+    }
+
+    public function test_requester_reports_problem_persists_and_ticket_returns_to_in_progress_when_assigned(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $assignee = $this->createUserWithRole($this->solverRole);
+        $inProgressStatus = TicketStatus::query()->create([
+            'name' => 'In Progress',
+            'slug' => 'in_progress',
             'sort_order' => 2,
         ]);
         $resolvedStatus = TicketStatus::query()->create([
@@ -1657,6 +1786,7 @@ class TicketVisibilityTest extends TestCase
         ]);
         $ticket = $this->createTicket([
             'requester' => $requester,
+            'assignee' => $assignee,
             'status' => $resolvedStatus,
             'visibility' => Ticket::VISIBILITY_PUBLIC,
         ]);
@@ -1672,10 +1802,153 @@ class TicketVisibilityTest extends TestCase
 
         $ticket->refresh();
 
-        $this->assertSame($assignedStatus->id, $ticket->ticket_status_id);
+        $this->assertSame($inProgressStatus->id, $ticket->ticket_status_id);
         $this->assertNull($ticket->resolved_at);
         $this->assertNull($ticket->auto_close_at);
         $this->assertNull($ticket->closed_at);
+        $this->assertTrue($ticket->history()
+            ->get()
+            ->contains(fn (TicketHistory $entry) => ($entry->meta['action'] ?? null) === 'requester_report_problem_persists'));
+    }
+
+    public function test_requester_reports_problem_persists_and_unassigned_ticket_returns_to_new(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $resolvedStatus = TicketStatus::query()->create([
+            'name' => 'Resolved',
+            'slug' => 'resolved',
+            'sort_order' => 3,
+        ]);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'status' => $resolvedStatus,
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+        ]);
+        $ticket->forceFill([
+            'resolved_at' => now()->subHour(),
+            'auto_close_at' => now()->addDays(5),
+            'closed_at' => null,
+        ])->save();
+
+        $this->actingAs($requester)
+            ->patch(route('tickets.report-problem-persists', $ticket))
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        $ticket->refresh();
+
+        $this->assertSame($this->defaultStatus->id, $ticket->ticket_status_id);
+        $this->assertNull($ticket->resolved_at);
+        $this->assertNull($ticket->auto_close_at);
+        $this->assertNull($ticket->closed_at);
+    }
+
+    public function test_auto_close_command_closes_due_resolved_tickets_and_records_history(): void
+    {
+        Carbon::setTestNow('2026-04-30 10:00:00');
+        Notification::fake();
+        config(['helpdesk.notifications.mail.enabled' => true]);
+
+        try {
+            $requester = $this->createUserWithRole($this->userRole, ['email' => 'requester@example.org']);
+            $assignee = $this->createUserWithRole($this->solverRole, ['email' => 'solver@example.org']);
+            $resolvedStatus = TicketStatus::query()->create([
+                'name' => 'Resolved',
+                'slug' => 'resolved',
+                'sort_order' => 2,
+            ]);
+            $closedStatus = TicketStatus::query()->create([
+                'name' => 'Closed',
+                'slug' => 'closed',
+                'sort_order' => 3,
+                'is_closed' => true,
+            ]);
+            $ticket = $this->createTicket([
+                'requester' => $requester,
+                'assignee' => $assignee,
+                'status' => $resolvedStatus,
+                'visibility' => Ticket::VISIBILITY_PUBLIC,
+            ]);
+            $ticket->watcherEntries()->create([
+                'user_id' => $assignee->id,
+                'is_manual' => false,
+                'is_auto_participant' => true,
+            ]);
+            $ticket->forceFill([
+                'resolved_at' => Carbon::now()->subDays(5),
+                'auto_close_at' => Carbon::now()->subMinute(),
+                'closed_at' => null,
+            ])->save();
+
+            $this->artisan('helpdesk:close-resolved-tickets')
+                ->assertExitCode(0);
+
+            $ticket->refresh();
+
+            $this->assertSame($closedStatus->id, $ticket->ticket_status_id);
+            $this->assertNull($ticket->auto_close_at);
+            $this->assertTrue($ticket->closed_at?->equalTo(Carbon::now()) ?? false);
+            $this->assertTrue($ticket->history()
+                ->get()
+                ->contains(fn (TicketHistory $entry) => ($entry->meta['action'] ?? null) === 'auto_close_resolved'));
+
+            Notification::assertSentTo($requester, TicketEventNotification::class);
+            Notification::assertSentTo($assignee, TicketEventNotification::class);
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_auto_close_command_ignores_future_and_archived_resolved_tickets(): void
+    {
+        Carbon::setTestNow('2026-04-30 10:00:00');
+
+        try {
+            $requester = $this->createUserWithRole($this->userRole);
+            $resolvedStatus = TicketStatus::query()->create([
+                'name' => 'Resolved',
+                'slug' => 'resolved',
+                'sort_order' => 2,
+            ]);
+            TicketStatus::query()->create([
+                'name' => 'Closed',
+                'slug' => 'closed',
+                'sort_order' => 3,
+                'is_closed' => true,
+            ]);
+            $futureTicket = $this->createTicket([
+                'requester' => $requester,
+                'status' => $resolvedStatus,
+                'subject' => 'Future auto close ticket',
+            ]);
+            $futureTicket->forceFill([
+                'resolved_at' => Carbon::now()->subDay(),
+                'auto_close_at' => Carbon::now()->addHour(),
+            ])->save();
+            $archivedTicket = $this->createTicket([
+                'requester' => $requester,
+                'status' => $resolvedStatus,
+                'subject' => 'Archived auto close ticket',
+            ]);
+            $archivedTicket->forceFill([
+                'resolved_at' => Carbon::now()->subDays(5),
+                'auto_close_at' => Carbon::now()->subMinute(),
+                'archived_at' => Carbon::now()->subDay(),
+            ])->save();
+
+            $this->artisan('helpdesk:close-resolved-tickets')
+                ->assertExitCode(0);
+
+            $this->assertDatabaseHas('tickets', [
+                'id' => $futureTicket->id,
+                'ticket_status_id' => $resolvedStatus->id,
+            ]);
+            $this->assertDatabaseHas('tickets', [
+                'id' => $archivedTicket->id,
+                'ticket_status_id' => $resolvedStatus->id,
+            ]);
+        } finally {
+            Carbon::setTestNow();
+        }
     }
 
     public function test_inline_json_update_respects_current_page_locale(): void

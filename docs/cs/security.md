@@ -67,6 +67,18 @@ Watcher záznamy nikdy automaticky nepřidělují přístup k privátním ticket
 
 Admini vidí všechny tickety, ale viditelnost pro admina automaticky neznamená, že admin dostává každou notifikaci. Výběr příjemců notifikací je řešen samostatně.
 
+## Workflow vyřešených ticketů
+
+Solveři a admini mohou označit ticket jako `resolved`. Zadavatel potom může potvrdit vyřešení nebo oznámit, že problém stále trvá. Pokud zadavatel nezareaguje před nastaveným termínem `auto_close_at`, plánovaný příkaz může ticket automaticky uzavřít.
+
+Lhůta se nastavuje pomocí:
+
+```env
+HELPDESK_RESOLVED_AUTO_CLOSE_DAYS=5
+```
+
+V produkci spouštějte Laravel scheduler, aby mohl příkaz `helpdesk:close-resolved-tickets` zpracovávat vyřešené tickety po termínu. Příkaz ignoruje archivované tickety, zapisuje historii a používá stejná pravidla notifikací filtrovaná podle oprávnění jako ostatní ticket události.
+
 ## Zálohy
 
 Zálohujte:

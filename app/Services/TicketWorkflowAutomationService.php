@@ -105,7 +105,7 @@ class TicketWorkflowAutomationService
                     : $now,
                 'auto_close_at' => $ticket->hasStatusSlug('resolved')
                     ? $ticket->auto_close_at
-                    : $now->addDays(5),
+                    : $now->addDays(max(1, (int) config('helpdesk.workflow.resolved_auto_close_days', 5))),
                 'closed_at' => null,
             ]);
         }

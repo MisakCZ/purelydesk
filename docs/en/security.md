@@ -67,6 +67,18 @@ Watcher records never automatically grant access to private tickets.
 
 Admins can see all tickets, but admin visibility does not automatically mean admins receive every notification. Notification recipient selection is handled separately.
 
+## Resolved Ticket Workflow
+
+Solvers and admins can mark a ticket as `resolved`. The requester can then confirm the resolution or report that the problem still persists. If the requester does not respond before the configured `auto_close_at` deadline, the scheduled command can close the ticket automatically.
+
+Configure the grace period with:
+
+```env
+HELPDESK_RESOLVED_AUTO_CLOSE_DAYS=5
+```
+
+Run Laravel's scheduler in production so `helpdesk:close-resolved-tickets` can process due resolved tickets. The command ignores archived tickets, writes ticket history, and uses the same permission-filtered notification rules as other ticket events.
+
 ## Backups
 
 Back up:

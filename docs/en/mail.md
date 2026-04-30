@@ -65,6 +65,15 @@ Notification recipients are filtered through current ticket visibility rules:
 
 This prevents a watcher record from leaking information about private tickets.
 
+## Resolved Workflow Notifications
+
+The resolved-ticket workflow uses the same notification pipeline and permission filtering:
+
+- When a solver or admin marks a ticket as resolved, the requester is notified and can open the ticket detail to confirm the resolution or report that the problem still persists.
+- When the requester confirms the resolution, the ticket is closed and the usual ticket recipients can be notified according to their access.
+- When the requester reports that the problem persists, the ticket returns to an active state and the assignee/watchers can be notified according to their access.
+- When `helpdesk:close-resolved-tickets` closes a ticket automatically, requester, assignee, and authorized watchers can receive the standard closed-ticket notification.
+
 ## Test from Laravel
 
 Use Laravel Tinker for a simple application-level test:

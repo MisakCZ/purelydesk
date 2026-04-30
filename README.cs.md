@@ -14,6 +14,7 @@ Aplikace používá lokální uživatelské profily synchronizované z LDAPu, za
 - Úrovně viditelnosti ticketů: `public`, `internal` a `private`.
 - Volba citlivého požadavku při založení ticketu.
 - Komentáře k ticketům a oddělené interní poznámky.
+- Workflow vyřešených ticketů s potvrzením zadavatelem a automatickým uzavřením.
 - Přílohy k ticketům a veřejným komentářům.
 - Chráněný náhled a stahování příloh přes Laravel controllery.
 - Lightbox galerie pro obrázkové přílohy.
@@ -61,6 +62,7 @@ Nejdůležitější oblasti konfigurace jsou:
 - `DB_*` pro připojení k MariaDB/MySQL.
 - `LDAP_*` pro LDAP přihlášení a mapování rolí.
 - `MAIL_*` a `HELPDESK_MAIL_NOTIFICATIONS` pro odchozí e-mailové notifikace.
+- `HELPDESK_RESOLVED_AUTO_CLOSE_DAYS` pro automatické uzavírání vyřešených ticketů.
 - `HELPDESK_ATTACHMENT_*` pro limity příloh a storage cestu.
 - `APP_LOCALE` a `APP_FALLBACK_LOCALE` pro výchozí jazyk UI.
 

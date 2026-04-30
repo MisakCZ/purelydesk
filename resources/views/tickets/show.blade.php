@@ -464,6 +464,34 @@
             color: #0f513f;
         }
 
+        .resolution-panel {
+            display: grid;
+            gap: 0.75rem;
+            padding: 0.85rem 0.95rem;
+            border: 1px solid #b7e4dd;
+            border-radius: 0.9rem;
+            background: #ecfdf8;
+            color: #0f513f;
+        }
+
+        .resolution-panel h4 {
+            margin: 0;
+            color: #0f3f34;
+            font-size: 0.98rem;
+        }
+
+        .resolution-panel p {
+            margin: 0;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .resolution-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.55rem;
+        }
+
         .comment-section {
             display: grid;
             gap: 0.8rem;
@@ -1590,6 +1618,52 @@
                                 {{ __('tickets.show.content.expected_resolution_at') }}:
                                 <strong>{{ $ticket->expected_resolution_at->locale($locale)->translatedFormat($dateTimeFormat) }}</strong>
                             </div>
+                        @endif
+
+                        @if ($ticket->hasStatusSlug('resolved'))
+                            <section class="resolution-panel" aria-label="{{ __('tickets.show.resolution.heading') }}">
+                                <div>
+                                    <h4>{{ __('tickets.show.resolution.heading') }}</h4>
+                                    <p>
+                                        @if ($canConfirmResolution || $canReportProblemPersists)
+                                            {{ __('tickets.show.resolution.requester_body') }}
+                                        @else
+                                            {{ __('tickets.show.resolution.solver_body') }}
+                                        @endif
+                                    </p>
+                                    @if ($ticket->auto_close_at)
+                                        <p>
+                                            {{ __('tickets.show.resolution.auto_close_at', [
+                                                'date' => $ticket->auto_close_at->locale($locale)->translatedFormat($dateTimeFormat),
+                                            ]) }}
+                                        </p>
+                                    @endif
+                                </div>
+
+                                @if ($canConfirmResolution || $canReportProblemPersists)
+                                    <div class="resolution-actions">
+                                        @if ($canConfirmResolution)
+                                            <form method="post" action="{{ route('tickets.confirm-resolution', $ticket) }}">
+                                                @csrf
+                                                @method('patch')
+                                                <button class="button button-primary button-compact" type="submit">
+                                                    {{ __('tickets.show.metadata.confirm_resolved') }}
+                                                </button>
+                                            </form>
+                                        @endif
+
+                                        @if ($canReportProblemPersists)
+                                            <form method="post" action="{{ route('tickets.report-problem-persists', $ticket) }}">
+                                                @csrf
+                                                @method('patch')
+                                                <button class="button button-secondary button-compact" type="submit">
+                                                    {{ __('tickets.show.metadata.problem_persists') }}
+                                                </button>
+                                            </form>
+                                        @endif
+                                    </div>
+                                @endif
+                            </section>
                         @endif
 
                         <div class="hero-description-actions">

@@ -19,7 +19,7 @@ class TicketNotificationRecipients
      */
     public function forTicket(Ticket $ticket, string $event, ?User $actor = null, bool $excludeActor = true): Collection
     {
-        $ticket->loadMissing([
+        $ticket->load([
             'requester:id,name,display_name,username,email,preferred_locale',
             'assignee:id,name,display_name,username,email,preferred_locale',
             'watchers:id,name,display_name,username,email,preferred_locale',

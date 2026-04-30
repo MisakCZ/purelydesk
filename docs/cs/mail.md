@@ -65,6 +65,15 @@ Příjemci notifikací jsou filtrováni přes aktuální pravidla viditelnosti t
 
 Tím se zabrání úniku informací o privátních ticketech přes watcher záznam.
 
+## Notifikace resolved workflow
+
+Workflow vyřešených ticketů používá stejný notifikační mechanismus a filtrování podle oprávnění:
+
+- Když solver nebo admin označí ticket jako vyřešený, zadavatel dostane notifikaci a může v detailu potvrdit vyřešení nebo oznámit, že problém trvá.
+- Když zadavatel potvrdí vyřešení, ticket se uzavře a obvyklí příjemci ticketu mohou dostat notifikaci podle svého přístupu.
+- Když zadavatel oznámí, že problém trvá, ticket se vrátí do aktivního stavu a přiřazený řešitel / sledující mohou dostat notifikaci podle svého přístupu.
+- Když `helpdesk:close-resolved-tickets` uzavře ticket automaticky, zadavatel, řešitel a oprávnění sledující mohou dostat standardní notifikaci o uzavření ticketu.
+
 ## Test z Laravelu
 
 Pro jednoduchý aplikační test použijte Laravel Tinker:
