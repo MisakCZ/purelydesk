@@ -6,6 +6,7 @@ return [
     ],
     'nav' => [
         'main' => 'Main navigation',
+        'dashboard' => 'Dashboard',
         'tickets' => 'Tickets',
         'announcements' => 'Announcements',
         'language' => 'Language',

@@ -1219,6 +1219,109 @@ class TicketVisibilityTest extends TestCase
             ->assertDontSeeText($unwatchedTicket->subject);
     }
 
+    public function test_ticket_index_relation_requester_shows_only_requested_tickets(): void
+    {
+        $user = $this->createUserWithRole($this->userRole);
+        $otherUser = $this->createUserWithRole($this->userRole);
+        $requestedTicket = $this->createTicket([
+            'requester' => $user,
+            'subject' => 'Relation requester match',
+        ]);
+        $otherTicket = $this->createTicket([
+            'requester' => $otherUser,
+            'subject' => 'Relation requester miss',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('tickets.index', ['relation' => 'requester']))
+            ->assertOk()
+            ->assertSeeText($requestedTicket->subject)
+            ->assertDontSeeText($otherTicket->subject);
+    }
+
+    public function test_ticket_index_relation_assigned_shows_only_assigned_tickets(): void
+    {
+        $solver = $this->createUserWithRole($this->solverRole);
+        $otherSolver = $this->createUserWithRole($this->solverRole);
+        $assignedTicket = $this->createTicket([
+            'assignee' => $solver,
+            'subject' => 'Relation assigned match',
+        ]);
+        $otherTicket = $this->createTicket([
+            'assignee' => $otherSolver,
+            'subject' => 'Relation assigned miss',
+        ]);
+
+        $this->actingAs($solver)
+            ->get(route('tickets.index', ['relation' => 'assigned']))
+            ->assertOk()
+            ->assertSeeText($assignedTicket->subject)
+            ->assertDontSeeText($otherTicket->subject);
+    }
+
+    public function test_ticket_index_relation_watched_shows_watched_tickets(): void
+    {
+        $user = $this->createUserWithRole($this->userRole);
+        $watchedTicket = $this->createTicket([
+            'subject' => 'Relation watched match',
+        ]);
+        $unwatchedTicket = $this->createTicket([
+            'subject' => 'Relation watched miss',
+        ]);
+
+        $watchedTicket->watcherEntries()->create([
+            'user_id' => $user->id,
+            'is_manual' => true,
+            'is_auto_participant' => false,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('tickets.index', ['relation' => 'watched']))
+            ->assertOk()
+            ->assertSeeText($watchedTicket->subject)
+            ->assertDontSeeText($unwatchedTicket->subject);
+    }
+
+    public function test_ticket_index_relation_unassigned_shows_unassigned_tickets(): void
+    {
+        $solver = $this->createUserWithRole($this->solverRole);
+        $unassignedTicket = $this->createTicket([
+            'subject' => 'Relation unassigned match',
+        ]);
+        $assignedTicket = $this->createTicket([
+            'assignee' => $solver,
+            'subject' => 'Relation unassigned miss',
+        ]);
+
+        $this->actingAs($solver)
+            ->get(route('tickets.index', ['relation' => 'unassigned']))
+            ->assertOk()
+            ->assertSeeText($unassignedTicket->subject)
+            ->assertDontSeeText($assignedTicket->subject);
+    }
+
+    public function test_ticket_index_relation_filters_still_respect_visibility(): void
+    {
+        $viewer = $this->createUserWithRole($this->userRole);
+        $requester = $this->createUserWithRole($this->userRole);
+        $privateTicket = $this->createTicket([
+            'requester' => $requester,
+            'subject' => 'Relation watched private hidden',
+            'visibility' => Ticket::VISIBILITY_PRIVATE,
+        ]);
+
+        $privateTicket->watcherEntries()->create([
+            'user_id' => $viewer->id,
+            'is_manual' => true,
+            'is_auto_participant' => false,
+        ]);
+
+        $this->actingAs($viewer)
+            ->get(route('tickets.index', ['relation' => 'watched']))
+            ->assertOk()
+            ->assertDontSeeText($privateTicket->subject);
+    }
+
     public function test_ticket_index_can_sort_by_visible_columns(): void
     {
         $admin = $this->createUserWithRole($this->adminRole);

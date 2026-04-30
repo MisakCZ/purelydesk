@@ -841,6 +841,9 @@
 
                 <nav class="nav" aria-label="{{ __('layout.nav.main') }}">
                     @php($activeLocale = $currentLocale ?? app()->getLocale())
+                    <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
+                        {{ __('layout.nav.dashboard') }}
+                    </a>
                     <a class="nav-link {{ request()->routeIs('tickets.index') ? 'active' : '' }}" href="{{ route('tickets.index') }}">
                         {{ __('layout.nav.tickets') }}
                     </a>

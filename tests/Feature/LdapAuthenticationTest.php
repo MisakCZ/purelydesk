@@ -82,7 +82,7 @@ class LdapAuthenticationTest extends TestCase
             'username' => 'ldapuser',
             'password' => 'secret',
         ])
-            ->assertRedirect(route('tickets.index'));
+            ->assertRedirect(route('dashboard'));
 
         $this->assertAuthenticatedAs($user);
     }

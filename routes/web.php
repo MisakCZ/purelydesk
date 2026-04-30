@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\TicketAttachmentController;
 use App\Http\Controllers\TicketCommentController;
@@ -10,7 +11,7 @@ use App\Http\Controllers\TicketWatcherController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return redirect()->route('tickets.index');
+    return redirect()->route('dashboard');
 });
 
 Route::middleware('guest')->group(function (): void {
@@ -23,6 +24,7 @@ Route::post('/locale', [LocaleController::class, 'update'])->name('locale.update
 Route::middleware('helpdesk.auth')->group(function (): void {
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 
+    Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::get('/tickets/create', [TicketController::class, 'create'])->name('tickets.create');
     Route::get('/tickets', [TicketController::class, 'index'])->name('tickets.index');
     Route::get('/tickets/{ticket}/edit', [TicketController::class, 'edit'])->name('tickets.edit');

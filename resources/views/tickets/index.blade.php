@@ -1316,22 +1316,25 @@
 
                     <div class="filter-field">
                         <div class="filter-head">
-                            <label class="filter-label" for="watched">{{ __('tickets.index.filters.watching') }}</label>
-                            @if ($filters['watched'] !== '')
+                            <label class="filter-label" for="relation">{{ __('tickets.index.filters.relation') }}</label>
+                            @if ($filters['relation'] !== '')
                                 <a
                                     class="filter-clear"
-                                    href="{{ route('tickets.index', $clearFilterQuery('watched')) }}"
-                                    aria-label="{{ __('tickets.index.filters.clear_watching') }}"
-                                    title="{{ __('tickets.index.filters.clear_watching') }}"
+                                    href="{{ route('tickets.index', $clearFilterQuery('relation')) }}"
+                                    aria-label="{{ __('tickets.index.filters.clear_relation') }}"
+                                    title="{{ __('tickets.index.filters.clear_relation') }}"
                                 >
                                     &times;
                                 </a>
                             @endif
                         </div>
                         <div class="filter-control filter-control-select">
-                            <select class="filter-select" id="watched" name="watched" data-filter-auto-submit>
-                                <option value="">{{ __('tickets.index.filters.all_tickets') }}</option>
-                                <option value="1" @selected($filters['watched'] === '1')>{{ __('tickets.index.filters.watched_only') }}</option>
+                            <select class="filter-select" id="relation" name="relation" data-filter-auto-submit>
+                                <option value="">{{ __('tickets.index.filters.relation_all') }}</option>
+                                <option value="requester" @selected($filters['relation'] === 'requester')>{{ __('tickets.index.filters.relation_requester') }}</option>
+                                <option value="assigned" @selected($filters['relation'] === 'assigned')>{{ __('tickets.index.filters.relation_assigned') }}</option>
+                                <option value="watched" @selected($filters['relation'] === 'watched')>{{ __('tickets.index.filters.relation_watched') }}</option>
+                                <option value="unassigned" @selected($filters['relation'] === 'unassigned')>{{ __('tickets.index.filters.relation_unassigned') }}</option>
                             </select>
                         </div>
                     </div>

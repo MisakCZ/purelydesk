@@ -6,6 +6,7 @@ return [
     ],
     'nav' => [
         'main' => 'Hlavní navigace',
+        'dashboard' => 'Dashboard',
         'tickets' => 'Tickety',
         'announcements' => 'Oznámení',
         'language' => 'Jazyk',

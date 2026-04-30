@@ -741,7 +741,13 @@ class TicketController extends Controller
                 });
             })
             ->when($filters['status'] !== '', function (Builder $query) use ($filters): void {
-                $query->where('ticket_status_id', (int) $filters['status']);
+                if (ctype_digit($filters['status'])) {
+                    $query->where('ticket_status_id', (int) $filters['status']);
+
+                    return;
+                }
+
+                $query->whereHas('status', fn (Builder $query) => $this->whereStatusIdentifiers($query, [$filters['status']]));
             })
             ->when($filters['priority'] !== '', function (Builder $query) use ($filters): void {
                 $query->where('ticket_priority_id', (int) $filters['priority']);
@@ -749,11 +755,25 @@ class TicketController extends Controller
             ->when($filters['category'] !== '', function (Builder $query) use ($filters): void {
                 $query->where('ticket_category_id', (int) $filters['category']);
             })
+            ->when($filters['relation'] !== '', function (Builder $query) use ($filters, $watcherUser): void {
+                $this->applyTicketRelationFilter($query, $filters['relation'], $watcherUser);
+            })
             ->when($filters['scope'] === 'open', function (Builder $query): void {
                 $query->whereDoesntHave('status', fn (Builder $query) => $this->whereStatusIdentifiers($query, ['closed', 'cancelled']));
             })
             ->when($filters['scope'] === 'finished', function (Builder $query): void {
                 $query->whereHas('status', fn (Builder $query) => $this->whereStatusIdentifiers($query, ['closed', 'cancelled']));
+            })
+            ->when($filters['due'] === 'overdue_or_soon', function (Builder $query): void {
+                if (! Ticket::supportsExpectedResolution()) {
+                    $query->whereRaw('1 = 0');
+
+                    return;
+                }
+
+                $query
+                    ->whereNotNull('expected_resolution_at')
+                    ->where('expected_resolution_at', '<=', Carbon::now()->addDays(3));
             })
             ->when($filters['watched'] === '1', function (Builder $query) use ($watcherUser): void {
                 if (! $watcherUser instanceof User) {
@@ -764,6 +784,23 @@ class TicketController extends Controller
 
                 $query->whereHas('watchers', fn (Builder $query) => $query->whereKey($watcherUser->id));
             });
+    }
+
+    private function applyTicketRelationFilter(Builder $query, string $relation, ?User $actor): void
+    {
+        if (! $actor instanceof User) {
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
+
+        match ($relation) {
+            'requester' => $query->where('requester_id', $actor->id),
+            'assigned' => $query->where('assignee_id', $actor->id),
+            'watched' => $query->whereHas('watchers', fn (Builder $query) => $query->whereKey($actor->id)),
+            'unassigned' => $query->whereNull('assignee_id'),
+            default => null,
+        };
     }
 
     private function whereStatusIdentifiers(Builder $query, array $identifiers): void
@@ -849,7 +886,9 @@ class TicketController extends Controller
             'status' => '',
             'priority' => '',
             'category' => '',
+            'relation' => '',
             'scope' => '',
+            'due' => '',
             'watched' => '',
             'archive' => '',
             'sort' => self::DEFAULT_INDEX_SORT,
@@ -862,19 +901,44 @@ class TicketController extends Controller
         $sort = (string) ($filters['sort'] ?? self::DEFAULT_INDEX_SORT);
         $direction = (string) ($filters['direction'] ?? self::DEFAULT_INDEX_DIRECTION);
         $scope = (string) ($filters['scope'] ?? '');
+        $relation = (string) ($filters['relation'] ?? '');
+        $due = (string) ($filters['due'] ?? '');
         $archive = (string) ($filters['archive'] ?? '');
 
         return [
             'search' => trim((string) ($filters['search'] ?? '')),
-            'status' => (string) ($filters['status'] ?? ''),
+            'status' => $this->normalizeStatusFilter((string) ($filters['status'] ?? '')),
             'priority' => (string) ($filters['priority'] ?? ''),
             'category' => (string) ($filters['category'] ?? ''),
+            'relation' => in_array($relation, ['requester', 'assigned', 'watched', 'unassigned'], true) ? $relation : '',
             'scope' => in_array($scope, ['open', 'finished'], true) ? $scope : '',
+            'due' => $due === 'overdue_or_soon' ? 'overdue_or_soon' : '',
             'watched' => (string) ($filters['watched'] ?? '') === '1' ? '1' : '',
             'archive' => $archive === 'archived' ? 'archived' : '',
             'sort' => in_array($sort, self::INDEX_SORT_COLUMNS, true) ? $sort : self::DEFAULT_INDEX_SORT,
             'direction' => in_array($direction, self::INDEX_SORT_DIRECTIONS, true) ? $direction : self::DEFAULT_INDEX_DIRECTION,
         ];
+    }
+
+    private function normalizeStatusFilter(string $status): string
+    {
+        if ($status === '') {
+            return '';
+        }
+
+        if (ctype_digit($status)) {
+            return $status;
+        }
+
+        $query = TicketStatus::query()->where('slug', $status);
+
+        if (Schema::hasColumn('ticket_statuses', 'code')) {
+            $query->orWhere('code', $status);
+        }
+
+        $statusModel = $query->first(['id']);
+
+        return $statusModel instanceof TicketStatus ? (string) $statusModel->id : '';
     }
 
     private function removeUnauthorizedArchiveFilter(array $filters, ?User $actor): array
@@ -908,7 +972,9 @@ class TicketController extends Controller
             'status' => (string) ($filters['status'] ?? ''),
             'priority' => (string) ($filters['priority'] ?? ''),
             'category' => (string) ($filters['category'] ?? ''),
+            'relation' => (string) ($filters['relation'] ?? ''),
             'scope' => (string) ($filters['scope'] ?? ''),
+            'due' => (string) ($filters['due'] ?? ''),
             'watched' => (string) ($filters['watched'] ?? ''),
             'archive' => (string) ($filters['archive'] ?? ''),
         ];
