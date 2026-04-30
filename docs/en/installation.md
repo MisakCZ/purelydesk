@@ -1,0 +1,105 @@
+# Installation
+
+This guide describes a clean development or test installation after cloning the project from GitHub. It does not assume any organization-specific infrastructure.
+
+## Requirements
+
+- PHP 8.3 or newer, matching `composer.json`.
+- Composer.
+- MariaDB or MySQL.
+- A web server for browser testing, for example Nginx or Apache.
+- PHP extensions commonly required by Laravel, including:
+  - `ldap`
+  - `mbstring`
+  - `openssl`
+  - `pdo_mysql`
+  - `fileinfo`
+  - `ctype`
+  - `json`
+  - `tokenizer`
+  - `xml`
+
+## Clone the Repository
+
+```bash
+git clone https://github.com/example/helpdesk.git
+cd helpdesk
+```
+
+Replace the repository URL with the real GitHub URL of your fork or project.
+
+## Install PHP Dependencies
+
+```bash
+composer install
+```
+
+For production builds use `composer install --no-dev --optimize-autoloader`.
+
+## Create the Environment File
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` and configure at least:
+
+- `APP_URL`
+- `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`
+- `LDAP_*` settings if LDAP login should be active
+- `MAIL_*` settings if outgoing notifications should be active
+
+## Generate the Application Key
+
+```bash
+php artisan key:generate
+```
+
+Never reuse a production `APP_KEY` between installations and never commit it to Git.
+
+## Configure the Database
+
+Create an empty MariaDB/MySQL database and a database user with privileges for that database.
+
+Example values in `.env`:
+
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=helpdesk
+DB_USERNAME=helpdesk
+DB_PASSWORD=secret
+```
+
+## Run Migrations
+
+```bash
+php artisan migrate
+```
+
+## Seed Initial Data
+
+```bash
+php artisan db:seed
+```
+
+Seeders create the basic roles, ticket statuses, priorities, and categories required by the helpdesk workflow.
+
+## Run Tests
+
+```bash
+php artisan test
+```
+
+Tests should pass before you start changing the application.
+
+## Local Development Server
+
+For simple local testing you can use Laravel's built-in server:
+
+```bash
+php artisan serve
+```
+
+For LDAP and mail integration testing, configure `.env` to point to test services, not production services.

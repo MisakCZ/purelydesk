@@ -1,58 +1,71 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Helpdesk
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+[Česká verze](README.cs.md)
 
-## About Laravel
+Helpdesk is a Laravel-based internal helpdesk application for organizations that need a simple ticket workflow integrated with LDAP authentication. It is designed as a general open-source friendly application, not as software tied to a specific company, network, or directory structure.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+The application uses local user profiles synchronized from LDAP, while authentication and role assignment are driven by an external LDAP-compatible directory.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Features
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- LDAP login with local user profile synchronization.
+- Role model with `user`, `solver`, and `admin`.
+- Role mapping from LDAP groups.
+- Ticket visibility levels: `public`, `internal`, and `private`.
+- Sensitive request option during ticket creation.
+- Ticket comments and separate internal notes.
+- Attachments for tickets and public comments.
+- Protected attachment preview and download through Laravel controllers.
+- Image attachment lightbox gallery.
+- Outgoing e-mail notifications.
+- Czech and English UI localization.
+- Conventional Laravel Blade UI without a SPA frontend.
 
-## Learning Laravel
+## Technology Stack
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+- Laravel
+- PHP 8.3+
+- MariaDB or MySQL
+- LDAP-compatible directory server
+- Nginx or Apache compatible deployment
+- PHP-FPM for the documented production deployment scenario
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Documentation
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+- [Installation](docs/en/installation.md)
+- [Deployment](docs/en/deployment.md)
+- [LDAP configuration](docs/en/ldap.md)
+- [Mail notifications](docs/en/mail.md)
+- [Attachments](docs/en/attachments.md)
+- [Security](docs/en/security.md)
 
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Quick Start
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone https://github.com/example/helpdesk.git
+cd helpdesk
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate
+php artisan db:seed
+php artisan test
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+After cloning, update `.env` for your database, LDAP server, mail settings, and application URL. See the documentation links above for details.
 
-## Contributing
+## Configuration Overview
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+The most important configuration areas are:
 
-## Code of Conduct
+- `DB_*` for MariaDB/MySQL connection settings.
+- `LDAP_*` for LDAP login and role mapping.
+- `MAIL_*` and `HELPDESK_MAIL_NOTIFICATIONS` for outgoing e-mail notifications.
+- `HELPDESK_ATTACHMENT_*` for attachment limits and storage path.
+- `APP_LOCALE` and `APP_FALLBACK_LOCALE` for the default UI language.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Do not commit real secrets, LDAP bind passwords, production `APP_KEY` values, or environment-specific server names to Git.
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+This project is distributed as a Laravel application. Use the license file in the repository if one is added by the project owner.
