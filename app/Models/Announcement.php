@@ -26,6 +26,7 @@ class Announcement extends Model
         'type',
         'visibility',
         'is_active',
+        'is_pinned',
         'starts_at',
         'ends_at',
     ];
@@ -34,6 +35,7 @@ class Announcement extends Model
     {
         return [
             'is_active' => 'boolean',
+            'is_pinned' => 'boolean',
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',
         ];
@@ -84,6 +86,17 @@ class Announcement extends Model
         }
 
         return $hasTypeColumn;
+    }
+
+    public static function supportsPinning(): bool
+    {
+        static $supportsPinning;
+
+        if ($supportsPinning === null) {
+            $supportsPinning = Schema::hasColumn('announcements', 'is_pinned');
+        }
+
+        return $supportsPinning;
     }
 
     public function getTypeAttribute(?string $value): string

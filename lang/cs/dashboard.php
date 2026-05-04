@@ -8,6 +8,17 @@ return [
         'new_ticket' => 'Nový ticket',
         'all_tickets' => 'Úplný seznam ticketů',
         'open_list' => 'Otevřít seznam',
+        'new_ticket_hint' => 'Před založením nového požadavku zkontrolujte, jestli se už neřeší:',
+        'check_open_tickets' => 'otevřené tickety',
+    ],
+    'announcements' => [
+        'label' => 'Aktivní provozní oznámení',
+        'heading' => 'Provozní oznámení',
+        'view_all' => 'Zobrazit všechna oznámení',
+        'open' => 'Otevřít oznámení',
+        'validity' => 'Platnost',
+        'from' => 'od',
+        'to' => 'do',
     ],
     'summary' => [
         'label' => 'Souhrn pracovní fronty',
@@ -16,12 +27,18 @@ return [
         'waiting_for_user' => 'Čeká na uživatele',
         'due_soon_or_overdue' => 'Po termínu / blíží se termín',
     ],
+    'pinned' => [
+        'label' => 'Připnuté tickety',
+        'heading' => 'Důležité otevřené tickety',
+        'subheading' => 'Připnuté tickety, které jsou pro vás viditelné. Pomáhají ověřit, jestli se problém už neřeší.',
+    ],
     'personal' => [
         'heading' => 'Moje zadané tickety',
         'open_requested' => '{0} Nemáte žádné otevřené zadané tickety.|{1} Máte 1 otevřený zadaný ticket.|[2,4] Máte :count otevřené zadané tickety.|[5,*] Máte :count otevřených zadaných ticketů.',
         'open_link' => 'Otevřít moje zadané',
     ],
     'sections' => [
+        'limited_preview' => 'Zobrazeno posledních :count položek. Úplný výpis je v seznamu.',
         'my_open_tickets' => [
             'heading' => 'Moje otevřené tickety',
             'subheading' => 'Tickety, které jste zadali a nejsou uzavřené ani zrušené.',

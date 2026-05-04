@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Announcement;
 use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
@@ -13,12 +14,16 @@ class DashboardDataService
 {
     private const LIMIT = 5;
 
+    private const ANNOUNCEMENT_LIMIT = 3;
+
     /**
      * @return array<string, mixed>
      */
     public function forUser(User $user): array
     {
         return [
+            'announcements' => $this->activeAnnouncements($user),
+            'pinnedTickets' => $this->pinnedTickets($user),
             'userSections' => [
                 'my_open_tickets' => $this->myOpenTickets($user),
                 'waiting_for_confirmation' => $this->waitingForConfirmation($user),
@@ -54,6 +59,69 @@ class DashboardDataService
             'isSolverDashboard' => $user->isSolver(),
             'isAdminDashboard' => $user->isAdmin(),
         ];
+    }
+
+    /**
+     * @return array{items: Collection<int, Announcement>, hasMore: bool}
+     */
+    private function activeAnnouncements(User $user): array
+    {
+        $announcements = $this->activeAnnouncementsQuery()
+            ->limit(self::ANNOUNCEMENT_LIMIT + 1)
+            ->get();
+
+        return [
+            'items' => $announcements->take(self::ANNOUNCEMENT_LIMIT)->values(),
+            'hasMore' => $announcements->count() > self::ANNOUNCEMENT_LIMIT,
+        ];
+    }
+
+    private function activeAnnouncementsQuery(): Builder
+    {
+        $query = Announcement::query()
+            ->active()
+            ->publicVisible()
+            ->select([
+                'id',
+                'title',
+                'body',
+                'type',
+                'visibility',
+                'starts_at',
+                'ends_at',
+                'updated_at',
+                'created_at',
+            ]);
+
+        if (Announcement::supportsPinning()) {
+            $query
+                ->addSelect('is_pinned')
+                ->orderByDesc('is_pinned');
+        }
+
+        return $query
+            ->orderByRaw("case type when 'outage' then 1 when 'warning' then 2 when 'maintenance' then 3 when 'info' then 4 else 5 end")
+            ->orderByDesc('starts_at')
+            ->orderByDesc('updated_at')
+            ->orderByDesc('created_at');
+    }
+
+    /**
+     * @return Collection<int, Ticket>
+     */
+    private function pinnedTickets(User $user): Collection
+    {
+        if (! Ticket::supportsPinning()) {
+            return collect();
+        }
+
+        return $this->baseTicketQuery($user)
+            ->where('is_pinned', true)
+            ->tap(fn (Builder $query) => $this->whereNotFinal($query))
+            ->orderByDesc('pinned_at')
+            ->orderByDesc('updated_at')
+            ->limit(self::LIMIT)
+            ->get();
     }
 
     /**

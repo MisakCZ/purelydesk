@@ -3,6 +3,7 @@
         <div>
             <h3>{{ __('dashboard.sections.'.$key.'.heading') }}</h3>
             <p>{{ __('dashboard.sections.'.$key.'.subheading') }}</p>
+            <p class="dashboard-section-note">{{ __('dashboard.sections.limited_preview', ['count' => 5]) }}</p>
         </div>
         @if ($href)
             <a class="dashboard-section-link" href="{{ $href }}">{{ __('dashboard.actions.open_list') }}</a>

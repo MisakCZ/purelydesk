@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Announcement;
 use App\Models\Role;
 use App\Models\Ticket;
 use App\Models\TicketCategory;
@@ -94,6 +95,25 @@ class DashboardTest extends TestCase
             ->assertSeeText(__('dashboard.sections.my_open_tickets.heading'))
             ->assertSeeText($ticket->subject)
             ->assertSee(e(route('tickets.index', ['scope' => 'open', 'relation' => 'requester'])), false);
+    }
+
+    public function test_dashboard_header_links_open_filtered_and_full_ticket_lists(): void
+    {
+        $user = $this->createUserWithRoles([$this->userRole]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee(e(route('tickets.index', ['scope' => 'open'])), false)
+            ->assertSee(e(route('tickets.index', ['reset' => 1])), false);
+
+        $this->actingAs($user)
+            ->get(route('tickets.index', ['scope' => 'open']))
+            ->assertOk();
+
+        $this->actingAs($user)
+            ->get(route('tickets.index', ['reset' => 1]))
+            ->assertOk();
     }
 
     public function test_user_does_not_see_other_private_or_internal_ticket(): void
@@ -212,6 +232,135 @@ class DashboardTest extends TestCase
             ->assertDontSeeText($ticket->subject);
     }
 
+    public function test_active_announcements_are_shown_on_dashboard(): void
+    {
+        $user = $this->createUserWithRoles([$this->userRole]);
+        $announcement = $this->createAnnouncement([
+            'title' => 'Active dashboard announcement',
+            'body' => 'Visible operational dashboard information.',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSeeText(__('dashboard.announcements.heading'))
+            ->assertSeeText($announcement->title)
+            ->assertSeeText($announcement->body);
+    }
+
+    public function test_inactive_announcements_are_not_shown_on_dashboard(): void
+    {
+        $user = $this->createUserWithRoles([$this->userRole]);
+        $announcement = $this->createAnnouncement([
+            'title' => 'Inactive dashboard announcement',
+            'is_active' => false,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertDontSeeText($announcement->title);
+    }
+
+    public function test_dashboard_announcements_respect_visibility(): void
+    {
+        $user = $this->createUserWithRoles([$this->userRole]);
+        $internalAnnouncement = $this->createAnnouncement([
+            'title' => 'Internal dashboard announcement',
+            'visibility' => 'internal',
+        ]);
+        $publicAnnouncement = $this->createAnnouncement([
+            'title' => 'Public dashboard announcement',
+            'visibility' => 'public',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSeeText($publicAnnouncement->title)
+            ->assertDontSeeText($internalAnnouncement->title);
+    }
+
+    public function test_pinned_announcements_have_priority_on_dashboard(): void
+    {
+        $user = $this->createUserWithRoles([$this->userRole]);
+        $regularAnnouncement = $this->createAnnouncement([
+            'title' => 'Regular outage dashboard announcement',
+            'type' => Announcement::TYPE_OUTAGE,
+            'starts_at' => now(),
+        ]);
+        $pinnedAnnouncement = $this->createAnnouncement([
+            'title' => 'Pinned info dashboard announcement',
+            'type' => Announcement::TYPE_INFO,
+            'is_pinned' => true,
+            'starts_at' => now()->subDay(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSeeTextInOrder([
+                $pinnedAnnouncement->title,
+                $regularAnnouncement->title,
+            ]);
+    }
+
+    public function test_dashboard_announcements_block_is_hidden_without_active_announcements(): void
+    {
+        $user = $this->createUserWithRoles([$this->userRole]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertDontSeeText(__('dashboard.announcements.heading'));
+    }
+
+    public function test_dashboard_announcements_are_limited_and_link_to_all_active_announcements(): void
+    {
+        $user = $this->createUserWithRoles([$this->userRole]);
+
+        foreach (range(1, 4) as $index) {
+            $this->createAnnouncement([
+                'title' => 'Dashboard announcement '.$index,
+                'starts_at' => now()->subMinutes($index),
+            ]);
+        }
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSeeText('Dashboard announcement 1')
+            ->assertSeeText('Dashboard announcement 2')
+            ->assertSeeText('Dashboard announcement 3')
+            ->assertDontSeeText('Dashboard announcement 4')
+            ->assertSee(e(route('announcements.active')), false);
+    }
+
+    public function test_dashboard_shows_visible_open_pinned_tickets(): void
+    {
+        $user = $this->createUserWithRoles([$this->userRole]);
+        $pinnedTicket = $this->createTicket([
+            'requester' => $user,
+            'subject' => 'Pinned dashboard ticket',
+            'is_pinned' => true,
+            'pinned_at' => now(),
+        ]);
+        $closedPinnedTicket = $this->createTicket([
+            'requester' => $user,
+            'subject' => 'Closed pinned dashboard ticket',
+            'status' => $this->closedStatus,
+            'is_pinned' => true,
+            'pinned_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSeeText(__('dashboard.pinned.heading'))
+            ->assertSeeText($pinnedTicket->subject)
+            ->assertDontSeeText($closedPinnedTicket->subject);
+    }
+
     private function createStatus(string $name, string $slug, int $sortOrder, bool $isClosed = false): TicketStatus
     {
         return TicketStatus::query()->create([
@@ -249,6 +398,22 @@ class DashboardTest extends TestCase
             'ticket_priority_id' => ($overrides['priority'] ?? $this->defaultPriority)->id,
             'ticket_category_id' => ($overrides['category'] ?? $this->defaultCategory)->id,
             'archived_at' => $overrides['archived_at'] ?? null,
+            'is_pinned' => $overrides['is_pinned'] ?? false,
+            'pinned_at' => $overrides['pinned_at'] ?? null,
+        ]);
+    }
+
+    private function createAnnouncement(array $overrides = []): Announcement
+    {
+        return Announcement::query()->create([
+            'title' => $overrides['title'] ?? 'Announcement '.Str::random(8),
+            'body' => $overrides['body'] ?? 'Operational information.',
+            'type' => $overrides['type'] ?? Announcement::TYPE_INFO,
+            'visibility' => $overrides['visibility'] ?? 'public',
+            'is_active' => $overrides['is_active'] ?? true,
+            'is_pinned' => $overrides['is_pinned'] ?? false,
+            'starts_at' => $overrides['starts_at'] ?? now()->subHour(),
+            'ends_at' => $overrides['ends_at'] ?? now()->addHour(),
         ]);
     }
 }

@@ -34,4 +34,13 @@ return [
             'expected_resolution_changed' => 'Předpokládané vyřešení bylo změněno na: :expected_resolution_at.',
         ],
     ],
+    'inbound' => [
+        'attachments_ignored' => [
+            'comment_note' => '[Poznámka helpdesku: E-mail obsahoval přílohy, ale přílohy z e-mailových odpovědí zatím nejsou automaticky ukládány. Nahrajte je prosím přímo v detailu ticketu.]',
+            'subject' => '[Helpdesk] :number: přílohy nebyly přidány',
+            'greeting' => 'Dobrý den,',
+            'body' => 'Vaše textová odpověď k ticketu :number byla přijata a uložena jako komentář. Přílohy z e-mailu ale zatím neumíme automaticky přidat, nahrajte je prosím přímo v detailu ticketu.',
+            'action' => 'Otevřít detail ticketu',
+        ],
+    ],
 ];

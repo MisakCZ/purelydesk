@@ -36,6 +36,24 @@ return [
             'inactive' => 'Inactive',
         ],
     ],
+    'active' => [
+        'page_title' => 'Active announcements',
+        'heading' => 'Active service announcements',
+        'subheading' => 'Currently valid operational information available to helpdesk users.',
+        'label' => 'Active announcements list',
+        'actions' => [
+            'back_to_dashboard' => 'Back to dashboard',
+        ],
+        'empty' => [
+            'heading' => 'No active announcements',
+            'body' => 'There are no active service announcements published right now.',
+        ],
+        'meta' => [
+            'validity' => 'Valid',
+            'from' => 'from',
+            'to' => 'until',
+        ],
+    ],
     'edit' => [
         'page_title' => 'Edit announcement',
         'heading' => 'Edit announcement',

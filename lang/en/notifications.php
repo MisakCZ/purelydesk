@@ -34,4 +34,13 @@ return [
             'expected_resolution_changed' => 'The expected resolution was changed to: :expected_resolution_at.',
         ],
     ],
+    'inbound' => [
+        'attachments_ignored' => [
+            'comment_note' => '[Helpdesk note: The e-mail contained attachments, but e-mail reply attachments are not imported automatically yet. Please upload them directly in the ticket detail.]',
+            'subject' => '[Helpdesk] :number: attachments were not added',
+            'greeting' => 'Hello,',
+            'body' => 'Your text reply to ticket :number was accepted and saved as a comment. Attachments from the e-mail are not imported automatically yet, so please upload them directly in the ticket detail.',
+            'action' => 'Open ticket detail',
+        ],
+    ],
 ];

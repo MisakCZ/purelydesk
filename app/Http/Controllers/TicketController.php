@@ -858,6 +858,13 @@ class TicketController extends Controller
 
     private function resolveTicketIndexFilters(Request $request, ?User $actor): array
     {
+        if ($request->boolean('reset')) {
+            $filters = $this->removeUnauthorizedArchiveFilter($this->defaultTicketFilters(), $actor);
+            $request->session()->put(self::INDEX_FILTERS_SESSION_KEY, $filters);
+
+            return $filters;
+        }
+
         $filterKeys = array_keys($this->defaultTicketFilters());
         $hasFilterQuery = false;
 

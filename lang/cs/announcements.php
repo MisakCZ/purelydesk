@@ -36,6 +36,24 @@ return [
             'inactive' => 'Neaktivní',
         ],
     ],
+    'active' => [
+        'page_title' => 'Aktivní oznámení',
+        'heading' => 'Aktivní provozní oznámení',
+        'subheading' => 'Aktuálně platné informace dostupné uživatelům helpdesku.',
+        'label' => 'Seznam aktivních oznámení',
+        'actions' => [
+            'back_to_dashboard' => 'Zpět na dashboard',
+        ],
+        'empty' => [
+            'heading' => 'Žádná aktivní oznámení',
+            'body' => 'Momentálně nejsou publikovaná žádná aktivní provozní oznámení.',
+        ],
+        'meta' => [
+            'validity' => 'Platnost',
+            'from' => 'od',
+            'to' => 'do',
+        ],
+    ],
     'edit' => [
         'page_title' => 'Upravit oznámení',
         'heading' => 'Upravit oznámení',

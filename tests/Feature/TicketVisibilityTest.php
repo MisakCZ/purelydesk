@@ -1562,6 +1562,7 @@ class TicketVisibilityTest extends TestCase
     public function test_status_change_to_resolved_sets_resolution_timestamps(): void
     {
         Carbon::setTestNow('2026-04-23 15:00:00');
+        config(['helpdesk.workflow.resolved_auto_close_days' => 5]);
 
         try {
             $requester = $this->createUserWithRole($this->userRole);

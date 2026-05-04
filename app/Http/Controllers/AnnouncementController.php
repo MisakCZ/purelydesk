@@ -28,6 +28,21 @@ class AnnouncementController extends Controller
         ]);
     }
 
+    public function active(): View
+    {
+        return view('announcements.active', [
+            'announcements' => Announcement::query()
+                ->active()
+                ->publicVisible()
+                ->when(Announcement::supportsPinning(), fn ($query) => $query->orderByDesc('is_pinned'))
+                ->orderByRaw("case type when 'outage' then 1 when 'warning' then 2 when 'maintenance' then 3 when 'info' then 4 else 5 end")
+                ->orderByDesc('starts_at')
+                ->orderByDesc('updated_at')
+                ->orderByDesc('created_at')
+                ->get(),
+        ]);
+    }
+
     public function edit(Announcement $announcement): View
     {
         $this->authorizeAnnouncementManagement();

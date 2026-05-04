@@ -31,6 +31,7 @@ Route::middleware('helpdesk.auth')->group(function (): void {
     Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
     Route::get('/ticket-attachments/{attachment}/preview', [TicketAttachmentController::class, 'preview'])->name('ticket-attachments.preview');
     Route::get('/ticket-attachments/{attachment}/download', [TicketAttachmentController::class, 'download'])->name('ticket-attachments.download');
+    Route::get('/announcements/active', [AnnouncementController::class, 'active'])->name('announcements.active');
     Route::get('/announcements', [AnnouncementController::class, 'index'])->name('announcements.index');
     Route::get('/announcements/{announcement}/edit', [AnnouncementController::class, 'edit'])->name('announcements.edit');
     Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store');

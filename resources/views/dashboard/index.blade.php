@@ -63,13 +63,128 @@
             line-height: 1.3;
         }
 
+        .dashboard-action-note {
+            flex-basis: 100%;
+            margin: -0.18rem 0 0;
+            color: #64748b;
+            font-size: 0.74rem;
+            font-weight: 600;
+            line-height: 1.45;
+        }
+
+        .dashboard-action-note a {
+            color: #0f766e;
+            font-weight: 750;
+            text-decoration: none;
+        }
+
         .dashboard-hero-actions {
             display: flex;
             flex-wrap: wrap;
             gap: 0.65rem;
+            max-width: 25rem;
+        }
+
+        .dashboard-announcements {
+            display: grid;
+            gap: 0.55rem;
+            margin-bottom: 0.85rem;
+        }
+
+        .dashboard-announcements-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.7rem;
+        }
+
+        .dashboard-announcements-title {
+            margin: 0;
+            color: #13202b;
+            font-size: 0.96rem;
+            font-weight: 760;
+            line-height: 1.35;
+        }
+
+        .dashboard-announcement-list {
+            display: grid;
+            gap: 0.5rem;
+        }
+
+        .dashboard-announcement {
+            display: grid;
+            gap: 0.35rem;
+            padding: 0.72rem 0.82rem;
+            border: 1px solid #e5ebf1;
+            border-radius: 0.95rem;
+            background: #fff;
+        }
+
+        .dashboard-announcement[data-type="info"] {
+            border-color: #bfdbfe;
+            background: #eff6ff;
+        }
+
+        .dashboard-announcement[data-type="warning"] {
+            border-color: #fde68a;
+            background: #fffbeb;
+        }
+
+        .dashboard-announcement[data-type="outage"] {
+            border-color: #fecaca;
+            background: #fef2f2;
+        }
+
+        .dashboard-announcement[data-type="maintenance"] {
+            border-color: #c7d2fe;
+            background: #eef2ff;
+        }
+
+        .dashboard-announcement-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.65rem;
+        }
+
+        .dashboard-announcement-title {
+            margin: 0;
+            color: #13202b;
+            font-size: 0.88rem;
+            font-weight: 760;
+            line-height: 1.35;
+        }
+
+        .dashboard-announcement-body,
+        .dashboard-announcement-meta {
+            margin: 0;
+            color: #475569;
+            font-size: 0.78rem;
+            line-height: 1.45;
+        }
+
+        .dashboard-announcement-foot {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+        }
+
+        .dashboard-announcement-meta {
+            color: #64748b;
+            font-weight: 650;
+        }
+
+        .dashboard-announcement .badge {
+            flex: 0 0 auto;
+            padding: 0.26rem 0.52rem;
+            font-size: 0.74rem;
+            line-height: 1.2;
         }
 
         .dashboard-section,
+        .dashboard-pinned,
         .dashboard-admin {
             display: grid;
             gap: 0.65rem;
@@ -80,6 +195,7 @@
         }
 
         .dashboard-section-head,
+        .dashboard-pinned-head,
         .dashboard-admin-head {
             display: flex;
             align-items: flex-start;
@@ -88,6 +204,7 @@
         }
 
         .dashboard-section-head h3,
+        .dashboard-pinned-head h3,
         .dashboard-admin-head h3 {
             margin: 0;
             color: #13202b;
@@ -96,11 +213,19 @@
         }
 
         .dashboard-section-head p,
+        .dashboard-pinned-head p,
         .dashboard-admin-head p {
             margin: 0.2rem 0 0;
             color: #64748b;
             font-size: 0.8rem;
             line-height: 1.45;
+        }
+
+        .dashboard-section-head .dashboard-section-note {
+            margin-top: 0.12rem;
+            color: #8493a5;
+            font-size: 0.72rem;
+            font-weight: 650;
         }
 
         .dashboard-section-link {
@@ -114,6 +239,12 @@
         .dashboard-ticket-list {
             display: grid;
             gap: 0.42rem;
+        }
+
+        .dashboard-pinned {
+            margin-bottom: 0.85rem;
+            border-color: #fde68a;
+            background: #fffbeb;
         }
 
         .dashboard-ticket {
@@ -216,12 +347,89 @@
 
             <div class="dashboard-hero-actions">
                 <a class="button button-primary" href="{{ route('tickets.create') }}">{{ __('dashboard.actions.new_ticket') }}</a>
-                <a class="button button-secondary" href="{{ route('tickets.index') }}">{{ __('dashboard.actions.all_tickets') }}</a>
+                <a class="button button-secondary" href="{{ route('tickets.index', ['reset' => 1]) }}">{{ __('dashboard.actions.all_tickets') }}</a>
+                <p class="dashboard-action-note">
+                    {{ __('dashboard.actions.new_ticket_hint') }}
+                    <a href="{{ route('tickets.index', ['scope' => 'open']) }}">{{ __('dashboard.actions.check_open_tickets') }}</a>
+                </p>
             </div>
         </div>
     </div>
 
     <div class="page-body">
+        @if ($dashboard['announcements']['items']->isNotEmpty())
+            <section class="dashboard-announcements" aria-label="{{ __('dashboard.announcements.label') }}">
+                <div class="dashboard-announcements-head">
+                    <h3 class="dashboard-announcements-title">{{ __('dashboard.announcements.heading') }}</h3>
+
+                    @if ($dashboard['announcements']['hasMore'])
+                        <a class="dashboard-section-link" href="{{ route('announcements.active') }}">{{ __('dashboard.announcements.view_all') }}</a>
+                    @endif
+                </div>
+
+                <div class="dashboard-announcement-list">
+                    @foreach ($dashboard['announcements']['items'] as $announcement)
+                        @php
+                            $announcementBadgeTone = match ($announcement->type) {
+                                \App\Models\Announcement::TYPE_OUTAGE => 'badge-tone-red',
+                                \App\Models\Announcement::TYPE_WARNING => 'badge-tone-amber',
+                                \App\Models\Announcement::TYPE_MAINTENANCE => 'badge-tone-violet',
+                                default => 'badge-tone-blue',
+                            };
+                        @endphp
+                        <article class="dashboard-announcement" data-type="{{ $announcement->type }}">
+                            <div class="dashboard-announcement-head">
+                                <p class="dashboard-announcement-title">{{ $announcement->title }}</p>
+                                <span class="badge {{ $announcementBadgeTone }}">
+                                    {{ \App\Models\Announcement::translatedTypeLabel($announcement->type) }}
+                                </span>
+                            </div>
+
+                            <p class="dashboard-announcement-body">{{ \Illuminate\Support\Str::limit($announcement->body, 180) }}</p>
+
+                            <div class="dashboard-announcement-foot">
+                                @if ($announcement->starts_at || $announcement->ends_at)
+                                    <p class="dashboard-announcement-meta">
+                                        {{ __('dashboard.announcements.validity') }}
+                                        @if ($announcement->starts_at)
+                                            {{ __('dashboard.announcements.from') }} {{ $announcement->starts_at->locale($locale)->translatedFormat($dateTimeFormat) }}
+                                        @endif
+                                        @if ($announcement->ends_at)
+                                            {{ __('dashboard.announcements.to') }} {{ $announcement->ends_at->locale($locale)->translatedFormat($dateTimeFormat) }}
+                                        @endif
+                                    </p>
+                                @endif
+
+                                <a class="dashboard-section-link" href="{{ route('announcements.active') }}">{{ __('dashboard.announcements.open') }}</a>
+                            </div>
+                        </article>
+                    @endforeach
+                </div>
+            </section>
+        @endif
+
+        @if ($dashboard['pinnedTickets']->isNotEmpty())
+            <section class="dashboard-pinned" aria-label="{{ __('dashboard.pinned.label') }}">
+                <div class="dashboard-pinned-head">
+                    <div>
+                        <h3>{{ __('dashboard.pinned.heading') }}</h3>
+                        <p>{{ __('dashboard.pinned.subheading') }}</p>
+                    </div>
+                    <a class="dashboard-section-link" href="{{ route('tickets.index', ['scope' => 'open']) }}">{{ __('dashboard.actions.open_list') }}</a>
+                </div>
+
+                <div class="dashboard-ticket-list">
+                    @foreach ($dashboard['pinnedTickets'] as $ticket)
+                        @include('dashboard.partials.ticket', [
+                            'ticket' => $ticket,
+                            'locale' => $locale,
+                            'dateTimeFormat' => $dateTimeFormat,
+                        ])
+                    @endforeach
+                </div>
+            </section>
+        @endif
+
         @if ($dashboard['isSolverDashboard'])
             <div class="dashboard-summary" aria-label="{{ __('dashboard.summary.label') }}">
                 @foreach (['new_unassigned_tickets', 'my_assigned_tickets', 'waiting_for_user', 'due_soon_or_overdue'] as $summaryKey)

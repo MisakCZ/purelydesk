@@ -58,6 +58,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Inbound E-mail
+    |--------------------------------------------------------------------------
+    |
+    | The first inbound reply implementation accepts text replies but does not
+    | import e-mail attachments into helpdesk attachments yet.
+    |
+    */
+    'inbound' => [
+        'import_attachments' => env('HELPDESK_INBOUND_IMPORT_ATTACHMENTS', false),
+        'notify_rejected_attachments' => env('HELPDESK_INBOUND_NOTIFY_REJECTED_ATTACHMENTS', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Ticket Workflow
     |--------------------------------------------------------------------------
     |
