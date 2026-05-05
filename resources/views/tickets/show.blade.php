@@ -239,6 +239,18 @@
             font-weight: 700;
         }
 
+        .hint-inline {
+            color: #64748b;
+            font-size: 0.76rem;
+            font-weight: 650;
+        }
+
+        .content-meta-line.text-warning {
+            border-color: #fde68a;
+            background: #fffbeb;
+            color: #92400e;
+        }
+
         .hero-description-actions {
             display: flex;
             justify-content: flex-end;
@@ -1617,6 +1629,15 @@
                             <div class="content-meta-line">
                                 {{ __('tickets.show.content.expected_resolution_at') }}:
                                 <strong>{{ $ticket->expected_resolution_at->locale($locale)->translatedFormat($dateTimeFormat) }}</strong>
+                                @if ($ticket->expected_resolution_source === 'auto')
+                                    <span class="hint-inline">{{ __('tickets.show.content.expected_resolution_auto') }}</span>
+                                @elseif ($ticket->expected_resolution_source === 'manual')
+                                    <span class="hint-inline">{{ __('tickets.show.content.expected_resolution_manual') }}</span>
+                                @endif
+                            </div>
+                        @elseif ($canUpdateAssignee && $ticket->assignee_id !== null && ! $ticket->hasStatusSlug(['closed', 'cancelled']))
+                            <div class="content-meta-line text-warning">
+                                {{ __('tickets.show.content.expected_resolution_missing') }}
                             </div>
                         @endif
 

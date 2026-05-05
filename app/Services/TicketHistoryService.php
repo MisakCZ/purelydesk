@@ -91,6 +91,9 @@ class TicketHistoryService
                 ]
                 : null,
             'expected_resolution_at' => $ticket->expected_resolution_at?->toIso8601String(),
+            'expected_resolution_source' => Ticket::supportsExpectedResolutionSource()
+                ? $ticket->expected_resolution_source
+                : null,
             'resolved_at' => $ticket->resolved_at?->toIso8601String(),
             'auto_close_at' => $ticket->auto_close_at?->toIso8601String(),
             'closed_at' => $ticket->closed_at?->toIso8601String(),

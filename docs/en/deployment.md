@@ -220,6 +220,23 @@ The grace period for resolved tickets is configured with:
 HELPDESK_RESOLVED_AUTO_CLOSE_DAYS=5
 ```
 
+## Expected Resolution Deadlines
+
+Tickets can store an expected resolution date in `expected_resolution_at`. The requester does not enter this date when creating a ticket, because it is an operational estimate owned by the helpdesk team.
+
+When a ticket is assigned to a solver and no expected resolution date exists, the application sets one automatically from the ticket priority. The first version uses calendar days:
+
+```env
+HELPDESK_EXPECTED_RESOLUTION_LOW_DAYS=10
+HELPDESK_EXPECTED_RESOLUTION_NORMAL_DAYS=5
+HELPDESK_EXPECTED_RESOLUTION_HIGH_DAYS=2
+HELPDESK_EXPECTED_RESOLUTION_CRITICAL_DAYS=1
+```
+
+The application tracks whether the deadline was set automatically or manually. Automatically set deadlines are recalculated when the priority changes. Manually set deadlines are not overwritten by priority changes. Changing the assignee does not extend or recalculate an existing deadline; the new assignee inherits the current value.
+
+Solver and admin users can set or change the expected resolution date manually from the ticket edit form. Regular users can see the date on the ticket detail when it exists, but cannot submit or change it. Dashboard and ticket list filters can highlight assigned open tickets without a deadline, overdue tickets, and tickets due soon.
+
 ## Backups
 
 Back up at least:

@@ -217,6 +217,26 @@ class DashboardTest extends TestCase
             ->assertSee(e(route('tickets.index', ['scope' => 'open', 'relation' => 'assigned'])), false);
     }
 
+    public function test_solver_dashboard_shows_assigned_open_tickets_without_expected_resolution(): void
+    {
+        $solver = $this->createUserWithRoles([$this->solverRole]);
+        $ticket = $this->createTicket([
+            'assignee' => $solver,
+            'subject' => 'Assigned dashboard ticket without deadline',
+        ]);
+
+        $this->actingAs($solver)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSeeText(__('dashboard.sections.without_expected_resolution.heading'))
+            ->assertSeeText($ticket->subject)
+            ->assertSee(e(route('tickets.index', [
+                'scope' => 'open',
+                'relation' => 'assigned',
+                'due' => 'missing_expected_resolution',
+            ])), false);
+    }
+
     public function test_archived_tickets_are_not_shown_on_regular_dashboard(): void
     {
         $user = $this->createUserWithRoles([$this->userRole]);
@@ -400,6 +420,8 @@ class DashboardTest extends TestCase
             'archived_at' => $overrides['archived_at'] ?? null,
             'is_pinned' => $overrides['is_pinned'] ?? false,
             'pinned_at' => $overrides['pinned_at'] ?? null,
+            'expected_resolution_at' => $overrides['expected_resolution_at'] ?? null,
+            'expected_resolution_source' => $overrides['expected_resolution_source'] ?? null,
         ]);
     }
 

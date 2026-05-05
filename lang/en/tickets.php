@@ -190,6 +190,9 @@ return [
             'subheading' => 'Request description and the basic information about ticket creation and the latest update.',
             'description' => 'Description',
             'expected_resolution_at' => 'Expected resolution',
+            'expected_resolution_auto' => 'Automatically based on priority',
+            'expected_resolution_manual' => 'Manually set deadline',
+            'expected_resolution_missing' => 'This assigned open ticket has no expected resolution date.',
             'original_toggle_title' => 'Show original ticket version',
         ],
         'hero' => [

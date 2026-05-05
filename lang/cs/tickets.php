@@ -190,6 +190,9 @@ return [
             'subheading' => 'Popis požadavku a základní informace o založení a poslední úpravě ticketu.',
             'description' => 'Popis',
             'expected_resolution_at' => 'Předpokládané vyřešení',
+            'expected_resolution_auto' => 'Automaticky podle priority',
+            'expected_resolution_manual' => 'Ručně nastavený termín',
+            'expected_resolution_missing' => 'Tento přiřazený otevřený ticket nemá nastavený očekávaný termín vyřešení.',
             'original_toggle_title' => 'Zobrazit původní verzi ticketu',
         ],
         'hero' => [

@@ -220,6 +220,23 @@ Lhůta pro vyřešené tickety se nastavuje pomocí:
 HELPDESK_RESOLVED_AUTO_CLOSE_DAYS=5
 ```
 
+## Předpokládané termíny vyřešení
+
+Ticket může mít uložené očekávané datum vyřešení v poli `expected_resolution_at`. Zadavatel ho při zakládání ticketu nevyplňuje, protože jde o provozní odhad helpdesk týmu.
+
+Když je ticket přiřazen řešiteli a nemá nastavený očekávaný termín vyřešení, aplikace ho automaticky doplní podle priority ticketu. První verze používá kalendářní dny:
+
+```env
+HELPDESK_EXPECTED_RESOLUTION_LOW_DAYS=10
+HELPDESK_EXPECTED_RESOLUTION_NORMAL_DAYS=5
+HELPDESK_EXPECTED_RESOLUTION_HIGH_DAYS=2
+HELPDESK_EXPECTED_RESOLUTION_CRITICAL_DAYS=1
+```
+
+Aplikace rozlišuje, zda byl termín nastaven automaticky nebo ručně. Automaticky nastavené termíny se při změně priority přepočítají. Ručně nastavené termíny se změnou priority nepřepisují. Změna řešitele existující termín neprodlužuje ani nepřepočítává; nový řešitel přebírá aktuální hodnotu.
+
+Solver a admin mohou očekávaný termín vyřešení ručně nastavit nebo změnit ve formuláři úpravy ticketu. Běžný uživatel termín na detailu ticketu vidí, pokud existuje, ale nemůže ho odeslat ani změnit. Dashboard a filtry seznamu ticketů umí zvýraznit přiřazené otevřené tickety bez termínu, tickety po termínu a tickety s blížícím se termínem.
+
 ## Zálohy
 
 Zálohujte minimálně:

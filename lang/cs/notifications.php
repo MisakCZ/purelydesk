@@ -32,7 +32,7 @@ return [
             'resolved' => 'Ticket byl označen jako vyřešený. V detailu můžete potvrdit vyřešení, nebo oznámit, že problém trvá.',
             'problem_persists' => 'Zadavatel označil, že problém stále trvá.',
             'closed' => 'Ticket byl uzavřen.',
-            'expected_resolution_changed' => 'Předpokládané vyřešení bylo změněno na: :expected_resolution_at.',
+            'expected_resolution_changed' => 'Předpokládané vyřešení bylo změněno z :old_expected_resolution_at na :expected_resolution_at.',
         ],
     ],
     'inbound' => [

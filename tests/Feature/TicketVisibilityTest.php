@@ -12,6 +12,7 @@ use App\Models\TicketPriority;
 use App\Models\TicketStatus;
 use App\Models\User;
 use App\Notifications\TicketEventNotification;
+use App\Services\TicketWorkflowAutomationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Notification;
@@ -677,7 +678,8 @@ class TicketVisibilityTest extends TestCase
             ->first();
 
         $this->assertNotNull($updateEntry);
-        $this->assertSame(['status', 'assignee'], $updateEntry->meta['changed_fields']);
+        $this->assertContains('status', $updateEntry->meta['changed_fields']);
+        $this->assertContains('assignee', $updateEntry->meta['changed_fields']);
     }
 
     public function test_assigning_assignee_on_non_new_ticket_keeps_status_unchanged(): void
@@ -2340,16 +2342,21 @@ class TicketVisibilityTest extends TestCase
                 'priority_id' => $this->defaultPriority->id,
                 'category_id' => $this->defaultCategory->id,
                 'expected_resolution_at' => '2026-05-04T13:30',
+                'expected_resolution_source' => TicketWorkflowAutomationService::EXPECTED_RESOLUTION_SOURCE_MANUAL,
             ])
             ->assertRedirect(route('tickets.show', $ticket));
 
         $ticket->refresh();
 
         $this->assertNull($ticket->expected_resolution_at);
+        $this->assertNull($ticket->expected_resolution_source);
     }
 
     public function test_solver_can_update_expected_resolution_and_history_records_it(): void
     {
+        config()->set('helpdesk.notifications.mail.enabled', true);
+        Notification::fake();
+
         $requester = $this->createUserWithRole($this->userRole);
         $solver = $this->createUserWithRole($this->solverRole);
         $ticket = $this->createTicket([
@@ -2370,6 +2377,7 @@ class TicketVisibilityTest extends TestCase
         $ticket->refresh();
 
         $this->assertTrue($ticket->expected_resolution_at?->equalTo(Carbon::parse('2026-05-04 13:30:00')) ?? false);
+        $this->assertSame(TicketWorkflowAutomationService::EXPECTED_RESOLUTION_SOURCE_MANUAL, $ticket->expected_resolution_source);
 
         $updateEntry = TicketHistory::query()
             ->where('ticket_id', $ticket->id)
@@ -2379,6 +2387,312 @@ class TicketVisibilityTest extends TestCase
 
         $this->assertNotNull($updateEntry);
         $this->assertContains('expected_resolution_at', $updateEntry->meta['changed_fields']);
+        $this->assertContains('expected_resolution_source', $updateEntry->meta['changed_fields']);
+        Notification::assertSentTo(
+            $requester,
+            TicketEventNotification::class,
+            fn (TicketEventNotification $notification) => $notification->event === 'expected_resolution_changed'
+        );
+    }
+
+    public function test_assigning_ticket_without_expected_resolution_sets_auto_deadline_from_priority(): void
+    {
+        $this->configureExpectedResolutionDays();
+        Carbon::setTestNow(Carbon::parse('2026-05-05 09:00:00'));
+
+        $requester = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $assignee = $this->createUserWithRole($this->solverRole);
+        $highPriority = TicketPriority::query()->create([
+            'name' => 'High',
+            'slug' => 'high',
+            'sort_order' => 2,
+        ]);
+        TicketStatus::query()->create([
+            'name' => 'Assigned',
+            'slug' => 'assigned',
+            'sort_order' => 2,
+        ]);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'priority' => $highPriority,
+            'visibility' => Ticket::VISIBILITY_INTERNAL,
+        ]);
+
+        $this->actingAs($solver)
+            ->patch(route('tickets.assignee.update', $ticket), [
+                'assignee_id' => $assignee->id,
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        $ticket->refresh();
+
+        $this->assertTrue($ticket->expected_resolution_at?->equalTo(Carbon::parse('2026-05-07 09:00:00')) ?? false);
+        $this->assertSame(TicketWorkflowAutomationService::EXPECTED_RESOLUTION_SOURCE_AUTO, $ticket->expected_resolution_source);
+
+        $history = TicketHistory::query()
+            ->where('ticket_id', $ticket->id)
+            ->where('event', TicketHistory::EVENT_UPDATED)
+            ->latest('id')
+            ->first();
+
+        $this->assertNotNull($history);
+        $this->assertContains('expected_resolution_at', $history->meta['changed_fields']);
+        $this->assertContains('expected_resolution_source', $history->meta['changed_fields']);
+
+        Carbon::setTestNow();
+    }
+
+    public function test_assignee_change_does_not_recalculate_existing_expected_resolution(): void
+    {
+        $this->configureExpectedResolutionDays();
+        Carbon::setTestNow(Carbon::parse('2026-05-05 09:00:00'));
+
+        $requester = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $oldAssignee = $this->createUserWithRole($this->solverRole);
+        $newAssignee = $this->createUserWithRole($this->solverRole);
+        $assignedStatus = TicketStatus::query()->create([
+            'name' => 'Assigned',
+            'slug' => 'assigned',
+            'sort_order' => 2,
+        ]);
+        $existingDeadline = Carbon::parse('2026-05-06 12:00:00');
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'assignee' => $oldAssignee,
+            'status' => $assignedStatus,
+            'visibility' => Ticket::VISIBILITY_INTERNAL,
+            'expected_resolution_at' => $existingDeadline,
+            'expected_resolution_source' => TicketWorkflowAutomationService::EXPECTED_RESOLUTION_SOURCE_AUTO,
+        ]);
+
+        $this->actingAs($solver)
+            ->patch(route('tickets.assignee.update', $ticket), [
+                'assignee_id' => $newAssignee->id,
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        $ticket->refresh();
+
+        $this->assertSame($newAssignee->id, $ticket->assignee_id);
+        $this->assertTrue($ticket->expected_resolution_at?->equalTo($existingDeadline) ?? false);
+        $this->assertSame(TicketWorkflowAutomationService::EXPECTED_RESOLUTION_SOURCE_AUTO, $ticket->expected_resolution_source);
+
+        Carbon::setTestNow();
+    }
+
+    public function test_removing_assignee_does_not_clear_expected_resolution(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $assignee = $this->createUserWithRole($this->solverRole);
+        $assignedStatus = TicketStatus::query()->create([
+            'name' => 'Assigned',
+            'slug' => 'assigned',
+            'sort_order' => 2,
+        ]);
+        $deadline = Carbon::parse('2026-05-08 12:00:00');
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'assignee' => $assignee,
+            'status' => $assignedStatus,
+            'visibility' => Ticket::VISIBILITY_INTERNAL,
+            'expected_resolution_at' => $deadline,
+            'expected_resolution_source' => TicketWorkflowAutomationService::EXPECTED_RESOLUTION_SOURCE_MANUAL,
+        ]);
+
+        $this->actingAs($solver)
+            ->patch(route('tickets.assignee.update', $ticket), [
+                'assignee_id' => '',
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        $ticket->refresh();
+
+        $this->assertNull($ticket->assignee_id);
+        $this->assertTrue($ticket->expected_resolution_at?->equalTo($deadline) ?? false);
+        $this->assertSame(TicketWorkflowAutomationService::EXPECTED_RESOLUTION_SOURCE_MANUAL, $ticket->expected_resolution_source);
+    }
+
+    public function test_priority_change_without_deadline_sets_auto_expected_resolution(): void
+    {
+        $this->configureExpectedResolutionDays();
+        Carbon::setTestNow(Carbon::parse('2026-05-05 10:00:00'));
+
+        $requester = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $assignee = $this->createUserWithRole($this->solverRole);
+        $highPriority = TicketPriority::query()->create([
+            'name' => 'High',
+            'slug' => 'high',
+            'sort_order' => 2,
+        ]);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'assignee' => $assignee,
+            'visibility' => Ticket::VISIBILITY_INTERNAL,
+        ]);
+
+        $this->actingAs($solver)
+            ->patch(route('tickets.priority.update', $ticket), [
+                'priority_id' => $highPriority->id,
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        $ticket->refresh();
+
+        $this->assertSame($highPriority->id, $ticket->ticket_priority_id);
+        $this->assertTrue($ticket->expected_resolution_at?->equalTo(Carbon::parse('2026-05-07 10:00:00')) ?? false);
+        $this->assertSame(TicketWorkflowAutomationService::EXPECTED_RESOLUTION_SOURCE_AUTO, $ticket->expected_resolution_source);
+
+        Carbon::setTestNow();
+    }
+
+    public function test_priority_change_recalculates_auto_deadline_but_not_manual_deadline(): void
+    {
+        $this->configureExpectedResolutionDays();
+        Carbon::setTestNow(Carbon::parse('2026-05-05 11:00:00'));
+
+        $requester = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $assignee = $this->createUserWithRole($this->solverRole);
+        $criticalPriority = TicketPriority::query()->create([
+            'name' => 'Critical',
+            'slug' => 'critical',
+            'sort_order' => 2,
+        ]);
+        $manualDeadline = Carbon::parse('2026-05-20 12:00:00');
+        $autoTicket = $this->createTicket([
+            'requester' => $requester,
+            'assignee' => $assignee,
+            'visibility' => Ticket::VISIBILITY_INTERNAL,
+            'expected_resolution_at' => Carbon::parse('2026-05-10 12:00:00'),
+            'expected_resolution_source' => TicketWorkflowAutomationService::EXPECTED_RESOLUTION_SOURCE_AUTO,
+        ]);
+        $manualTicket = $this->createTicket([
+            'requester' => $requester,
+            'assignee' => $assignee,
+            'visibility' => Ticket::VISIBILITY_INTERNAL,
+            'expected_resolution_at' => $manualDeadline,
+            'expected_resolution_source' => TicketWorkflowAutomationService::EXPECTED_RESOLUTION_SOURCE_MANUAL,
+        ]);
+
+        $this->actingAs($solver)
+            ->patch(route('tickets.priority.update', $autoTicket), [
+                'priority_id' => $criticalPriority->id,
+            ])
+            ->assertRedirect(route('tickets.show', $autoTicket));
+
+        $this->actingAs($solver)
+            ->patch(route('tickets.priority.update', $manualTicket), [
+                'priority_id' => $criticalPriority->id,
+            ])
+            ->assertRedirect(route('tickets.show', $manualTicket));
+
+        $autoTicket->refresh();
+        $manualTicket->refresh();
+
+        $this->assertTrue($autoTicket->expected_resolution_at?->equalTo(Carbon::parse('2026-05-06 11:00:00')) ?? false);
+        $this->assertSame(TicketWorkflowAutomationService::EXPECTED_RESOLUTION_SOURCE_AUTO, $autoTicket->expected_resolution_source);
+        $this->assertTrue($manualTicket->expected_resolution_at?->equalTo($manualDeadline) ?? false);
+        $this->assertSame(TicketWorkflowAutomationService::EXPECTED_RESOLUTION_SOURCE_MANUAL, $manualTicket->expected_resolution_source);
+
+        Carbon::setTestNow();
+    }
+
+    public function test_priority_change_without_assignee_does_not_set_expected_resolution(): void
+    {
+        $this->configureExpectedResolutionDays();
+        $solver = $this->createUserWithRole($this->solverRole);
+        $criticalPriority = TicketPriority::query()->create([
+            'name' => 'Critical',
+            'slug' => 'critical',
+            'sort_order' => 2,
+        ]);
+        $ticket = $this->createTicket([
+            'visibility' => Ticket::VISIBILITY_INTERNAL,
+        ]);
+
+        $this->actingAs($solver)
+            ->patch(route('tickets.priority.update', $ticket), [
+                'priority_id' => $criticalPriority->id,
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        $ticket->refresh();
+
+        $this->assertNull($ticket->expected_resolution_at);
+        $this->assertNull($ticket->expected_resolution_source);
+    }
+
+    public function test_auto_expected_resolution_updates_do_not_send_email_notifications(): void
+    {
+        config()->set('helpdesk.notifications.mail.enabled', true);
+        $this->configureExpectedResolutionDays();
+        Notification::fake();
+        Carbon::setTestNow(Carbon::parse('2026-05-05 12:00:00'));
+
+        $requester = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $assignee = $this->createUserWithRole($this->solverRole);
+        TicketStatus::query()->create([
+            'name' => 'Assigned',
+            'slug' => 'assigned',
+            'sort_order' => 2,
+        ]);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'visibility' => Ticket::VISIBILITY_INTERNAL,
+        ]);
+
+        $this->actingAs($solver)
+            ->patch(route('tickets.assignee.update', $ticket), [
+                'assignee_id' => $assignee->id,
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        Notification::assertNotSentTo(
+            $requester,
+            TicketEventNotification::class,
+            fn (TicketEventNotification $notification) => $notification->event === 'expected_resolution_changed'
+        );
+
+        Carbon::setTestNow();
+    }
+
+    public function test_ticket_index_due_filter_can_show_assigned_open_tickets_without_expected_resolution(): void
+    {
+        $solver = $this->createUserWithRole($this->solverRole);
+        $assignedStatus = TicketStatus::query()->create([
+            'name' => 'Assigned',
+            'slug' => 'assigned',
+            'sort_order' => 2,
+        ]);
+        $missingDeadlineTicket = $this->createTicket([
+            'assignee' => $solver,
+            'status' => $assignedStatus,
+            'visibility' => Ticket::VISIBILITY_INTERNAL,
+            'subject' => 'Assigned missing expected resolution',
+        ]);
+        $withDeadlineTicket = $this->createTicket([
+            'assignee' => $solver,
+            'status' => $assignedStatus,
+            'visibility' => Ticket::VISIBILITY_INTERNAL,
+            'subject' => 'Assigned with expected resolution',
+            'expected_resolution_at' => Carbon::parse('2026-05-10 12:00:00'),
+            'expected_resolution_source' => TicketWorkflowAutomationService::EXPECTED_RESOLUTION_SOURCE_MANUAL,
+        ]);
+
+        $this->actingAs($solver)
+            ->get(route('tickets.index', [
+                'scope' => 'open',
+                'relation' => 'assigned',
+                'due' => 'missing_expected_resolution',
+            ]))
+            ->assertOk()
+            ->assertSeeText($missingDeadlineTicket->subject)
+            ->assertDontSeeText($withDeadlineTicket->subject);
     }
 
     public function test_ticket_list_uses_czech_translations_for_system_labels_and_values(): void
@@ -2597,6 +2911,16 @@ class TicketVisibilityTest extends TestCase
             'ticket_status_id' => ($overrides['status'] ?? $this->defaultStatus)->id,
             'ticket_priority_id' => ($overrides['priority'] ?? $this->defaultPriority)->id,
             'ticket_category_id' => ($overrides['category'] ?? $this->defaultCategory)->id,
+            'expected_resolution_at' => $overrides['expected_resolution_at'] ?? null,
+            'expected_resolution_source' => $overrides['expected_resolution_source'] ?? null,
         ]);
+    }
+
+    private function configureExpectedResolutionDays(): void
+    {
+        config()->set('helpdesk.workflow.expected_resolution_days.low', 10);
+        config()->set('helpdesk.workflow.expected_resolution_days.normal', 5);
+        config()->set('helpdesk.workflow.expected_resolution_days.high', 2);
+        config()->set('helpdesk.workflow.expected_resolution_days.critical', 1);
     }
 }

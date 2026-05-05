@@ -89,6 +89,12 @@ return [
     */
     'workflow' => [
         'resolved_auto_close_days' => (int) env('HELPDESK_RESOLVED_AUTO_CLOSE_DAYS', 5),
+        'expected_resolution_days' => [
+            'low' => (int) env('HELPDESK_EXPECTED_RESOLUTION_LOW_DAYS', 10),
+            'normal' => (int) env('HELPDESK_EXPECTED_RESOLUTION_NORMAL_DAYS', 5),
+            'high' => (int) env('HELPDESK_EXPECTED_RESOLUTION_HIGH_DAYS', 2),
+            'critical' => (int) env('HELPDESK_EXPECTED_RESOLUTION_CRITICAL_DAYS', 1),
+        ],
     ],
 
     /*

@@ -25,6 +25,7 @@ return [
         'new_unassigned_tickets' => 'New unassigned',
         'my_assigned_tickets' => 'Assigned to me',
         'waiting_for_user' => 'Waiting for user',
+        'without_expected_resolution' => 'Without deadline',
         'due_soon_or_overdue' => 'Overdue / due soon',
     ],
     'pinned' => [
@@ -73,6 +74,11 @@ return [
             'heading' => 'Overdue / due soon',
             'subheading' => 'Open tickets with expected resolution within the next three days or already overdue.',
             'empty' => 'No visible tickets are due soon or overdue.',
+        ],
+        'without_expected_resolution' => [
+            'heading' => 'Without expected resolution',
+            'subheading' => 'Your assigned open tickets without an expected resolution date.',
+            'empty' => 'Your assigned open tickets all have an expected resolution date.',
         ],
     ],
     'admin' => [

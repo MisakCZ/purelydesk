@@ -25,6 +25,7 @@ return [
         'new_unassigned_tickets' => 'Nové nepřiřazené',
         'my_assigned_tickets' => 'Moje přiřazené',
         'waiting_for_user' => 'Čeká na uživatele',
+        'without_expected_resolution' => 'Bez termínu',
         'due_soon_or_overdue' => 'Po termínu / blíží se termín',
     ],
     'pinned' => [
@@ -73,6 +74,11 @@ return [
             'heading' => 'Po termínu / blíží se termín',
             'subheading' => 'Otevřené tickety s očekávaným vyřešením během tří dnů nebo už po termínu.',
             'empty' => 'Žádné viditelné tickety nejsou po termínu ani před blízkým termínem.',
+        ],
+        'without_expected_resolution' => [
+            'heading' => 'Bez očekávaného termínu',
+            'subheading' => 'Vaše přiřazené otevřené tickety bez očekávaného termínu vyřešení.',
+            'empty' => 'Všechny vaše přiřazené otevřené tickety mají očekávaný termín vyřešení.',
         ],
     ],
     'admin' => [

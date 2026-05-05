@@ -32,7 +32,7 @@ return [
             'resolved' => 'The ticket was marked as resolved. In the ticket detail you can confirm the resolution or report that the problem still persists.',
             'problem_persists' => 'The requester marked that the problem still persists.',
             'closed' => 'The ticket was closed.',
-            'expected_resolution_changed' => 'The expected resolution was changed to: :expected_resolution_at.',
+            'expected_resolution_changed' => 'The expected resolution changed from :old_expected_resolution_at to :expected_resolution_at.',
         ],
     ],
     'inbound' => [

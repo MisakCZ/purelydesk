@@ -319,9 +319,14 @@ class TicketController extends Controller
     {
         $this->authorizeTicketAbility('updatePriority', $ticket);
 
-        return $this->applyTicketUpdateWithHistory($ticket, [
-            'ticket_priority_id' => $request->integer('priority_id'),
-        ], __('tickets.flash.priority_updated'), 'priority_update', $request, 'tickets.flash.priority_updated');
+        return $this->applyTicketUpdateWithHistory(
+            $ticket,
+            $this->workflowAutomationService()->attributesForPriorityUpdate($ticket, $request->integer('priority_id')),
+            __('tickets.flash.priority_updated'),
+            'priority_update',
+            $request,
+            'tickets.flash.priority_updated',
+        );
     }
 
     public function updateCategory(UpdateTicketCategoryRequest $request, Ticket $ticket): RedirectResponse
@@ -442,7 +447,7 @@ class TicketController extends Controller
 
         return $this->applyTicketUpdateWithHistory(
             $ticket,
-            $this->workflowAutomationService()->attributesForRequesterActivity(
+            $this->workflowAutomationService()->attributesForTicketUpdate(
                 $ticket,
                 $this->currentHelpdeskUser(),
                 $this->buildEditableTicketAttributes($validated),
@@ -604,6 +609,9 @@ class TicketController extends Controller
             'assignee_id' => $ticket->assignee_id !== null ? (int) $ticket->assignee_id : null,
             'ticket_status_id' => $ticket->ticket_status_id !== null ? (int) $ticket->ticket_status_id : null,
             'expected_resolution_at' => $ticket->expected_resolution_at?->toIso8601String(),
+            'expected_resolution_source' => Ticket::supportsExpectedResolutionSource()
+                ? $ticket->expected_resolution_source
+                : null,
         ];
     }
 
@@ -643,6 +651,7 @@ class TicketController extends Controller
 
         $this->ticketNotificationService()->notify($ticket, $event, $actor, [
             'assignee' => $ticket->assignee?->displayName() ?? __('tickets.common.unassigned'),
+            'old_expected_resolution_at' => $before['expected_resolution_at'] ?? null,
         ]);
     }
 
@@ -776,6 +785,15 @@ class TicketController extends Controller
                 $query
                     ->whereNotNull('expected_resolution_at')
                     ->where('expected_resolution_at', '<=', Carbon::now()->addDays(3));
+            })
+            ->when($filters['due'] === 'missing_expected_resolution', function (Builder $query): void {
+                if (! Ticket::supportsExpectedResolution()) {
+                    $query->whereRaw('1 = 0');
+
+                    return;
+                }
+
+                $query->whereNull('expected_resolution_at');
             })
             ->when($filters['watched'] === '1', function (Builder $query) use ($watcherUser): void {
                 if (! $watcherUser instanceof User) {
@@ -921,7 +939,7 @@ class TicketController extends Controller
             'category' => (string) ($filters['category'] ?? ''),
             'relation' => in_array($relation, ['requester', 'assigned', 'watched', 'unassigned'], true) ? $relation : '',
             'scope' => in_array($scope, ['open', 'finished'], true) ? $scope : '',
-            'due' => $due === 'overdue_or_soon' ? 'overdue_or_soon' : '',
+            'due' => in_array($due, ['overdue_or_soon', 'missing_expected_resolution'], true) ? $due : '',
             'watched' => (string) ($filters['watched'] ?? '') === '1' ? '1' : '',
             'archive' => $archive === 'archived' ? 'archived' : '',
             'sort' => in_array($sort, self::INDEX_SORT_COLUMNS, true) ? $sort : self::DEFAULT_INDEX_SORT,
@@ -1065,6 +1083,9 @@ class TicketController extends Controller
             $attributes['expected_resolution_at'] = $validated['expected_resolution_at'] !== null
                 ? Carbon::parse($validated['expected_resolution_at'])
                 : null;
+            $attributes['expected_resolution_source'] = $validated['expected_resolution_at'] !== null
+                ? TicketWorkflowAutomationService::EXPECTED_RESOLUTION_SOURCE_MANUAL
+                : null;
         }
 
         return $attributes;
@@ -1165,6 +1186,9 @@ class TicketController extends Controller
                 ]
                 : null,
             'expected_resolution_at' => $ticket->expected_resolution_at?->toIso8601String(),
+            'expected_resolution_source' => Ticket::supportsExpectedResolutionSource()
+                ? $ticket->expected_resolution_source
+                : null,
             'closed_at' => $ticket->closed_at?->toIso8601String(),
             'archived_at' => Ticket::supportsArchiving()
                 ? $ticket->archived_at?->toIso8601String()

@@ -80,6 +80,20 @@ class TicketEventNotification extends Notification
             'assignee' => (string) ($this->context['assignee'] ?? __('tickets.common.unassigned', [], $locale)),
             'expected_resolution_at' => $this->ticket->expected_resolution_at?->locale($locale)->translatedFormat(__('tickets.formats.datetime', [], $locale))
                 ?? __('tickets.common.not_available', [], $locale),
+            'old_expected_resolution_at' => $this->formatContextDate('old_expected_resolution_at', $locale),
         ], $locale);
+    }
+
+    private function formatContextDate(string $key, string $locale): string
+    {
+        $value = $this->context[$key] ?? null;
+
+        if (! is_string($value) || $value === '') {
+            return __('tickets.common.not_available', [], $locale);
+        }
+
+        return \Illuminate\Support\Carbon::parse($value)
+            ->locale($locale)
+            ->translatedFormat(__('tickets.formats.datetime', [], $locale));
     }
 }

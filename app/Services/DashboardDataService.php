@@ -37,6 +37,9 @@ class DashboardDataService
                     'my_assigned_tickets' => $this->myAssignedTickets($user),
                     'waiting_for_user' => $this->waitingForUser($user),
                     'resolved_waiting_confirmation' => $this->resolvedWaitingConfirmation($user),
+                    'without_expected_resolution' => Ticket::supportsExpectedResolution()
+                        ? $this->withoutExpectedResolution($user)
+                        : collect(),
                     'due_soon_or_overdue' => Ticket::supportsExpectedResolution()
                         ? $this->dueSoonOrOverdue($user)
                         : collect(),
@@ -47,6 +50,9 @@ class DashboardDataService
                     'new_unassigned_tickets' => $this->newUnassignedTicketsQuery($user)->count(),
                     'my_assigned_tickets' => $this->myAssignedTicketsQuery($user)->count(),
                     'waiting_for_user' => $this->waitingForUserQuery($user)->count(),
+                    'without_expected_resolution' => Ticket::supportsExpectedResolution()
+                        ? $this->withoutExpectedResolutionQuery($user)->count()
+                        : 0,
                     'due_soon_or_overdue' => Ticket::supportsExpectedResolution()
                         ? $this->dueSoonOrOverdueQuery($user)->count()
                         : 0,
@@ -216,6 +222,17 @@ class DashboardDataService
             ->get();
     }
 
+    /**
+     * @return Collection<int, Ticket>
+     */
+    private function withoutExpectedResolution(User $user): Collection
+    {
+        return $this->withoutExpectedResolutionQuery($user)
+            ->orderByDesc('updated_at')
+            ->limit(self::LIMIT)
+            ->get();
+    }
+
     private function newUnassignedTicketsQuery(User $user): Builder
     {
         return $this->baseTicketQuery($user)
@@ -242,6 +259,14 @@ class DashboardDataService
         return $this->baseTicketQuery($user)
             ->whereNotNull('expected_resolution_at')
             ->where('expected_resolution_at', '<=', Carbon::now()->addDays(3))
+            ->tap(fn (Builder $query) => $this->whereNotFinal($query));
+    }
+
+    private function withoutExpectedResolutionQuery(User $user): Builder
+    {
+        return $this->baseTicketQuery($user)
+            ->where('assignee_id', $user->id)
+            ->whereNull('expected_resolution_at')
             ->tap(fn (Builder $query) => $this->whereNotFinal($query));
     }
 

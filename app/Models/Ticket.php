@@ -33,6 +33,7 @@ class Ticket extends Model
         'ticket_category_id',
         'due_at',
         'expected_resolution_at',
+        'expected_resolution_source',
         'last_activity_at',
         'resolved_at',
         'auto_close_at',
@@ -79,6 +80,17 @@ class Ticket extends Model
         }
 
         return $supportsExpectedResolution;
+    }
+
+    public static function supportsExpectedResolutionSource(): bool
+    {
+        static $supportsExpectedResolutionSource;
+
+        if ($supportsExpectedResolutionSource === null) {
+            $supportsExpectedResolutionSource = Schema::hasColumn('tickets', 'expected_resolution_source');
+        }
+
+        return $supportsExpectedResolutionSource;
     }
 
     public static function supportsArchiving(): bool

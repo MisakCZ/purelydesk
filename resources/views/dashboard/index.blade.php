@@ -26,7 +26,7 @@
 
         .dashboard-summary {
             display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
+            grid-template-columns: repeat(5, minmax(0, 1fr));
             gap: 0.7rem;
             margin-bottom: 0.8rem;
         }
@@ -432,12 +432,13 @@
 
         @if ($dashboard['isSolverDashboard'])
             <div class="dashboard-summary" aria-label="{{ __('dashboard.summary.label') }}">
-                @foreach (['new_unassigned_tickets', 'my_assigned_tickets', 'waiting_for_user', 'due_soon_or_overdue'] as $summaryKey)
-                    @if ($summaryKey !== 'due_soon_or_overdue' || $dashboard['showExpectedResolutionSection'])
+                @foreach (['new_unassigned_tickets', 'my_assigned_tickets', 'waiting_for_user', 'without_expected_resolution', 'due_soon_or_overdue'] as $summaryKey)
+                    @if (! in_array($summaryKey, ['without_expected_resolution', 'due_soon_or_overdue'], true) || $dashboard['showExpectedResolutionSection'])
                         <a class="dashboard-summary-card" href="{{ match ($summaryKey) {
                             'new_unassigned_tickets' => route('tickets.index', ['status' => 'new', 'relation' => 'unassigned']),
                             'my_assigned_tickets' => route('tickets.index', ['scope' => 'open', 'relation' => 'assigned']),
                             'waiting_for_user' => route('tickets.index', ['status' => 'waiting_user']),
+                            'without_expected_resolution' => route('tickets.index', ['scope' => 'open', 'relation' => 'assigned', 'due' => 'missing_expected_resolution']),
                             default => route('tickets.index', ['scope' => 'open', 'due' => 'overdue_or_soon']),
                         } }}">
                             <span class="dashboard-summary-count">{{ $dashboard['solverCounts'][$summaryKey] ?? 0 }}</span>
@@ -480,6 +481,13 @@
                     'dateTimeFormat' => $dateTimeFormat,
                 ])
                 @if ($dashboard['showExpectedResolutionSection'])
+                    @include('dashboard.partials.section', [
+                        'key' => 'without_expected_resolution',
+                        'tickets' => $dashboard['solverSections']['without_expected_resolution'],
+                        'href' => route('tickets.index', ['scope' => 'open', 'relation' => 'assigned', 'due' => 'missing_expected_resolution']),
+                        'locale' => $locale,
+                        'dateTimeFormat' => $dateTimeFormat,
+                    ])
                     @include('dashboard.partials.section', [
                         'key' => 'due_soon_or_overdue',
                         'tickets' => $dashboard['solverSections']['due_soon_or_overdue'],

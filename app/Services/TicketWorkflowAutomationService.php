@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Ticket;
+use App\Models\TicketPriority;
 use App\Models\TicketStatus;
 use App\Models\User;
 use Carbon\CarbonImmutable;
@@ -10,6 +11,9 @@ use Illuminate\Support\Facades\Schema;
 
 class TicketWorkflowAutomationService
 {
+    public const EXPECTED_RESOLUTION_SOURCE_AUTO = 'auto';
+    public const EXPECTED_RESOLUTION_SOURCE_MANUAL = 'manual';
+
     /**
      * @var array<string, int|null>
      */
@@ -42,14 +46,14 @@ class TicketWorkflowAutomationService
             );
         }
 
-        if (! $ticket->hasStatusSlug('new')) {
-            return $attributes;
+        if ($ticket->hasStatusSlug('new')) {
+            $attributes = array_replace(
+                $attributes,
+                $this->attributesForStatusIdentifier($ticket, 'assigned'),
+            );
         }
 
-        return array_replace(
-            $attributes,
-            $this->attributesForStatusIdentifier($ticket, 'assigned'),
-        );
+        return $this->applyMissingExpectedResolution($ticket, $attributes);
     }
 
     /**
@@ -70,6 +74,27 @@ class TicketWorkflowAutomationService
             $attributes,
             $this->attributesForStatusIdentifier($ticket, 'assigned'),
         );
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     * @return array<string, mixed>
+     */
+    public function attributesForTicketUpdate(Ticket $ticket, ?User $actor, array $attributes = []): array
+    {
+        $attributes = $this->attributesForPriorityChange($ticket, (int) ($attributes['ticket_priority_id'] ?? $ticket->ticket_priority_id), $attributes);
+
+        return $this->attributesForRequesterActivity($ticket, $actor, $attributes);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function attributesForPriorityUpdate(Ticket $ticket, int $priorityId): array
+    {
+        return $this->attributesForPriorityChange($ticket, $priorityId, [
+            'ticket_priority_id' => $priorityId,
+        ]);
     }
 
     /**
@@ -119,11 +144,90 @@ class TicketWorkflowAutomationService
             ]);
         }
 
-        return array_replace($attributes, [
+        $attributes = array_replace($attributes, [
             'resolved_at' => null,
             'auto_close_at' => null,
             'closed_at' => null,
         ]);
+
+        if (in_array($targetSlug, ['assigned', 'in_progress'], true)) {
+            return $this->applyMissingExpectedResolution($ticket, $attributes);
+        }
+
+        return $attributes;
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     * @return array<string, mixed>
+     */
+    private function attributesForPriorityChange(Ticket $ticket, int $priorityId, array $attributes): array
+    {
+        if ($priorityId <= 0 || (int) $ticket->ticket_priority_id === $priorityId) {
+            return $attributes;
+        }
+
+        if (($attributes['assignee_id'] ?? $ticket->assignee_id) === null) {
+            return $attributes;
+        }
+
+        if (array_key_exists('expected_resolution_at', $attributes)) {
+            return $attributes;
+        }
+
+        if ($ticket->expected_resolution_at === null) {
+            return $this->withAutomaticExpectedResolution($attributes, $priorityId);
+        }
+
+        if (Ticket::supportsExpectedResolutionSource() && $ticket->expected_resolution_source === self::EXPECTED_RESOLUTION_SOURCE_AUTO) {
+            return $this->withAutomaticExpectedResolution($attributes, $priorityId);
+        }
+
+        return $attributes;
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     * @return array<string, mixed>
+     */
+    private function applyMissingExpectedResolution(Ticket $ticket, array $attributes): array
+    {
+        if (! Ticket::supportsExpectedResolution() || array_key_exists('expected_resolution_at', $attributes)) {
+            return $attributes;
+        }
+
+        if (($attributes['assignee_id'] ?? $ticket->assignee_id) === null || $ticket->expected_resolution_at !== null) {
+            return $attributes;
+        }
+
+        return $this->withAutomaticExpectedResolution($attributes, (int) ($attributes['ticket_priority_id'] ?? $ticket->ticket_priority_id));
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     * @return array<string, mixed>
+     */
+    private function withAutomaticExpectedResolution(array $attributes, int $priorityId): array
+    {
+        if (! Ticket::supportsExpectedResolution()) {
+            return $attributes;
+        }
+
+        $attributes['expected_resolution_at'] = CarbonImmutable::now()->addDays($this->defaultDaysForPriorityId($priorityId));
+
+        if (Ticket::supportsExpectedResolutionSource()) {
+            $attributes['expected_resolution_source'] = self::EXPECTED_RESOLUTION_SOURCE_AUTO;
+        }
+
+        return $attributes;
+    }
+
+    private function defaultDaysForPriorityId(int $priorityId): int
+    {
+        $slug = TicketPriority::query()->whereKey($priorityId)->value('slug') ?: 'normal';
+        $days = (int) config("helpdesk.workflow.expected_resolution_days.{$slug}", config('helpdesk.workflow.expected_resolution_days.normal', 5));
+
+        return max(1, $days);
     }
 
     private function statusByIdentifier(string $identifier): ?TicketStatus
