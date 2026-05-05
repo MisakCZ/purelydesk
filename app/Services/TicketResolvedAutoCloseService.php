@@ -36,7 +36,10 @@ class TicketResolvedAutoCloseService
                         'auto_close_resolved',
                     );
 
-                    $this->notifications->notify($updatedTicket, 'closed', null, excludeActor: false);
+                    $this->notifications->notify($updatedTicket, 'closed', null, [
+                        'close_reason' => 'automatic',
+                        'auto_close_days' => max(1, (int) config('helpdesk.workflow.resolved_auto_close_days', 5)),
+                    ], excludeActor: false);
                     $closedCount++;
                 }
             });

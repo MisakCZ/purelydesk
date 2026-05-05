@@ -641,7 +641,10 @@ class TicketController extends Controller
             $event = $this->ticketStatusNotificationEvent($ticket);
         }
 
-        if ($event === null && $action === 'ticket_update' && ($before['expected_resolution_at'] ?? null) !== $ticket->expected_resolution_at?->toIso8601String()) {
+        if ($event === null
+            && in_array($action, ['ticket_update', 'priority_update'], true)
+            && ($before['expected_resolution_at'] ?? null) !== $ticket->expected_resolution_at?->toIso8601String()
+        ) {
             $event = 'expected_resolution_changed';
         }
 
@@ -651,8 +654,22 @@ class TicketController extends Controller
 
         $this->ticketNotificationService()->notify($ticket, $event, $actor, [
             'assignee' => $ticket->assignee?->displayName() ?? __('tickets.common.unassigned'),
+            'close_reason' => $this->closeReasonForNotification($ticket, $action, $actor),
             'old_expected_resolution_at' => $before['expected_resolution_at'] ?? null,
         ]);
+    }
+
+    private function closeReasonForNotification(Ticket $ticket, string $action, ?User $actor): ?string
+    {
+        if ($action !== 'requester_confirm_resolution') {
+            return null;
+        }
+
+        if ($actor instanceof User && (int) $actor->id === (int) $ticket->requester_id) {
+            return 'requester_confirmed';
+        }
+
+        return 'manual';
     }
 
     private function ticketStatusNotificationEvent(Ticket $ticket): string

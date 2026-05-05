@@ -6,6 +6,7 @@ return [
         'greeting' => 'Hello,',
         'action' => 'View ticket detail',
         'reply_marker' => 'Reply above this line.',
+        'no_reply_instruction' => 'Please do not reply to this e-mail. Add your comment in the ticket detail using the link below.',
         'events' => [
             'created' => 'New ticket',
             'public_comment' => 'New comment',
@@ -31,7 +32,9 @@ return [
             'status_changed' => 'The ticket status was changed to: :status.',
             'resolved' => 'The ticket was marked as resolved. In the ticket detail you can confirm the resolution or report that the problem still persists.',
             'problem_persists' => 'The requester marked that the problem still persists.',
-            'closed' => 'The ticket was closed.',
+            'closed' => 'The ticket has been closed in the helpdesk.',
+            'closed_by_requester' => 'The requester confirmed the resolution. The ticket has therefore been closed.',
+            'closed_automatically' => 'The ticket was automatically closed because the requester did not respond within :days days after it was marked as resolved.',
             'expected_resolution_changed' => 'The expected resolution changed from :old_expected_resolution_at to :expected_resolution_at.',
         ],
     ],

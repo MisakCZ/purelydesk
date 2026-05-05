@@ -285,7 +285,7 @@ In production, run Laravel's scheduler every minute. The scheduler runs `helpdes
 
 ### Reply Tokens and Authorization
 
-Outgoing ticket notifications include a tokenized `Reply-To` address when plus addressing is enabled:
+Outgoing ticket notifications include a tokenized `Reply-To` address only when inbound mail is enabled and plus addressing is enabled:
 
 ```text
 helpdesk-replies+<token>@helpdesk.example.org
@@ -301,7 +301,9 @@ The subject marker is only a fallback for locating a candidate ticket. It is not
 
 If `HELPDESK_INBOUND_USE_PLUS_ADDRESSING=false`, outgoing notifications use the base reply address without a token in the address. In that mode, subject fallback can work only for requester or assignee replies and still requires permission checks.
 
-Notification bodies include a localized reply marker:
+If `HELPDESK_INBOUND_MAIL_ENABLED=false`, outbound ticket notifications do not include the reply marker and do not use a tokenized `Reply-To` address. Users should add comments through the web ticket detail link instead. Enable inbound replies only after Maildir delivery and mail routing have been tested end to end.
+
+When inbound mail is enabled, notification bodies include a localized reply marker:
 
 ```text
 Reply above this line.

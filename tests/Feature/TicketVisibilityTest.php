@@ -1207,6 +1207,43 @@ class TicketVisibilityTest extends TestCase
         Notification::assertNothingSent();
     }
 
+    public function test_ticket_notification_hides_reply_marker_and_reply_to_when_inbound_mail_is_disabled(): void
+    {
+        config()->set('helpdesk.inbound.mail_enabled', false);
+        config()->set('helpdesk.inbound.reply_address', 'helpdesk-replies@example.org');
+        $requester = $this->createUserWithRole($this->userRole, ['preferred_locale' => 'en']);
+        $ticket = $this->createTicket(['requester' => $requester]);
+        $notification = new TicketEventNotification($ticket, 'created');
+
+        $mail = $notification->toMail($requester);
+        $html = (string) $mail->render();
+
+        $this->assertStringNotContainsString(__('notifications.ticket.reply_marker', [], 'en'), $html);
+        $this->assertStringContainsString('Please do not reply', $html);
+        $this->assertSame([], $mail->replyTo);
+        $this->assertDatabaseCount('ticket_reply_tokens', 0);
+    }
+
+    public function test_ticket_notification_shows_reply_marker_and_tokenized_reply_to_when_inbound_mail_is_enabled(): void
+    {
+        config()->set('helpdesk.inbound.mail_enabled', true);
+        config()->set('helpdesk.inbound.use_plus_addressing', true);
+        config()->set('helpdesk.inbound.reply_address', 'helpdesk-replies@example.org');
+        $requester = $this->createUserWithRole($this->userRole, ['preferred_locale' => 'en']);
+        $ticket = $this->createTicket(['requester' => $requester]);
+        $notification = new TicketEventNotification($ticket, 'created');
+
+        $mail = $notification->toMail($requester);
+        $html = (string) $mail->render();
+
+        $this->assertStringContainsString(__('notifications.ticket.reply_marker', [], 'en'), $html);
+        $this->assertStringNotContainsString('Please do not reply', $html);
+        $this->assertNotSame([], $mail->replyTo);
+        $this->assertStringStartsWith('helpdesk-replies+', $mail->replyTo[0][0]);
+        $this->assertStringEndsWith('@example.org', $mail->replyTo[0][0]);
+        $this->assertDatabaseCount('ticket_reply_tokens', 1);
+    }
+
     public function test_assignee_update_synchronizes_automatic_watchers(): void
     {
         $requester = $this->createUserWithRole($this->userRole);
@@ -1879,11 +1916,49 @@ class TicketVisibilityTest extends TestCase
                 $recipient,
                 TicketEventNotification::class,
                 fn (TicketEventNotification $notification) => $notification->event === 'closed'
-                    && (int) $notification->ticket->id === (int) $ticket->id,
+                    && (int) $notification->ticket->id === (int) $ticket->id
+                    && str_contains(
+                        $this->notificationHtml($notification, $recipient),
+                        __('notifications.ticket.descriptions.closed_by_requester', [], $recipient->preferred_locale ?: app()->getLocale()),
+                    ),
             );
         }
 
         Notification::assertNotSentTo($requester, TicketEventNotification::class);
+    }
+
+    public function test_manual_closed_status_notification_uses_general_closed_text(): void
+    {
+        config()->set('helpdesk.notifications.mail.enabled', true);
+        Notification::fake();
+        $requester = $this->createUserWithRole($this->userRole, ['preferred_locale' => 'en']);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $closedStatus = TicketStatus::query()->create([
+            'name' => 'Closed',
+            'slug' => 'closed',
+            'sort_order' => 3,
+            'is_closed' => true,
+        ]);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+        ]);
+
+        $this->actingAs($solver)
+            ->patch(route('tickets.status.update', $ticket), [
+                'status_id' => $closedStatus->id,
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        Notification::assertSentTo(
+            $requester,
+            TicketEventNotification::class,
+            fn (TicketEventNotification $notification) => $notification->event === 'closed'
+                && str_contains(
+                    $this->notificationHtml($notification, $requester),
+                    __('notifications.ticket.descriptions.closed', [], 'en'),
+                ),
+        );
     }
 
     public function test_admin_can_confirm_resolved_ticket(): void
@@ -2039,10 +2114,11 @@ class TicketVisibilityTest extends TestCase
         Carbon::setTestNow('2026-04-30 10:00:00');
         Notification::fake();
         config(['helpdesk.notifications.mail.enabled' => true]);
+        config(['helpdesk.workflow.resolved_auto_close_days' => 5]);
 
         try {
-            $requester = $this->createUserWithRole($this->userRole, ['email' => 'requester@example.org']);
-            $assignee = $this->createUserWithRole($this->solverRole, ['email' => 'solver@example.org']);
+            $requester = $this->createUserWithRole($this->userRole, ['email' => 'requester@example.org', 'preferred_locale' => 'en']);
+            $assignee = $this->createUserWithRole($this->solverRole, ['email' => 'solver@example.org', 'preferred_locale' => 'en']);
             $resolvedStatus = TicketStatus::query()->create([
                 'name' => 'Resolved',
                 'slug' => 'resolved',
@@ -2083,8 +2159,17 @@ class TicketVisibilityTest extends TestCase
                 ->get()
                 ->contains(fn (TicketHistory $entry) => ($entry->meta['action'] ?? null) === 'auto_close_resolved'));
 
-            Notification::assertSentTo($requester, TicketEventNotification::class);
-            Notification::assertSentTo($assignee, TicketEventNotification::class);
+            foreach ([$requester, $assignee] as $recipient) {
+                Notification::assertSentTo(
+                    $recipient,
+                    TicketEventNotification::class,
+                    fn (TicketEventNotification $notification) => $notification->event === 'closed'
+                        && str_contains(
+                            $this->notificationHtml($notification, $recipient),
+                            __('notifications.ticket.descriptions.closed_automatically', ['days' => 5], 'en'),
+                        ),
+                );
+            }
         } finally {
             Carbon::setTestNow();
         }
@@ -2827,6 +2912,94 @@ class TicketVisibilityTest extends TestCase
         Carbon::setTestNow();
     }
 
+    public function test_priority_update_recalculating_auto_expected_resolution_notifies_requester_only(): void
+    {
+        config()->set('helpdesk.notifications.mail.enabled', true);
+        $this->configureExpectedResolutionDays();
+        Notification::fake();
+        Carbon::setTestNow(Carbon::parse('2026-05-05 11:00:00'));
+
+        $requester = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $assignee = $this->createUserWithRole($this->solverRole);
+        $watcher = $this->createUserWithRole($this->userRole);
+        $criticalPriority = TicketPriority::query()->create([
+            'name' => 'Critical',
+            'slug' => 'critical',
+            'sort_order' => 2,
+        ]);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'assignee' => $assignee,
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+            'expected_resolution_at' => Carbon::parse('2026-05-10 12:00:00'),
+            'expected_resolution_source' => TicketWorkflowAutomationService::EXPECTED_RESOLUTION_SOURCE_AUTO,
+        ]);
+        $ticket->watcherEntries()->create([
+            'user_id' => $watcher->id,
+            'is_manual' => true,
+            'is_auto_participant' => false,
+        ]);
+
+        $this->actingAs($solver)
+            ->patch(route('tickets.priority.update', $ticket), [
+                'priority_id' => $criticalPriority->id,
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        $ticket->refresh();
+
+        $this->assertTrue($ticket->expected_resolution_at?->equalTo(Carbon::parse('2026-05-06 11:00:00')) ?? false);
+        Notification::assertSentTo(
+            $requester,
+            TicketEventNotification::class,
+            fn (TicketEventNotification $notification) => $notification->event === 'expected_resolution_changed'
+                && (int) $notification->ticket->id === (int) $ticket->id,
+        );
+        Notification::assertNotSentTo($assignee, TicketEventNotification::class);
+        Notification::assertNotSentTo($watcher, TicketEventNotification::class);
+
+        Carbon::setTestNow();
+    }
+
+    public function test_priority_update_with_manual_expected_resolution_does_not_send_expected_resolution_notification(): void
+    {
+        config()->set('helpdesk.notifications.mail.enabled', true);
+        $this->configureExpectedResolutionDays();
+        Notification::fake();
+        Carbon::setTestNow(Carbon::parse('2026-05-05 11:00:00'));
+
+        $requester = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $assignee = $this->createUserWithRole($this->solverRole);
+        $criticalPriority = TicketPriority::query()->create([
+            'name' => 'Critical',
+            'slug' => 'critical',
+            'sort_order' => 2,
+        ]);
+        $manualDeadline = Carbon::parse('2026-05-20 12:00:00');
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'assignee' => $assignee,
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+            'expected_resolution_at' => $manualDeadline,
+            'expected_resolution_source' => TicketWorkflowAutomationService::EXPECTED_RESOLUTION_SOURCE_MANUAL,
+        ]);
+
+        $this->actingAs($solver)
+            ->patch(route('tickets.priority.update', $ticket), [
+                'priority_id' => $criticalPriority->id,
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        $ticket->refresh();
+
+        $this->assertTrue($ticket->expected_resolution_at?->equalTo($manualDeadline) ?? false);
+        Notification::assertNothingSent();
+
+        Carbon::setTestNow();
+    }
+
     public function test_priority_change_without_assignee_does_not_set_expected_resolution(): void
     {
         $this->configureExpectedResolutionDays();
@@ -3154,5 +3327,10 @@ class TicketVisibilityTest extends TestCase
         config()->set('helpdesk.workflow.expected_resolution_days.normal', 5);
         config()->set('helpdesk.workflow.expected_resolution_days.high', 2);
         config()->set('helpdesk.workflow.expected_resolution_days.critical', 1);
+    }
+
+    private function notificationHtml(TicketEventNotification $notification, User $recipient): string
+    {
+        return (string) $notification->toMail($recipient)->render();
     }
 }

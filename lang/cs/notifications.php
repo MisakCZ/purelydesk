@@ -6,6 +6,7 @@ return [
         'greeting' => 'Dobrý den,',
         'action' => 'Zobrazit detail ticketu',
         'reply_marker' => 'Odpovězte nad tento řádek.',
+        'no_reply_instruction' => 'Na tento e-mail prosím neodpovídejte. Komentář doplňte v detailu ticketu přes odkaz níže.',
         'events' => [
             'created' => 'Nový ticket',
             'public_comment' => 'Nový komentář',
@@ -31,7 +32,9 @@ return [
             'status_changed' => 'Status ticketu byl změněn na: :status.',
             'resolved' => 'Ticket byl označen jako vyřešený. V detailu můžete potvrdit vyřešení, nebo oznámit, že problém trvá.',
             'problem_persists' => 'Zadavatel označil, že problém stále trvá.',
-            'closed' => 'Ticket byl uzavřen.',
+            'closed' => 'Ticket byl uzavřen v helpdesku.',
+            'closed_by_requester' => 'Zadavatel potvrdil vyřešení ticketu. Ticket byl proto uzavřen.',
+            'closed_automatically' => 'Ticket byl automaticky uzavřen, protože po označení jako vyřešený nepřišla během :days dnů žádná reakce zadavatele.',
             'expected_resolution_changed' => 'Předpokládané vyřešení bylo změněno z :old_expected_resolution_at na :expected_resolution_at.',
         ],
     ],

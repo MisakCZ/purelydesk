@@ -285,7 +285,7 @@ V produkci spouštějte Laravel scheduler každou minutu. Scheduler spouští `h
 
 ### Reply tokeny a autorizace
 
-Odchozí ticket notifikace obsahují tokenizovanou adresu `Reply-To`, pokud je zapnutý plus addressing:
+Odchozí ticket notifikace obsahují tokenizovanou adresu `Reply-To` pouze tehdy, když je zapnutý inbound mail a zároveň plus addressing:
 
 ```text
 helpdesk-replies+<token>@helpdesk.example.org
@@ -301,7 +301,9 @@ Značka v subjectu slouží jen jako fallback pro dohledání kandidátního tic
 
 Pokud je `HELPDESK_INBOUND_USE_PLUS_ADDRESSING=false`, odchozí notifikace používají základní reply adresu bez tokenu v adrese. V tomto režimu může subject fallback fungovat jen pro odpovědi zadavatele nebo řešitele a stále se ověřují oprávnění.
 
-Tělo notifikace obsahuje lokalizovaný reply marker:
+Pokud je `HELPDESK_INBOUND_MAIL_ENABLED=false`, odchozí ticket notifikace neobsahují reply marker a nepoužívají tokenizovaný `Reply-To`. Uživatelé mají komentáře doplňovat přes webový detail ticketu. Inbound odpovědi zapněte až po otestování Maildir doručování a mail routingu od začátku do konce.
+
+Pokud je inbound mail zapnutý, tělo notifikace obsahuje lokalizovaný reply marker:
 
 ```text
 Odpovězte nad tento řádek.
