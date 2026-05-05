@@ -853,6 +853,54 @@ class TicketVisibilityTest extends TestCase
         Notification::assertNotSentTo($admin, TicketEventNotification::class);
     }
 
+    public function test_new_ticket_does_not_notify_solvers_when_solver_queue_notifications_are_disabled(): void
+    {
+        config()->set('helpdesk.notifications.mail.enabled', true);
+        config()->set('helpdesk.notifications.mail.notify_solvers_on_new_tickets', false);
+        Notification::fake();
+        $requester = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+
+        $this->actingAs($requester);
+
+        $this->post(route('tickets.store'), [
+            'subject' => 'No solver queue notification ticket',
+            'description' => 'Solver queue notifications are disabled.',
+            'priority_id' => $this->defaultPriority->id,
+            'category_id' => $this->defaultCategory->id,
+        ])->assertRedirect(route('tickets.index'));
+
+        Notification::assertSentTo($requester, TicketEventNotification::class);
+        Notification::assertNotSentTo($solver, TicketEventNotification::class);
+    }
+
+    public function test_created_notification_does_not_include_assignee_or_watchers_by_default(): void
+    {
+        config()->set('helpdesk.notifications.mail.enabled', true);
+        config()->set('helpdesk.notifications.mail.notify_solvers_on_new_tickets', false);
+        Notification::fake();
+        $requester = $this->createUserWithRole($this->userRole);
+        $assignee = $this->createUserWithRole($this->solverRole);
+        $watcher = $this->createUserWithRole($this->userRole);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'assignee' => $assignee,
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+            'subject' => 'Created event assigned watched ticket',
+        ]);
+        $ticket->watcherEntries()->create([
+            'user_id' => $watcher->id,
+            'is_manual' => true,
+            'is_auto_participant' => false,
+        ]);
+
+        app(\App\Services\TicketNotificationService::class)->notify($ticket, 'created', $requester, excludeActor: false);
+
+        Notification::assertSentTo($requester, TicketEventNotification::class);
+        Notification::assertNotSentTo($assignee, TicketEventNotification::class);
+        Notification::assertNotSentTo($watcher, TicketEventNotification::class);
+    }
+
     public function test_new_ticket_recipient_deduplication_when_requester_is_solver(): void
     {
         config()->set('helpdesk.notifications.mail.enabled', true);
@@ -891,9 +939,10 @@ class TicketVisibilityTest extends TestCase
         Notification::assertNotSentTo($admin, TicketEventNotification::class);
     }
 
-    public function test_new_private_ticket_notifies_assignee(): void
+    public function test_new_private_ticket_does_not_notify_assignee_just_because_assignee_exists(): void
     {
         config()->set('helpdesk.notifications.mail.enabled', true);
+        config()->set('helpdesk.notifications.mail.notify_solvers_on_new_tickets', false);
         Notification::fake();
         $requester = $this->createUserWithRole($this->userRole);
         $assignee = $this->createUserWithRole($this->solverRole);
@@ -907,12 +956,7 @@ class TicketVisibilityTest extends TestCase
         app(\App\Services\TicketNotificationService::class)->notify($ticket, 'created', $requester, excludeActor: false);
 
         Notification::assertSentTo($requester, TicketEventNotification::class);
-        Notification::assertSentTo(
-            $assignee,
-            TicketEventNotification::class,
-            fn (TicketEventNotification $notification) => $notification->event === 'created'
-                && (int) $notification->ticket->id === (int) $ticket->id,
-        );
+        Notification::assertNotSentTo($assignee, TicketEventNotification::class);
     }
 
     public function test_new_ticket_can_notify_admins_when_enabled(): void
@@ -1059,6 +1103,26 @@ class TicketVisibilityTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_internal_note_does_not_send_ticket_event_notification(): void
+    {
+        config()->set('helpdesk.notifications.mail.enabled', true);
+        Notification::fake();
+        $requester = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'visibility' => Ticket::VISIBILITY_INTERNAL,
+        ]);
+
+        $this->actingAs($solver)
+            ->post(route('tickets.internal-notes.store', $ticket), [
+                'note_body' => 'Internal note should stay internal.',
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        Notification::assertNothingSent();
+    }
+
     public function test_assignee_change_notifies_new_assignee(): void
     {
         config()->set('helpdesk.notifications.mail.enabled', true);
@@ -1066,6 +1130,7 @@ class TicketVisibilityTest extends TestCase
         $requester = $this->createUserWithRole($this->userRole);
         $solver = $this->createUserWithRole($this->solverRole);
         $newAssignee = $this->createUserWithRole($this->solverRole);
+        $watcher = $this->createUserWithRole($this->userRole);
         $assignedStatus = TicketStatus::query()->create([
             'name' => 'Assigned',
             'slug' => 'assigned',
@@ -1075,6 +1140,11 @@ class TicketVisibilityTest extends TestCase
             'requester' => $requester,
             'status' => $assignedStatus,
             'visibility' => Ticket::VISIBILITY_INTERNAL,
+        ]);
+        $ticket->watcherEntries()->create([
+            'user_id' => $watcher->id,
+            'is_manual' => true,
+            'is_auto_participant' => false,
         ]);
 
         $this->actingAs($solver)
@@ -1089,6 +1159,34 @@ class TicketVisibilityTest extends TestCase
             fn (TicketEventNotification $notification) => $notification->event === 'assignee_changed'
                 && (int) $notification->ticket->id === (int) $ticket->id,
         );
+        Notification::assertNotSentTo($requester, TicketEventNotification::class);
+        Notification::assertNotSentTo($watcher, TicketEventNotification::class);
+    }
+
+    public function test_assignee_change_does_not_notify_actor_when_assigning_to_self(): void
+    {
+        config()->set('helpdesk.notifications.mail.enabled', true);
+        Notification::fake();
+        $requester = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $assignedStatus = TicketStatus::query()->create([
+            'name' => 'Assigned',
+            'slug' => 'assigned',
+            'sort_order' => 2,
+        ]);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'status' => $assignedStatus,
+            'visibility' => Ticket::VISIBILITY_INTERNAL,
+        ]);
+
+        $this->actingAs($solver)
+            ->patch(route('tickets.assignee.update', $ticket), [
+                'assignee_id' => $solver->id,
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        Notification::assertNothingSent();
     }
 
     public function test_disabled_mail_notifications_prevent_ticket_notification(): void
@@ -1742,6 +1840,52 @@ class TicketVisibilityTest extends TestCase
         }
     }
 
+    public function test_requester_confirming_resolution_notifies_assignee_and_watchers_but_not_requester(): void
+    {
+        config()->set('helpdesk.notifications.mail.enabled', true);
+        Notification::fake();
+        $requester = $this->createUserWithRole($this->userRole);
+        $assignee = $this->createUserWithRole($this->solverRole);
+        $watcher = $this->createUserWithRole($this->userRole);
+        $resolvedStatus = TicketStatus::query()->create([
+            'name' => 'Resolved',
+            'slug' => 'resolved',
+            'sort_order' => 2,
+        ]);
+        TicketStatus::query()->create([
+            'name' => 'Closed',
+            'slug' => 'closed',
+            'sort_order' => 3,
+            'is_closed' => true,
+        ]);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'assignee' => $assignee,
+            'status' => $resolvedStatus,
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+        ]);
+        $ticket->watcherEntries()->create([
+            'user_id' => $watcher->id,
+            'is_manual' => true,
+            'is_auto_participant' => false,
+        ]);
+
+        $this->actingAs($requester)
+            ->patch(route('tickets.confirm-resolution', $ticket))
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        foreach ([$assignee, $watcher] as $recipient) {
+            Notification::assertSentTo(
+                $recipient,
+                TicketEventNotification::class,
+                fn (TicketEventNotification $notification) => $notification->event === 'closed'
+                    && (int) $notification->ticket->id === (int) $ticket->id,
+            );
+        }
+
+        Notification::assertNotSentTo($requester, TicketEventNotification::class);
+    }
+
     public function test_admin_can_confirm_resolved_ticket(): void
     {
         $requester = $this->createUserWithRole($this->userRole);
@@ -1812,6 +1956,51 @@ class TicketVisibilityTest extends TestCase
         $this->assertTrue($ticket->history()
             ->get()
             ->contains(fn (TicketHistory $entry) => ($entry->meta['action'] ?? null) === 'requester_report_problem_persists'));
+    }
+
+    public function test_requester_problem_persists_notifies_assignee_and_watchers_but_not_requester(): void
+    {
+        config()->set('helpdesk.notifications.mail.enabled', true);
+        Notification::fake();
+        $requester = $this->createUserWithRole($this->userRole);
+        $assignee = $this->createUserWithRole($this->solverRole);
+        $watcher = $this->createUserWithRole($this->userRole);
+        TicketStatus::query()->create([
+            'name' => 'In Progress',
+            'slug' => 'in_progress',
+            'sort_order' => 2,
+        ]);
+        $resolvedStatus = TicketStatus::query()->create([
+            'name' => 'Resolved',
+            'slug' => 'resolved',
+            'sort_order' => 3,
+        ]);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'assignee' => $assignee,
+            'status' => $resolvedStatus,
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+        ]);
+        $ticket->watcherEntries()->create([
+            'user_id' => $watcher->id,
+            'is_manual' => true,
+            'is_auto_participant' => false,
+        ]);
+
+        $this->actingAs($requester)
+            ->patch(route('tickets.report-problem-persists', $ticket))
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        foreach ([$assignee, $watcher] as $recipient) {
+            Notification::assertSentTo(
+                $recipient,
+                TicketEventNotification::class,
+                fn (TicketEventNotification $notification) => $notification->event === 'problem_persists'
+                    && (int) $notification->ticket->id === (int) $ticket->id,
+            );
+        }
+
+        Notification::assertNotSentTo($requester, TicketEventNotification::class);
     }
 
     public function test_requester_reports_problem_persists_and_unassigned_ticket_returns_to_new(): void
@@ -2359,9 +2548,17 @@ class TicketVisibilityTest extends TestCase
 
         $requester = $this->createUserWithRole($this->userRole);
         $solver = $this->createUserWithRole($this->solverRole);
+        $assignee = $this->createUserWithRole($this->solverRole);
+        $watcher = $this->createUserWithRole($this->userRole);
         $ticket = $this->createTicket([
             'requester' => $requester,
-            'visibility' => Ticket::VISIBILITY_INTERNAL,
+            'assignee' => $assignee,
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+        ]);
+        $ticket->watcherEntries()->create([
+            'user_id' => $watcher->id,
+            'is_manual' => true,
+            'is_auto_participant' => false,
         ]);
 
         $this->actingAs($solver)
@@ -2393,6 +2590,35 @@ class TicketVisibilityTest extends TestCase
             TicketEventNotification::class,
             fn (TicketEventNotification $notification) => $notification->event === 'expected_resolution_changed'
         );
+        Notification::assertNotSentTo($assignee, TicketEventNotification::class);
+        Notification::assertNotSentTo($watcher, TicketEventNotification::class);
+    }
+
+    public function test_expected_resolution_change_does_not_notify_actor_when_actor_is_requester(): void
+    {
+        config()->set('helpdesk.notifications.mail.enabled', true);
+        Notification::fake();
+
+        $adminRequester = $this->createUserWithRole($this->adminRole);
+        $assignee = $this->createUserWithRole($this->solverRole);
+        $ticket = $this->createTicket([
+            'requester' => $adminRequester,
+            'assignee' => $assignee,
+            'visibility' => Ticket::VISIBILITY_PRIVATE,
+        ]);
+
+        $this->actingAs($adminRequester)
+            ->patch(route('tickets.update', $ticket), [
+                'subject' => $ticket->subject,
+                'description' => $ticket->description,
+                'priority_id' => $this->defaultPriority->id,
+                'category_id' => $this->defaultCategory->id,
+                'expected_resolution_at' => '2026-05-04T13:30',
+                'visibility' => Ticket::VISIBILITY_PRIVATE,
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        Notification::assertNothingSent();
     }
 
     public function test_assigning_ticket_without_expected_resolution_sets_auto_deadline_from_priority(): void
@@ -2657,6 +2883,12 @@ class TicketVisibilityTest extends TestCase
             TicketEventNotification::class,
             fn (TicketEventNotification $notification) => $notification->event === 'expected_resolution_changed'
         );
+        Notification::assertSentTo(
+            $assignee,
+            TicketEventNotification::class,
+            fn (TicketEventNotification $notification) => $notification->event === 'assignee_changed'
+        );
+        Notification::assertNotSentTo($requester, TicketEventNotification::class);
 
         Carbon::setTestNow();
     }

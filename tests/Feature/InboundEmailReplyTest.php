@@ -13,7 +13,10 @@ use App\Models\User;
 use App\Services\InboundAttachmentRejectedNotifier;
 use App\Services\InboundEmailReplyService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Mail\Message;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Symfony\Component\Mime\Email;
 use Tests\TestCase;
 
 class InboundEmailReplyTest extends TestCase
@@ -183,6 +186,32 @@ class InboundEmailReplyTest extends TestCase
 
         $this->assertSame([], $this->fakeNotifier->sent);
         $this->assertStringNotContainsString(__('notifications.inbound.attachments_ignored.comment_note'), $comment->body);
+    }
+
+    public function test_attachment_rejection_notice_uses_loop_prevention_headers_and_no_tokenized_reply_to(): void
+    {
+        $sender = $this->createUser(['preferred_locale' => 'en']);
+        $ticket = $this->createTicket($sender);
+
+        Mail::shouldReceive('send')
+            ->once()
+            ->withArgs(function (string $view, array $data, callable $callback): bool {
+                $email = new Email();
+                $callback(new Message($email));
+
+                $headers = $email->getHeaders();
+                $to = array_map(fn ($address) => $address->getAddress(), $email->getTo());
+
+                $this->assertSame('emails.inbound-attachment-rejected', $view);
+                $this->assertSame(['sender@example.org'], $to);
+                $this->assertSame('auto-generated', $headers->get('Auto-Submitted')?->getBodyAsString());
+                $this->assertSame('All', $headers->get('X-Auto-Response-Suppress')?->getBodyAsString());
+                $this->assertNull($headers->get('Reply-To'));
+
+                return true;
+            });
+
+        (new InboundAttachmentRejectedNotifier())->send($ticket, 'sender@example.org', 'en');
     }
 
     private function service(): InboundEmailReplyService

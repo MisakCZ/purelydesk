@@ -55,6 +55,19 @@ Solveři mohou být defaultně notifikováni o nových veřejných a interních 
 
 Pokud je `HELPDESK_NOTIFY_ADMINS_ON_NEW_TICKETS=true`, admini mohou být přidáni do notifikací nově založených ticketů, ale příjemci se stále deduplikují a filtrují přes oprávnění ticketu.
 
+## Model příjemců podle události ticketu
+
+Příjemci ticketových notifikací závisí na typu události:
+
+- Nový ticket: zadavatel dostane potvrzení o založení. Uživatelé ve frontě solverů dostanou notifikaci jen při `HELPDESK_NOTIFY_SOLVERS_ON_NEW_TICKETS=true`. Admini dostanou notifikaci jen při `HELPDESK_NOTIFY_ADMINS_ON_NEW_TICKETS=true`. Existující řešitel nebo watcher záznam nejsou samy o sobě obecným důvodem pro notifikaci o novém ticketu.
+- Veřejný komentář: notifikaci dostane zadavatel, aktuální řešitel a sledující. Autor komentáře je vyloučen.
+- Změna řešitele: notifikaci dostane pouze nový řešitel. Pokud si aktér přiřadí ticket sám sobě, e-mail o změně řešitele se mu neposílá.
+- Změna očekávaného termínu vyřešení: notifikaci dostane pouze zadavatel. Pokud je zadavatel zároveň aktér, e-mail se mu neposílá.
+- Změny statusu, vyřešeno, uzavřeno, problém trvá a automatické uzavření: posuzuje se zadavatel, řešitel a sledující. Aktér je vyloučen, pokud existuje; automatické uzavření aktéra nemá.
+- Interní poznámky neodesílají outbound ticketové notifikace.
+
+Všechny seznamy příjemců se před odesláním deduplikují a filtrují přes aktuální policy viditelnosti ticketu.
+
 ## Filtrování podle oprávnění
 
 Příjemci notifikací jsou filtrováni přes aktuální pravidla viditelnosti ticketů:

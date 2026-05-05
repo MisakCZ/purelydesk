@@ -25,13 +25,7 @@ class TicketNotificationRecipients
             'watchers:id,name,display_name,username,email,preferred_locale',
         ]);
 
-        return collect([
-            $ticket->requester,
-            $ticket->assignee,
-            ...$ticket->watchers,
-            ...$this->operationalRecipientsForCreatedTicket($event),
-        ])
-            ->filter(fn ($user) => $user instanceof User)
+        return $this->baseRecipientsForEvent($ticket, $event)
             ->when(
                 $excludeActor && $actor instanceof User,
                 fn (Collection $users) => $users->reject(fn (User $user) => (int) $user->id === (int) $actor->id),
@@ -39,6 +33,34 @@ class TicketNotificationRecipients
             ->filter(fn (User $user) => filled($user->email))
             ->filter(fn (User $user) => $this->ticketPolicy->view($user, $ticket))
             ->unique(fn (User $user) => $this->deduplicationKey($user))
+            ->values();
+    }
+
+    /**
+     * @return Collection<int, User>
+     */
+    private function baseRecipientsForEvent(Ticket $ticket, string $event): Collection
+    {
+        $recipients = match ($event) {
+            'created' => [
+                $ticket->requester,
+                ...$this->operationalRecipientsForCreatedTicket($event),
+            ],
+            'assignee_changed' => [
+                $ticket->assignee,
+            ],
+            'expected_resolution_changed' => [
+                $ticket->requester,
+            ],
+            default => [
+                $ticket->requester,
+                $ticket->assignee,
+                ...$ticket->watchers,
+            ],
+        };
+
+        return collect($recipients)
+            ->filter(fn ($user) => $user instanceof User)
             ->values();
     }
 
