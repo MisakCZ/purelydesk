@@ -18,7 +18,7 @@ Aplikace používá lokální uživatelské profily synchronizované z LDAPu, za
 - Přílohy k ticketům a veřejným komentářům.
 - Chráněný náhled a stahování příloh přes Laravel controllery.
 - Lightbox galerie pro obrázkové přílohy.
-- Odchozí e-mailové notifikace.
+- Odchozí e-mailové notifikace a příchozí odpovědi přes lokální Maildir polling.
 - Česká a anglická lokalizace UI.
 - Konvenční Laravel Blade UI bez SPA frontendu.
 
@@ -61,7 +61,7 @@ Nejdůležitější oblasti konfigurace jsou:
 
 - `DB_*` pro připojení k MariaDB/MySQL.
 - `LDAP_*` pro LDAP přihlášení a mapování rolí.
-- `MAIL_*` a `HELPDESK_MAIL_NOTIFICATIONS` pro odchozí e-mailové notifikace.
+- `MAIL_*`, `HELPDESK_MAIL_NOTIFICATIONS` a `HELPDESK_INBOUND_*` pro odchozí notifikace a volitelné zpracování příchozích odpovědí.
 - `HELPDESK_RESOLVED_AUTO_CLOSE_DAYS` pro automatické uzavírání vyřešených ticketů.
 - `HELPDESK_ATTACHMENT_*` pro limity příloh a storage cestu.
 - `APP_LOCALE` a `APP_FALLBACK_LOCALE` pro výchozí jazyk UI.

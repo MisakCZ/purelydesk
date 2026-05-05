@@ -18,7 +18,7 @@ The application uses local user profiles synchronized from LDAP, while authentic
 - Attachments for tickets and public comments.
 - Protected attachment preview and download through Laravel controllers.
 - Image attachment lightbox gallery.
-- Outgoing e-mail notifications.
+- Outgoing e-mail notifications and inbound replies through local Maildir polling.
 - Czech and English UI localization.
 - Conventional Laravel Blade UI without a SPA frontend.
 
@@ -61,7 +61,7 @@ The most important configuration areas are:
 
 - `DB_*` for MariaDB/MySQL connection settings.
 - `LDAP_*` for LDAP login and role mapping.
-- `MAIL_*` and `HELPDESK_MAIL_NOTIFICATIONS` for outgoing e-mail notifications.
+- `MAIL_*`, `HELPDESK_MAIL_NOTIFICATIONS`, and `HELPDESK_INBOUND_*` for outgoing notifications and optional inbound reply processing.
 - `HELPDESK_RESOLVED_AUTO_CLOSE_DAYS` for automatic closing of resolved tickets.
 - `HELPDESK_ATTACHMENT_*` for attachment limits and storage path.
 - `APP_LOCALE` and `APP_FALLBACK_LOCALE` for the default UI language.

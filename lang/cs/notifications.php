@@ -2,9 +2,10 @@
 
 return [
     'ticket' => [
-        'subject' => '[Helpdesk] :number: :event',
+        'subject' => '[Helpdesk #:number] :event',
         'greeting' => 'Dobrý den,',
         'action' => 'Zobrazit detail ticketu',
+        'reply_marker' => 'Odpovězte nad tento řádek.',
         'events' => [
             'created' => 'Nový ticket',
             'public_comment' => 'Nový komentář',
@@ -35,6 +36,9 @@ return [
         ],
     ],
     'inbound' => [
+        'console' => [
+            'finished' => 'Inbound e-maily zpracovány: :processed zpracováno, :ignored ignorováno, :failed selhalo.',
+        ],
         'attachments_ignored' => [
             'comment_note' => '[Poznámka helpdesku: E-mail obsahoval přílohy, ale přílohy z e-mailových odpovědí zatím nejsou automaticky ukládány. Nahrajte je prosím přímo v detailu ticketu.]',
             'subject' => '[Helpdesk] :number: přílohy nebyly přidány',

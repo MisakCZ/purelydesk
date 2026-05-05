@@ -14,7 +14,12 @@ return new class extends Migration
             $table->foreignId('ticket_comment_id')->nullable()->constrained('ticket_comments')->nullOnDelete();
             $table->foreignId('sender_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('message_id')->unique();
+            $table->string('raw_hash')->nullable()->unique();
             $table->string('sender_email')->nullable();
+            $table->string('status', 20)->default('pending');
+            $table->text('failure_reason')->nullable();
+            $table->timestamp('processed_at')->nullable();
+            $table->timestamp('failed_at')->nullable();
             $table->timestamp('attachment_notice_sent_at')->nullable();
             $table->timestamps();
 

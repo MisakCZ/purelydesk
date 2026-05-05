@@ -2,9 +2,10 @@
 
 return [
     'ticket' => [
-        'subject' => '[Helpdesk] :number: :event',
+        'subject' => '[Helpdesk #:number] :event',
         'greeting' => 'Hello,',
         'action' => 'View ticket detail',
+        'reply_marker' => 'Reply above this line.',
         'events' => [
             'created' => 'New ticket',
             'public_comment' => 'New comment',
@@ -35,6 +36,9 @@ return [
         ],
     ],
     'inbound' => [
+        'console' => [
+            'finished' => 'Inbound mail processed: :processed processed, :ignored ignored, :failed failed.',
+        ],
         'attachments_ignored' => [
             'comment_note' => '[Helpdesk note: The e-mail contained attachments, but e-mail reply attachments are not imported automatically yet. Please upload them directly in the ticket detail.]',
             'subject' => '[Helpdesk] :number: attachments were not added',

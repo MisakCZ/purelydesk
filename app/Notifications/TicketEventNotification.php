@@ -3,6 +3,8 @@
 namespace App\Notifications;
 
 use App\Models\Ticket;
+use App\Models\User;
+use App\Services\TicketReplyTokenService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -39,7 +41,9 @@ class TicketEventNotification extends Notification
                 'number' => $number,
                 'event' => mb_strtolower($eventLabel),
             ], $locale))
+            ->replyTo($this->replyToAddress($notifiable))
             ->greeting(__('notifications.ticket.greeting', [], $locale))
+            ->line(__('notifications.ticket.reply_marker', [], $locale))
             ->line(__('notifications.ticket.lines.event', ['event' => $eventLabel], $locale))
             ->line(__('notifications.ticket.lines.number', ['number' => $number], $locale))
             ->line(__('notifications.ticket.lines.subject', ['subject' => $this->ticket->subject], $locale))
@@ -56,6 +60,17 @@ class TicketEventNotification extends Notification
         return $message
             ->action(__('notifications.ticket.action', [], $locale), route('tickets.show', $this->ticket))
             ->line(__('notifications.ticket.lines.footer', [], $locale));
+    }
+
+    private function replyToAddress(object $notifiable): string
+    {
+        $replyAddress = (string) config('helpdesk.inbound.reply_address');
+
+        if (! $notifiable instanceof User) {
+            return $replyAddress;
+        }
+
+        return app(TicketReplyTokenService::class)->replyAddressFor($this->ticket, $notifiable);
     }
 
     private function description(string $locale): string

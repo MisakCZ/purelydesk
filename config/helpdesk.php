@@ -66,6 +66,14 @@ return [
     |
     */
     'inbound' => [
+        'mail_enabled' => env('HELPDESK_INBOUND_MAIL_ENABLED', false),
+        'mail_driver' => env('HELPDESK_INBOUND_MAIL_DRIVER', 'maildir'),
+        'reply_address' => env('HELPDESK_INBOUND_REPLY_ADDRESS', 'helpdesk-replies@example.org'),
+        'use_plus_addressing' => env('HELPDESK_INBOUND_USE_PLUS_ADDRESSING', true),
+        'maildir_path' => env('HELPDESK_INBOUND_MAILDIR_PATH', '/var/lib/helpdesk-mail/Maildir'),
+        'maildir_processed_path' => env('HELPDESK_INBOUND_MAILDIR_PROCESSED_PATH', '/var/lib/helpdesk-mail/Processed'),
+        'maildir_failed_path' => env('HELPDESK_INBOUND_MAILDIR_FAILED_PATH', '/var/lib/helpdesk-mail/Failed'),
+        'maildir_max_messages' => (int) env('HELPDESK_INBOUND_MAILDIR_MAX_MESSAGES', 50),
         'import_attachments' => env('HELPDESK_INBOUND_IMPORT_ATTACHMENTS', false),
         'notify_rejected_attachments' => env('HELPDESK_INBOUND_NOTIFY_REJECTED_ATTACHMENTS', true),
     ],

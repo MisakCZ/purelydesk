@@ -15,13 +15,20 @@ class IncomingEmail extends Model
         'ticket_comment_id',
         'sender_user_id',
         'message_id',
+        'raw_hash',
         'sender_email',
+        'status',
+        'failure_reason',
+        'processed_at',
+        'failed_at',
         'attachment_notice_sent_at',
     ];
 
     protected function casts(): array
     {
         return [
+            'processed_at' => 'datetime',
+            'failed_at' => 'datetime',
             'attachment_notice_sent_at' => 'datetime',
         ];
     }

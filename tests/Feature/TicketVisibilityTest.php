@@ -815,7 +815,7 @@ class TicketVisibilityTest extends TestCase
 
                 return $notification->event === 'created'
                     && $notification->ticket->subject === 'Notification ticket'
-                    && $mailMessage->subject === '[Helpdesk] '.$notification->ticket->ticket_number.': new ticket'
+                    && $mailMessage->subject === '[Helpdesk #'.$notification->ticket->ticket_number.'] new ticket'
                     && in_array('Ticket description:', $mailMessage->introLines, true)
                     && in_array('New ticket notification body.', $mailMessage->introLines, true);
             },

@@ -205,10 +205,13 @@ sudo systemctl list-timers helpdesk-scheduler.timer
 
 Aplikace plánuje příkaz `helpdesk:close-resolved-tickets` každou hodinu. Příkaz uzavírá vyřešené tickety po dosažení `auto_close_at`, zapíše historii a odešle standardní ticket notifikaci, pokud jsou e-mailové notifikace zapnuté.
 
-Pro test ho lze spustit ručně:
+Aplikace také plánuje příkaz `helpdesk:fetch-inbound-mail` každých pět minut. Příkaz nic neudělá, pokud není nastaveno `HELPDESK_INBOUND_MAIL_ENABLED=true`. Po zapnutí čte nastavený lokální Maildir a přesouvá zpracované zprávy do nakonfigurovaných adresářů `Processed` nebo `Failed`. Doručování do Maildiru, routování inbound reply domény na helpdesk SMTP server, Postfix aliasy, ACL pro PHP uživatele a troubleshooting SELinux/AppArmor jsou popsané v dokumentu [E-mailové notifikace](mail.md).
+
+Pro test je lze spustit ručně:
 
 ```bash
 php artisan helpdesk:close-resolved-tickets
+php artisan helpdesk:fetch-inbound-mail
 ```
 
 Lhůta pro vyřešené tickety se nastavuje pomocí:
