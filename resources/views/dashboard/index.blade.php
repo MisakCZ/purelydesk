@@ -187,6 +187,7 @@
         .dashboard-pinned,
         .dashboard-admin {
             display: grid;
+            align-content: start;
             gap: 0.65rem;
             padding: 0.85rem;
             border: 1px solid #e5ebf1;
