@@ -26,6 +26,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Helpdesk Branding
+    |--------------------------------------------------------------------------
+    |
+    | Optional public logo path for the application header. Keep real internal
+    | logos out of the repository and point this value to a deployed asset.
+    |
+    */
+    'brand' => [
+        'logo_path' => env('HELPDESK_BRAND_LOGO_PATH'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Helpdesk Authentication
     |--------------------------------------------------------------------------
     |

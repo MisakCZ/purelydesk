@@ -2,7 +2,7 @@
 
 return [
     'brand' => [
-        'subtitle' => 'Základ interní administrace',
+        'subtitle' => 'Interní helpdesk',
     ],
     'nav' => [
         'main' => 'Hlavní navigace',
@@ -17,5 +17,14 @@ return [
         ],
         'current' => 'Aktivní jazyk: :locale',
         'logout' => 'Odhlásit',
+        'theme' => 'Barevné schéma',
+        'theme_switch' => 'Přepnout barevné schéma',
+        'theme_current' => 'Aktivní barevné schéma: :theme',
+        'themes' => [
+            'default' => 'Výchozí',
+            'dark' => 'Tmavé',
+            'pastel' => 'Pastelové',
+            'contrast' => 'Kontrastní',
+        ],
     ],
 ];

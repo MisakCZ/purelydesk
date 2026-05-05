@@ -119,6 +119,18 @@ HELPDESK_ATTACHMENT_MAX_FILES=10
 
 `post_max_size` a `client_max_body_size` mají být větší než velikost jednoho souboru, protože požadavek může obsahovat více příloh a formulářová pole.
 
+## Branding a barevná schémata UI
+
+Hlavička aplikace může místo výchozího monogramu `HD` zobrazit nasazené logo. Ve `.env` nastavte veřejnou cestu k logu:
+
+```env
+HELPDESK_BRAND_LOGO_PATH=/branding/logo.svg
+```
+
+Cesta má ukazovat na veřejný asset servírovaný aplikací nebo web serverem. Skutečná interní loga ani organizačně specifické brandové soubory necommitujte do veřejného repozitáře.
+
+Uživatel může barevné schéma UI přepnout v hlavičce aplikace. Dostupná schémata jsou Výchozí, Tmavé, Pastelové a Kontrastní. Vybrané schéma se ukládá pouze v prohlížeči do `localStorage`; neukládá se do databáze a neovlivňuje ostatní uživatele.
+
 ## Příkazy při nasazení
 
 Po změně `.env` nebo jiného konfiguračního souboru vždy vyčistěte Laravel cache konfigurace. Jinak může aplikace dál používat staré hodnoty:

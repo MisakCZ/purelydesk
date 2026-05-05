@@ -5,18 +5,127 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <title>@yield('title', config('app.name', 'Helpdesk'))</title>
+        <script>
+            (() => {
+                const themes = ['default', 'dark', 'pastel', 'contrast'];
+                let storedTheme = null;
+
+                try {
+                    storedTheme = window.localStorage?.getItem('helpdesk.theme');
+                } catch (error) {
+                    storedTheme = null;
+                }
+
+                document.documentElement.dataset.theme = themes.includes(storedTheme) ? storedTheme : 'default';
+            })();
+        </script>
         <style>
             :root {
                 color-scheme: light;
-                --bg: #f4f6f8;
-                --panel: #ffffff;
-                --panel-muted: #f8fafc;
-                --line: #d9e0e7;
-                --text: #13202b;
-                --muted: #5b6b79;
-                --accent: #0f766e;
-                --accent-soft: #dff5f2;
+                --color-bg: #f4f6f8;
+                --color-surface: #ffffff;
+                --color-surface-muted: #f8fafc;
+                --color-text: #13202b;
+                --color-muted: #5b6b79;
+                --color-border: #d9e0e7;
+                --color-primary: #0f766e;
+                --color-primary-hover: #0b625b;
+                --color-primary-soft: #dff5f2;
+                --color-danger: #b42318;
+                --color-danger-soft: #fff5f4;
+                --color-warning: #b45309;
+                --color-warning-soft: #fff7e8;
+                --color-success: #15803d;
+                --color-success-soft: #ecfdf8;
+                --color-field-bg: #ffffff;
+                --color-hover: #eef2f6;
+                --color-menu-bg: #ffffff;
+                --color-brand-gradient-start: #0f766e;
+                --color-brand-gradient-end: #155e75;
+                --bg: var(--color-bg);
+                --panel: var(--color-surface);
+                --panel-muted: var(--color-surface-muted);
+                --line: var(--color-border);
+                --text: var(--color-text);
+                --muted: var(--color-muted);
+                --accent: var(--color-primary);
+                --accent-soft: var(--color-primary-soft);
                 --shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+            }
+
+            :root[data-theme="dark"] {
+                color-scheme: dark;
+                --color-bg: #0f172a;
+                --color-surface: #172033;
+                --color-surface-muted: #111827;
+                --color-text: #e5e7eb;
+                --color-muted: #a7b0be;
+                --color-border: #334155;
+                --color-primary: #5eead4;
+                --color-primary-hover: #99f6e4;
+                --color-primary-soft: rgba(45, 212, 191, 0.16);
+                --color-danger: #fca5a5;
+                --color-danger-soft: rgba(127, 29, 29, 0.28);
+                --color-warning: #fbbf24;
+                --color-warning-soft: rgba(146, 64, 14, 0.24);
+                --color-success: #86efac;
+                --color-success-soft: rgba(20, 83, 45, 0.26);
+                --color-field-bg: #0f172a;
+                --color-hover: #223047;
+                --color-menu-bg: #172033;
+                --color-brand-gradient-start: #14b8a6;
+                --color-brand-gradient-end: #2563eb;
+                --shadow: 0 22px 48px rgba(0, 0, 0, 0.32);
+            }
+
+            :root[data-theme="pastel"] {
+                color-scheme: light;
+                --color-bg: #f7f2ea;
+                --color-surface: #fffaf3;
+                --color-surface-muted: #f8efe3;
+                --color-text: #2d2a26;
+                --color-muted: #76695a;
+                --color-border: #eadfce;
+                --color-primary: #4f8f86;
+                --color-primary-hover: #3f756f;
+                --color-primary-soft: #dcefeb;
+                --color-danger: #b85f62;
+                --color-danger-soft: #fdecec;
+                --color-warning: #b77b2a;
+                --color-warning-soft: #fff0d6;
+                --color-success: #5f9468;
+                --color-success-soft: #e7f3e7;
+                --color-field-bg: #fffdf8;
+                --color-hover: #f2eadf;
+                --color-menu-bg: #fffaf3;
+                --color-brand-gradient-start: #4f8f86;
+                --color-brand-gradient-end: #cc8f6a;
+                --shadow: 0 20px 42px rgba(105, 85, 62, 0.12);
+            }
+
+            :root[data-theme="contrast"] {
+                color-scheme: light;
+                --color-bg: #e8edf3;
+                --color-surface: #ffffff;
+                --color-surface-muted: #eef3f8;
+                --color-text: #0b1220;
+                --color-muted: #354052;
+                --color-border: #9aa8b8;
+                --color-primary: #0f4c81;
+                --color-primary-hover: #0b3d68;
+                --color-primary-soft: #d9eafa;
+                --color-danger: #9f1239;
+                --color-danger-soft: #ffe4e6;
+                --color-warning: #92400e;
+                --color-warning-soft: #fef3c7;
+                --color-success: #166534;
+                --color-success-soft: #dcfce7;
+                --color-field-bg: #ffffff;
+                --color-hover: #dbe5ee;
+                --color-menu-bg: #ffffff;
+                --color-brand-gradient-start: #0f4c81;
+                --color-brand-gradient-end: #111827;
+                --shadow: 0 20px 45px rgba(11, 18, 32, 0.14);
             }
 
             * {
@@ -45,7 +154,7 @@
                 font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
                 background:
                     radial-gradient(circle at top left, rgba(15, 118, 110, 0.10), transparent 28%),
-                    linear-gradient(180deg, #f8fbfc 0%, var(--bg) 100%);
+                    linear-gradient(180deg, var(--panel-muted) 0%, var(--bg) 100%);
                 color: var(--text);
             }
 
@@ -81,9 +190,18 @@
                 align-items: center;
                 justify-content: center;
                 font-weight: 700;
-                background: linear-gradient(135deg, #0f766e, #155e75);
+                background: linear-gradient(135deg, var(--color-brand-gradient-start), var(--color-brand-gradient-end));
                 color: #fff;
                 box-shadow: var(--shadow);
+            }
+
+            .brand-logo {
+                display: block;
+                max-width: 12rem;
+                max-height: 2.5rem;
+                width: auto;
+                height: auto;
+                object-fit: contain;
             }
 
             .brand-copy h1 {
@@ -112,7 +230,7 @@
                 border-radius: 999px;
                 text-decoration: none;
                 color: var(--muted);
-                background: rgba(255, 255, 255, 0.7);
+                background: color-mix(in srgb, var(--panel) 82%, transparent);
                 border: 1px solid transparent;
             }
 
@@ -136,11 +254,11 @@
             }
 
             .attachment-queue-empty {
-                color: #64748b;
+                color: var(--muted);
             }
 
             .attachment-queue-error {
-                color: #b91c1c;
+                color: var(--color-danger);
             }
 
             .attachment-queue-list {
@@ -158,10 +276,10 @@
                 max-width: 100%;
                 gap: 0.45rem;
                 padding: 0.35rem 0.45rem;
-                border: 1px solid #dbe4ee;
+                border: 1px solid var(--line);
                 border-radius: 0.7rem;
-                background: #f8fafc;
-                color: #334155;
+                background: var(--panel-muted);
+                color: var(--text);
                 font-size: 0.8rem;
                 font-weight: 650;
             }
@@ -174,7 +292,7 @@
             }
 
             .attachment-queue-size {
-                color: #64748b;
+                color: var(--muted);
                 font-size: 0.74rem;
                 font-weight: 600;
                 white-space: nowrap;
@@ -189,8 +307,8 @@
                 padding: 0;
                 border: 0;
                 border-radius: 999px;
-                background: #fee2e2;
-                color: #991b1b;
+                background: var(--color-danger-soft);
+                color: var(--color-danger);
                 cursor: pointer;
                 font-size: 0.9rem;
                 font-weight: 900;
@@ -328,18 +446,21 @@
                 }
             }
 
-            .locale-switcher {
+            .locale-switcher,
+            .theme-switcher {
                 margin-left: 0.55rem;
                 padding-left: 0.75rem;
-                border-left: 1px solid rgba(217, 224, 231, 0.95);
+                border-left: 1px solid var(--line);
                 position: relative;
             }
 
-            .locale-switcher[open] {
+            .locale-switcher[open],
+            .theme-switcher[open] {
                 z-index: 20;
             }
 
-            .locale-toggle {
+            .locale-toggle,
+            .theme-toggle {
                 display: inline-flex;
                 align-items: center;
                 gap: 0.35rem;
@@ -358,39 +479,45 @@
                 list-style: none;
             }
 
-            .locale-toggle::-webkit-details-marker {
+            .locale-toggle::-webkit-details-marker,
+            .theme-toggle::-webkit-details-marker {
                 display: none;
             }
 
-            .locale-toggle:hover {
+            .locale-toggle:hover,
+            .theme-toggle:hover {
                 color: var(--text);
             }
 
-            .locale-current {
-                color: #13202b;
+            .locale-current,
+            .theme-current {
+                color: var(--text);
                 line-height: 1;
             }
 
-            .locale-chevron {
+            .locale-chevron,
+            .theme-chevron {
                 color: #94a3b8;
                 font-size: 0.7rem;
                 line-height: 1;
                 transition: transform 0.15s ease;
             }
 
-            .locale-switcher[open] .locale-chevron {
+            .locale-switcher[open] .locale-chevron,
+            .theme-switcher[open] .theme-chevron {
                 transform: rotate(180deg);
             }
 
-            .locale-menu {
+            .locale-menu,
+            .theme-menu {
                 position: absolute;
                 top: calc(100% + 0.45rem);
                 right: 0;
                 min-width: 8.75rem;
                 padding: 0.35rem;
-                border: 1px solid rgba(217, 224, 231, 0.95);
+                border: 1px solid var(--line);
                 border-radius: 0.9rem;
-                background: #fff;
+                background: var(--color-menu-bg);
                 box-shadow: 0 16px 32px rgba(15, 23, 42, 0.12);
                 font-size: 0.86rem;
             }
@@ -399,7 +526,8 @@
                 margin: 0;
             }
 
-            .locale-option {
+            .locale-option,
+            .theme-option {
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
@@ -409,7 +537,7 @@
                 border: 0;
                 border-radius: 0.65rem;
                 background: transparent;
-                color: #475569;
+                color: var(--muted);
                 cursor: pointer;
                 font: inherit;
                 font-size: 0.86rem;
@@ -417,23 +545,27 @@
                 transition: background-color 0.15s ease, color 0.15s ease;
             }
 
-            .locale-option:hover {
-                background: #f8fafc;
-                color: #13202b;
+            .locale-option:hover,
+            .theme-option:hover {
+                background: var(--color-hover);
+                color: var(--text);
             }
 
-            .locale-option.active {
-                background: #eef6f5;
-                color: #13202b;
+            .locale-option.active,
+            .theme-option.active {
+                background: var(--accent-soft);
+                color: var(--text);
                 font-weight: 700;
             }
 
-            .locale-option-label {
+            .locale-option-label,
+            .theme-option-label {
                 font-size: 0.86rem;
                 line-height: 1.3;
             }
 
-            .locale-option-check {
+            .locale-option-check,
+            .theme-option-check {
                 color: var(--accent);
                 font-size: 0.76rem;
                 line-height: 1;
@@ -453,9 +585,9 @@
             .logout-button {
                 min-height: 2.2rem;
                 padding: 0.35rem 0.65rem;
-                border: 1px solid rgba(217, 224, 231, 0.95);
+                border: 1px solid var(--line);
                 border-radius: 999px;
-                background: rgba(255, 255, 255, 0.72);
+                background: color-mix(in srgb, var(--panel) 82%, transparent);
                 color: var(--muted);
                 cursor: pointer;
                 font: inherit;
@@ -465,7 +597,7 @@
 
             .logout-button:hover {
                 color: var(--text);
-                background: #fff;
+                background: var(--panel);
             }
 
             .page-card {
@@ -525,17 +657,17 @@
             }
 
             .button-primary:hover {
-                background: #0b625b;
+                background: var(--color-primary-hover);
             }
 
             .button-secondary {
-                background: #f8fafc;
+                background: var(--panel-muted);
                 color: var(--text);
                 border: 1px solid var(--line);
             }
 
             .button-secondary:hover {
-                background: #eef2f6;
+                background: var(--color-hover);
             }
 
             .panel {
@@ -595,9 +727,9 @@
                 width: 100%;
                 min-height: 2.9rem;
                 padding: 0.8rem 0.95rem;
-                border: 1px solid #cfd8e3;
+                border: 1px solid var(--line);
                 border-radius: 0.9rem;
-                background: #fff;
+                background: var(--color-field-bg);
                 color: var(--text);
                 font: inherit;
             }
@@ -629,9 +761,9 @@
                 margin: 0;
                 padding: 0.9rem 1rem;
                 list-style: none;
-                border: 1px solid #f3c8c3;
+                border: 1px solid color-mix(in srgb, var(--color-danger) 35%, var(--line));
                 border-radius: 0.9rem;
-                background: #fff5f4;
+                background: var(--color-danger-soft);
                 color: #b42318;
             }
 
@@ -641,7 +773,7 @@
             }
 
             .field-error {
-                color: #b42318;
+                color: var(--color-danger);
                 font-size: 0.9rem;
             }
 
@@ -658,9 +790,9 @@
                 align-items: center;
                 gap: 0.7rem;
                 padding: 0.85rem 1rem;
-                border: 1px solid #e5ebf1;
+                border: 1px solid var(--line);
                 border-radius: 0.9rem;
-                background: #fcfaf6;
+                background: var(--panel-muted);
                 color: var(--text);
                 font-weight: 600;
             }
@@ -675,17 +807,17 @@
                 margin-bottom: 1rem;
                 padding: 0.9rem 1rem;
                 border-radius: 0.9rem;
-                border: 1px solid #b7e4dd;
-                background: #ecfdf8;
-                color: #0f513f;
+                border: 1px solid color-mix(in srgb, var(--color-success) 35%, var(--line));
+                background: var(--color-success-soft);
+                color: var(--color-success);
             }
 
             .empty-state {
                 padding: 2.25rem 1rem;
                 text-align: center;
-                border: 1px dashed #cfd8e3;
+                border: 1px dashed var(--line);
                 border-radius: 1rem;
-                background: linear-gradient(180deg, #fbfdff 0%, #f7fafc 100%);
+                background: linear-gradient(180deg, var(--panel) 0%, var(--panel-muted) 100%);
             }
 
             .empty-state h3 {
@@ -702,7 +834,7 @@
             }
 
             .ticket-number {
-                color: #7b8794;
+                color: var(--muted);
                 font-size: 0.79rem;
                 font-weight: 400;
                 line-height: 1.35;
@@ -726,8 +858,8 @@
                 border-radius: 999px;
                 font-size: 0.84rem;
                 font-weight: 600;
-                background: #eef2f6;
-                color: #334155;
+                background: var(--color-hover);
+                color: var(--text);
                 white-space: nowrap;
                 max-width: 100%;
             }
@@ -793,6 +925,61 @@
                 transition: transform 0.15s ease;
             }
 
+            :root:not([data-theme="default"]) .filter-card,
+            :root:not([data-theme="default"]) .announcement-card,
+            :root:not([data-theme="default"]) .pinned-section,
+            :root:not([data-theme="default"]) .pinned-ticket,
+            :root:not([data-theme="default"]) .dashboard-summary-card,
+            :root:not([data-theme="default"]) .dashboard-announcement,
+            :root:not([data-theme="default"]) .dashboard-section,
+            :root:not([data-theme="default"]) .dashboard-ticket,
+            :root:not([data-theme="default"]) .ticket-row,
+            :root:not([data-theme="default"]) .ticket-card,
+            :root:not([data-theme="default"]) .ticket-panel,
+            :root:not([data-theme="default"]) .comment-card,
+            :root:not([data-theme="default"]) .note-card,
+            :root:not([data-theme="default"]) .history-card,
+            :root:not([data-theme="default"]) .attachment-card,
+            :root:not([data-theme="default"]) .login-card {
+                border-color: var(--line) !important;
+                background: var(--panel) !important;
+                color: var(--text) !important;
+            }
+
+            :root:not([data-theme="default"]) .announcement-title,
+            :root:not([data-theme="default"]) .announcement-body,
+            :root:not([data-theme="default"]) .dashboard-announcements-title,
+            :root:not([data-theme="default"]) .dashboard-summary-count,
+            :root:not([data-theme="default"]) .comment-author,
+            :root:not([data-theme="default"]) .comment-body,
+            :root:not([data-theme="default"]) .ticket-detail-title {
+                color: var(--text) !important;
+            }
+
+            :root:not([data-theme="default"]) .announcement-meta,
+            :root:not([data-theme="default"]) .dashboard-summary-label,
+            :root:not([data-theme="default"]) .dashboard-action-note,
+            :root:not([data-theme="default"]) .comment-time,
+            :root:not([data-theme="default"]) .ticket-meta,
+            :root:not([data-theme="default"]) .ticket-secondary,
+            :root:not([data-theme="default"]) .attachment-meta {
+                color: var(--muted) !important;
+            }
+
+            :root:not([data-theme="default"]) input,
+            :root:not([data-theme="default"]) select,
+            :root:not([data-theme="default"]) textarea {
+                border-color: var(--line);
+                background: var(--color-field-bg);
+                color: var(--text);
+            }
+
+            :root[data-theme="dark"] .badge,
+            :root[data-theme="dark"] .badge-tone-slate {
+                background: #243145;
+                color: #dbe4ee;
+            }
+
             @media (max-width: 720px) {
                 .shell {
                     width: min(100% - 1rem, 100%);
@@ -814,13 +1001,15 @@
                     align-items: stretch;
                 }
 
-                .locale-switcher {
+                .locale-switcher,
+                .theme-switcher {
                     margin-left: 0;
                     padding-left: 0;
                     border-left: 0;
                 }
 
-                .locale-menu {
+                .locale-menu,
+                .theme-menu {
                     right: auto;
                     left: 0;
                 }
@@ -829,10 +1018,22 @@
         @stack('styles')
     </head>
     <body>
+        @php
+            $brandLogoPath = trim((string) config('helpdesk.brand.logo_path', ''));
+            $availableThemes = ['default', 'dark', 'pastel', 'contrast'];
+        @endphp
         <div class="shell">
             <header class="topbar">
                 <div class="brand">
-                    <div class="brand-mark">HD</div>
+                    @if ($brandLogoPath !== '')
+                        <img
+                            class="brand-logo"
+                            src="{{ $brandLogoPath }}"
+                            alt="{{ config('app.name', 'Helpdesk') }}"
+                        >
+                    @else
+                        <div class="brand-mark">HD</div>
+                    @endif
                     <div class="brand-copy">
                         <h1>{{ config('app.name', 'Helpdesk') }}</h1>
                         <p>{{ __('layout.brand.subtitle') }}</p>
@@ -881,6 +1082,34 @@
                                         @endif
                                     </button>
                                 </form>
+                            @endforeach
+                        </div>
+                    </details>
+
+                    <details class="theme-switcher" data-theme-switcher>
+                        <summary
+                            class="theme-toggle"
+                            aria-label="{{ __('layout.nav.theme_current', ['theme' => __('layout.nav.themes.default')]) }}"
+                            title="{{ __('layout.nav.theme_switch') }}"
+                            data-theme-current-label="{{ __('layout.nav.theme_current', ['theme' => '__THEME__']) }}"
+                        >
+                            <span class="theme-current" data-theme-current>{{ __('layout.nav.themes.default') }}</span>
+                            <span class="theme-chevron" aria-hidden="true">▾</span>
+                        </summary>
+
+                        <div class="theme-menu" role="menu" aria-label="{{ __('layout.nav.theme') }}">
+                            @foreach ($availableThemes as $theme)
+                                <button
+                                    class="theme-option"
+                                    type="button"
+                                    role="menuitemradio"
+                                    aria-checked="false"
+                                    data-theme-option="{{ $theme }}"
+                                    data-theme-label="{{ __('layout.nav.themes.'.$theme) }}"
+                                >
+                                    <span class="theme-option-label">{{ __('layout.nav.themes.'.$theme) }}</span>
+                                    <span class="theme-option-check" aria-hidden="true" hidden>✓</span>
+                                </button>
                             @endforeach
                         </div>
                     </details>
@@ -940,6 +1169,63 @@
 
         <script>
             document.addEventListener('DOMContentLoaded', () => {
+                const themeSwitcher = document.querySelector('[data-theme-switcher]');
+
+                if (themeSwitcher) {
+                    const themes = ['default', 'dark', 'pastel', 'contrast'];
+                    const current = themeSwitcher.querySelector('[data-theme-current]');
+                    const summary = themeSwitcher.querySelector('.theme-toggle');
+                    const summaryLabel = summary?.dataset.themeCurrentLabel || '';
+                    const options = Array.from(themeSwitcher.querySelectorAll('[data-theme-option]'));
+                    const normalizeTheme = (theme) => themes.includes(theme) ? theme : 'default';
+                    const storedTheme = () => {
+                        try {
+                            return window.localStorage?.getItem('helpdesk.theme');
+                        } catch (error) {
+                            return null;
+                        }
+                    };
+                    const storeTheme = (theme) => {
+                        try {
+                            window.localStorage?.setItem('helpdesk.theme', theme);
+                        } catch (error) {
+                            // Theme switching remains usable even when localStorage is blocked.
+                        }
+                    };
+                    const applyTheme = (theme) => {
+                        const activeTheme = normalizeTheme(theme);
+                        const activeOption = options.find((option) => option.dataset.themeOption === activeTheme);
+                        const label = activeOption?.dataset.themeLabel || activeTheme;
+
+                        document.documentElement.dataset.theme = activeTheme;
+                        storeTheme(activeTheme);
+
+                        if (current) {
+                            current.textContent = label;
+                        }
+
+                        if (summary && summaryLabel !== '') {
+                            summary.setAttribute('aria-label', summaryLabel.replace('__THEME__', label));
+                        }
+
+                        options.forEach((option) => {
+                            const isActive = option.dataset.themeOption === activeTheme;
+                            option.classList.toggle('active', isActive);
+                            option.setAttribute('aria-checked', isActive ? 'true' : 'false');
+                            option.querySelector('.theme-option-check').hidden = ! isActive;
+                        });
+                    };
+
+                    options.forEach((option) => {
+                        option.addEventListener('click', () => {
+                            applyTheme(option.dataset.themeOption);
+                            themeSwitcher.removeAttribute('open');
+                        });
+                    });
+
+                    applyTheme(document.documentElement.dataset.theme || storedTheme());
+                }
+
                 const formatFileSize = (bytes) => {
                     if (bytes < 1024) {
                         return `${bytes} B`;

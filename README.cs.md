@@ -62,6 +62,7 @@ Nejdůležitější oblasti konfigurace jsou:
 - `DB_*` pro připojení k MariaDB/MySQL.
 - `LDAP_*` pro LDAP přihlášení a mapování rolí.
 - `MAIL_*`, `HELPDESK_MAIL_NOTIFICATIONS` a `HELPDESK_INBOUND_*` pro odchozí notifikace a volitelné zpracování příchozích odpovědí.
+- `HELPDESK_BRAND_LOGO_PATH` pro volitelné nasazené logo v hlavičce. Skutečná interní loga necommitujte.
 - `HELPDESK_RESOLVED_AUTO_CLOSE_DAYS` pro automatické uzavírání vyřešených ticketů.
 - `HELPDESK_ATTACHMENT_*` pro limity příloh a storage cestu.
 - `APP_LOCALE` a `APP_FALLBACK_LOCALE` pro výchozí jazyk UI.

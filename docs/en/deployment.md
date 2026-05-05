@@ -119,6 +119,18 @@ HELPDESK_ATTACHMENT_MAX_FILES=10
 
 `post_max_size` and `client_max_body_size` should be larger than one file because a request can contain multiple attachments and form fields.
 
+## Branding and UI Color Schemes
+
+The application header can show a deployed logo instead of the default `HD` monogram. Configure the public logo path in `.env`:
+
+```env
+HELPDESK_BRAND_LOGO_PATH=/branding/logo.svg
+```
+
+The path should point to a public asset served by the application or web server. Do not commit real internal logos or organization-specific branding assets to the public repository.
+
+Users can switch the UI color scheme from the application header. The available schemes are Default, Dark, Pastel, and Contrast. The selected scheme is stored only in the browser's `localStorage`; it is not stored in the database and does not affect other users.
+
 ## Deployment Commands
 
 After changing `.env` or another configuration file, always clear Laravel's cached configuration. Otherwise the application may continue using old values:
