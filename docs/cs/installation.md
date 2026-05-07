@@ -84,7 +84,22 @@ php artisan migrate
 php artisan db:seed
 ```
 
-Seedery vytvoří základní role, stavy ticketů, priority a kategorie vyžadované helpdesk workflow.
+Tento krok je povinný pro běžné používání aplikace. Seedery vytvoří základní role, stavy ticketů, priority a kategorie vyžadované helpdesk workflow. Bez těchto záznamů mohou být ve formulářích prázdné seznamy rolí, stavů, priorit nebo kategorií a zakládání ticketů nemusí být použitelné.
+
+Základní seedery jsou napsané idempotentně, takže je bezpečné spustit je znovu po vyčištění nebo obnovení vývojové databáze:
+
+```bash
+php artisan db:seed
+```
+
+Pokud potřebujete obnovit jen vybrané číselníky, můžete spustit také jednotlivé seedery:
+
+```bash
+php artisan db:seed --class=RoleSeeder
+php artisan db:seed --class=TicketStatusSeeder
+php artisan db:seed --class=TicketPrioritySeeder
+php artisan db:seed --class=TicketCategorySeeder
+```
 
 ## Spuštění testů
 

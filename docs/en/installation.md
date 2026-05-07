@@ -84,7 +84,22 @@ php artisan migrate
 php artisan db:seed
 ```
 
-Seeders create the basic roles, ticket statuses, priorities, and categories required by the helpdesk workflow.
+This step is required for normal use of the application. Seeders create the basic roles, ticket statuses, priorities, and categories required by the helpdesk workflow. Without these records, forms can show empty role, status, priority, or category lists and ticket creation may not be usable.
+
+The base seeders are written to be idempotent, so they are safe to run again after cleaning or rebuilding a development database:
+
+```bash
+php artisan db:seed
+```
+
+If you need to restore only selected lookup tables, you can also run the individual seeders:
+
+```bash
+php artisan db:seed --class=RoleSeeder
+php artisan db:seed --class=TicketStatusSeeder
+php artisan db:seed --class=TicketPrioritySeeder
+php artisan db:seed --class=TicketCategorySeeder
+```
 
 ## Run Tests
 
