@@ -321,18 +321,69 @@
             }
         }
 
-        @media (max-width: 560px) {
-            .dashboard-summary,
-            .dashboard-grid-secondary {
+        @media (max-width: 768px) {
+            .dashboard-hero-actions {
+                display: grid;
                 grid-template-columns: 1fr;
+                max-width: none;
+                width: 100%;
+                gap: 0.5rem;
+            }
+
+            .dashboard-hero-actions .button {
+                width: 100%;
+                min-height: 2.55rem;
+            }
+
+            .dashboard-action-note {
+                margin-top: 0;
+            }
+
+            .dashboard-announcements,
+            .dashboard-pinned,
+            .dashboard-admin {
+                margin-bottom: 0.65rem;
+            }
+
+            .dashboard-section,
+            .dashboard-pinned,
+            .dashboard-admin {
+                gap: 0.55rem;
+                padding: 0.72rem;
+                border-radius: 0.85rem;
+            }
+
+            .dashboard-section-head,
+            .dashboard-pinned-head,
+            .dashboard-admin-head {
+                flex-direction: column;
+                gap: 0.45rem;
+            }
+
+            .dashboard-section-link {
+                align-self: flex-start;
             }
 
             .dashboard-ticket {
                 grid-template-columns: 1fr;
+                gap: 0.38rem;
+                padding: 0.48rem 0.55rem;
             }
 
             .dashboard-ticket-badges {
                 justify-content: flex-start;
+            }
+
+            .dashboard-ticket .badge {
+                padding: 0.26rem 0.5rem;
+                font-size: 0.76rem;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .dashboard-summary,
+            .dashboard-grid-secondary {
+                grid-template-columns: 1fr;
             }
         }
     </style>

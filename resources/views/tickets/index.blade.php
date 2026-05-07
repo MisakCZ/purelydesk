@@ -161,6 +161,14 @@
             display: block;
         }
 
+        .filter-disclosure {
+            display: block;
+        }
+
+        .filter-disclosure-summary {
+            display: none;
+        }
+
         .filter-grid {
             display: grid;
             grid-template-columns: minmax(11rem, 1.25fr) repeat(auto-fit, minmax(7.6rem, 0.82fr));
@@ -287,6 +295,10 @@
 
         .table-wrap {
             overflow: visible;
+        }
+
+        .ticket-mobile-list {
+            display: none;
         }
 
         .ticket-table {
@@ -754,9 +766,119 @@
             }
         }
 
-        @media (max-width: 720px) {
+        @media (max-width: 768px) {
+            .filter-card {
+                padding: 0.65rem;
+                border-radius: 0.9rem;
+            }
+
+            .filter-disclosure-summary {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                min-height: 2.45rem;
+                padding: 0.2rem 0.1rem;
+                color: var(--text);
+                cursor: pointer;
+                font-size: 0.92rem;
+                font-weight: 750;
+                list-style: none;
+            }
+
+            .filter-disclosure-summary::-webkit-details-marker {
+                display: none;
+            }
+
+            .filter-disclosure-summary::after {
+                content: "▾";
+                color: #94a3b8;
+                font-size: 0.76rem;
+                transition: transform 0.15s ease;
+            }
+
+            .filter-disclosure[open] .filter-disclosure-summary::after {
+                transform: rotate(180deg);
+            }
+
+            .filter-disclosure .filter-form {
+                margin-top: 0.55rem;
+            }
+
             .filter-grid {
                 grid-template-columns: 1fr;
+                gap: 0.45rem;
+            }
+
+            .filter-field {
+                padding: 0.48rem 0.55rem 0.55rem;
+                border-radius: 0.78rem;
+            }
+
+            .filter-input,
+            .filter-select {
+                min-height: 2.35rem;
+                font-size: 0.9rem;
+            }
+
+            .table-wrap {
+                display: none;
+            }
+
+            .ticket-mobile-list {
+                display: grid;
+                gap: 0.65rem;
+            }
+
+            .ticket-mobile-card {
+                display: grid;
+                gap: 0.55rem;
+                padding: 0.82rem 0.88rem;
+                border: 1px solid #e5ebf1;
+                border-radius: 0.95rem;
+                background: var(--panel);
+                color: inherit;
+                text-decoration: none;
+                box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+            }
+
+            .ticket-mobile-card:hover {
+                border-color: #b8d7d2;
+                background: #f8fbff;
+            }
+
+            .ticket-mobile-top {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 0.75rem;
+            }
+
+            .ticket-mobile-subject {
+                color: var(--text);
+                font-size: 1rem;
+                font-weight: 750;
+                line-height: 1.35;
+                overflow-wrap: anywhere;
+            }
+
+            .ticket-mobile-badges {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.4rem;
+            }
+
+            .ticket-mobile-meta {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.2rem 0.45rem;
+                color: var(--muted);
+                font-size: 0.82rem;
+                line-height: 1.4;
+            }
+
+            .ticket-mobile-card .badge {
+                padding: 0.3rem 0.58rem;
+                font-size: 0.79rem;
             }
 
             .pinned-section-head {
@@ -786,6 +908,11 @@
                 'saved' => __('tickets.index.inline.saved'),
             ]) }};
             const filterForm = document.querySelector('[data-ticket-filters]');
+            const filterDisclosure = document.querySelector('[data-filter-disclosure]');
+
+            if (filterDisclosure && window.matchMedia('(max-width: 768px)').matches) {
+                filterDisclosure.open = false;
+            }
 
             if (filterForm) {
                 const searchInput = filterForm.querySelector('[data-filter-search-input]');
@@ -1204,7 +1331,9 @@
         @endif
 
         <section class="filter-card" aria-label="{{ __('tickets.index.filters.section') }}">
-            <form class="filter-form" method="get" action="{{ route('tickets.index') }}" data-ticket-filters>
+            <details class="filter-disclosure" open data-filter-disclosure>
+                <summary class="filter-disclosure-summary">{{ __('tickets.index.filters.toggle') }}</summary>
+                <form class="filter-form" method="get" action="{{ route('tickets.index') }}" data-ticket-filters>
                 <input type="hidden" name="search" value="{{ $filters['search'] }}" data-filter-search-hidden>
                 <input type="hidden" name="sort" value="{{ $filters['sort'] }}">
                 <input type="hidden" name="direction" value="{{ $filters['direction'] }}">
@@ -1386,7 +1515,8 @@
                         </div>
                     @endif
                 </div>
-            </form>
+                </form>
+            </details>
         </section>
 
         @if ($pinningEnabled && $pinnedTickets->isNotEmpty())
@@ -1635,6 +1765,42 @@
                         @endforeach
                     </tbody>
                 </table>
+            </div>
+
+            <div class="ticket-mobile-list" aria-label="{{ __('tickets.index.heading') }}">
+                @foreach ($tickets as $ticket)
+                    <a class="ticket-mobile-card" href="{{ route('tickets.show', $ticket) }}" data-ticket-row="{{ $ticket->id }}">
+                        <div class="ticket-mobile-top">
+                            <span class="ticket-number">{{ $ticket->ticket_number ?? __('tickets.common.not_available') }}</span>
+                            <span class="ticket-updated-value" data-ticket-id="{{ $ticket->id }}" data-ticket-updated-at>{{ $ticket->updated_at?->locale($locale)->translatedFormat($listUpdatedAtFormat) ?? __('tickets.common.not_available') }}</span>
+                        </div>
+
+                        <span class="ticket-mobile-subject">{{ $ticket->subject }}</span>
+
+                        <div class="ticket-mobile-badges">
+                            <span class="badge {{ $ticket->status?->badgeToneClass() ?? 'badge-tone-slate' }}" data-ticket-id="{{ $ticket->id }}" data-ticket-field="status">
+                                <span class="badge-dot"></span>
+                                <span class="badge-label" data-ticket-field-value>{{ $ticket->status?->translatedName() ?? __('tickets.common.not_available') }}</span>
+                            </span>
+                            <span class="badge {{ $ticket->priority?->badgeToneClass() ?? 'badge-tone-slate' }}" data-ticket-id="{{ $ticket->id }}" data-ticket-field="priority">
+                                <span class="badge-dot"></span>
+                                <span class="badge-label" data-ticket-field-value>{{ $ticket->priority?->translatedName() ?? __('tickets.common.not_available') }}</span>
+                            </span>
+                        </div>
+
+                        <div class="ticket-mobile-meta">
+                            <span>{{ $ticket->translatedVisibilityLabel() }}</span>
+                            <span aria-hidden="true">&middot;</span>
+                            <span>
+                                {{ $ticket->assignee
+                                    ? __('tickets.index.meta.assignee', ['name' => $ticket->assignee->displayName()])
+                                    : __('tickets.index.meta.assignee_unassigned') }}
+                            </span>
+                            <span aria-hidden="true">&middot;</span>
+                            <span>{{ trans_choice('tickets.index.meta.comments', $ticket->public_comments_count, ['count' => $ticket->public_comments_count]) }}</span>
+                        </div>
+                    </a>
+                @endforeach
             </div>
 
             @if ($tickets->hasPages())

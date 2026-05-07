@@ -31,6 +31,7 @@ return [
         ],
         'filters' => [
             'section' => 'Ticket filtering',
+            'toggle' => 'Filters',
             'search' => 'Search subject',
             'search_placeholder' => 'e.g. printer, VPN',
             'status' => 'Status',

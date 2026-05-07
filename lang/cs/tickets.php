@@ -31,6 +31,7 @@ return [
         ],
         'filters' => [
             'section' => 'Filtrování ticketů',
+            'toggle' => 'Filtry',
             'search' => 'Hledat v předmětu',
             'search_placeholder' => 'Např. tiskárna, VPN',
             'status' => 'Status',
