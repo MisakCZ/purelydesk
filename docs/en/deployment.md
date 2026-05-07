@@ -124,10 +124,14 @@ HELPDESK_ATTACHMENT_MAX_FILES=10
 The application header can show a deployed logo instead of the default `HD` monogram. Configure the public logo path in `.env`:
 
 ```env
-HELPDESK_BRAND_LOGO_PATH=/branding/logo.svg
+HELPDESK_BRAND_LOGO_PATH=/helpdesk-logo.svg
+HELPDESK_BRAND_FALLBACK_TEXT=HD
+HELPDESK_BRAND_LOGO_MODE=wide
 ```
 
-The path should point to a public asset served by the application or web server. Do not commit real internal logos or organization-specific branding assets to the public repository.
+The path should point to a public asset served by the application or web server. A simple deployment option is to place the installation-specific logo directly in `public/helpdesk-logo.svg` and use `/helpdesk-logo.svg` as the path. Do not commit real internal logos or organization-specific branding assets to the public repository.
+
+`HELPDESK_BRAND_LOGO_MODE=mark` treats the logo as a small icon in the original monogram area and keeps the application name next to it. `HELPDESK_BRAND_LOGO_MODE=wide` treats the logo as a wider horizontal brand mark and hides the duplicate visible application name to keep the header compact. If the logo path is empty, or if the image fails to load, the header falls back to `HELPDESK_BRAND_FALLBACK_TEXT`.
 
 Users can switch the UI color scheme from the application header. The available schemes are Default, Dark, Pastel, and Contrast. The selected scheme is stored only in the browser's `localStorage`; it is not stored in the database and does not affect other users.
 

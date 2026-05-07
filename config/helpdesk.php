@@ -35,6 +35,8 @@ return [
     */
     'brand' => [
         'logo_path' => env('HELPDESK_BRAND_LOGO_PATH'),
+        'fallback_text' => env('HELPDESK_BRAND_FALLBACK_TEXT', 'HD'),
+        'logo_mode' => env('HELPDESK_BRAND_LOGO_MODE', 'mark'),
     ],
 
     /*

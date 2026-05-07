@@ -62,7 +62,7 @@ The most important configuration areas are:
 - `DB_*` for MariaDB/MySQL connection settings.
 - `LDAP_*` for LDAP login and role mapping.
 - `MAIL_*`, `HELPDESK_MAIL_NOTIFICATIONS`, and `HELPDESK_INBOUND_*` for outgoing notifications and optional inbound reply processing.
-- `HELPDESK_BRAND_LOGO_PATH` for an optional deployed header logo. Do not commit real internal logos.
+- `HELPDESK_BRAND_LOGO_PATH`, `HELPDESK_BRAND_FALLBACK_TEXT`, and `HELPDESK_BRAND_LOGO_MODE` for optional deployed header branding. Do not commit real internal logos.
 - `HELPDESK_RESOLVED_AUTO_CLOSE_DAYS` for automatic closing of resolved tickets.
 - `HELPDESK_ATTACHMENT_*` for attachment limits and storage path.
 - `APP_LOCALE` and `APP_FALLBACK_LOCALE` for the default UI language.

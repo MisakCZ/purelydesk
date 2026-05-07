@@ -180,6 +180,22 @@
                 display: flex;
                 align-items: center;
                 gap: 0.9rem;
+                min-width: 0;
+                max-width: min(100%, 32rem);
+            }
+
+            .brand--wide {
+                align-items: center;
+                display: flex;
+                gap: 0.25rem;
+                min-width: 0;
+                max-width: min(100%, 32rem);
+            }
+
+            .brand-media {
+                display: inline-flex;
+                align-items: center;
+                min-width: 0;
             }
 
             .brand-mark {
@@ -197,11 +213,21 @@
 
             .brand-logo {
                 display: block;
-                max-width: 12rem;
-                max-height: 2.5rem;
                 width: auto;
                 height: auto;
                 object-fit: contain;
+                flex: 0 1 auto;
+            }
+
+            .brand-logo-mark {
+                max-width: 2.75rem;
+                max-height: 2.75rem;
+            }
+
+            .brand-logo-wide {
+                min-width: min(100%, 12.5rem);
+                max-width: 17.5rem;
+                max-height: 2.75rem;
             }
 
             .brand-copy h1 {
@@ -215,11 +241,132 @@
                 font-size: 0.95rem;
             }
 
+            .brand--wide .brand-copy p {
+                margin-top: 0;
+                font-size: 0.82rem;
+                line-height: 1.25;
+            }
+
+            .brand--wide .brand-copy {
+                min-width: 0;
+                padding-left: 0.65rem;
+                border-left: 1px solid var(--line);
+            }
+
             .nav {
                 display: flex;
                 gap: 0.75rem;
                 flex-wrap: wrap;
                 align-items: center;
+            }
+
+            .mobile-nav {
+                display: none;
+                position: relative;
+                margin-left: auto;
+            }
+
+            .mobile-nav-toggle {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 2.6rem;
+                height: 2.6rem;
+                border: 1px solid var(--line);
+                border-radius: 0.85rem;
+                background: var(--panel);
+                color: var(--text);
+                cursor: pointer;
+                list-style: none;
+                box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
+            }
+
+            .mobile-nav-toggle::-webkit-details-marker {
+                display: none;
+            }
+
+            .mobile-nav-lines {
+                display: grid;
+                gap: 0.25rem;
+                width: 1.05rem;
+            }
+
+            .mobile-nav-lines span {
+                display: block;
+                height: 2px;
+                border-radius: 999px;
+                background: currentColor;
+            }
+
+            .mobile-nav-panel {
+                position: absolute;
+                top: calc(100% + 0.55rem);
+                right: 0;
+                z-index: 80;
+                display: grid;
+                gap: 0.55rem;
+                width: min(20rem, calc(100vw - 1rem));
+                padding: 0.65rem;
+                border: 1px solid var(--line);
+                border-radius: 1rem;
+                background: var(--color-menu-bg);
+                box-shadow: 0 20px 45px rgba(15, 23, 42, 0.18);
+            }
+
+            .mobile-nav-section {
+                display: grid;
+                gap: 0.35rem;
+                padding-top: 0.55rem;
+                border-top: 1px solid var(--line);
+            }
+
+            .mobile-nav-section:first-child {
+                padding-top: 0;
+                border-top: 0;
+            }
+
+            .mobile-nav-link,
+            .mobile-nav-account {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                min-height: 2.45rem;
+                padding: 0.55rem 0.7rem;
+                border-radius: 0.75rem;
+                color: var(--muted);
+                text-decoration: none;
+                font-size: 0.92rem;
+                font-weight: 650;
+            }
+
+            .mobile-nav-link.active {
+                color: var(--accent);
+                background: var(--accent-soft);
+            }
+
+            .mobile-nav-link:hover {
+                color: var(--text);
+                background: var(--color-hover);
+            }
+
+            .mobile-nav-caption {
+                padding: 0 0.15rem;
+                color: var(--muted);
+                font-size: 0.72rem;
+                font-weight: 800;
+                letter-spacing: 0.05em;
+                text-transform: uppercase;
+            }
+
+            .mobile-nav .locale-form,
+            .mobile-nav .logout-form {
+                width: 100%;
+            }
+
+            .mobile-nav .logout-button {
+                width: 100%;
+                border-radius: 0.75rem;
+                text-align: left;
             }
 
             .nav-link {
@@ -935,6 +1082,7 @@
             :root:not([data-theme="default"]) .dashboard-ticket,
             :root:not([data-theme="default"]) .ticket-row,
             :root:not([data-theme="default"]) .ticket-card,
+            :root:not([data-theme="default"]) .ticket-mobile-card,
             :root:not([data-theme="default"]) .ticket-panel,
             :root:not([data-theme="default"]) .comment-card,
             :root:not([data-theme="default"]) .note-card,
@@ -980,15 +1128,62 @@
                 color: #dbe4ee;
             }
 
-            @media (max-width: 720px) {
+            @media (max-width: 768px) {
                 .shell {
                     width: min(100% - 1rem, 100%);
                     padding-top: 1rem;
                 }
 
                 .topbar {
-                    align-items: flex-start;
-                    flex-direction: column;
+                    align-items: center;
+                    flex-direction: row;
+                    gap: 0.75rem;
+                    margin-bottom: 0.8rem;
+                }
+
+                .brand {
+                    max-width: 100%;
+                    flex: 1 1 auto;
+                }
+
+                .brand--wide {
+                    max-width: 100%;
+                }
+
+                .brand-mark,
+                .brand-logo-mark {
+                    max-width: 2.25rem;
+                    max-height: 2.25rem;
+                }
+
+                .brand-logo-wide {
+                    max-width: 11.25rem;
+                    max-height: 2.25rem;
+                }
+
+                .brand-copy h1 {
+                    font-size: 1rem;
+                }
+
+                .brand-copy p {
+                    display: none;
+                }
+
+                .brand--wide .brand-copy p {
+                    display: none;
+                }
+
+                .brand--wide .brand-copy {
+                    padding-left: 0.5rem;
+                }
+
+                .nav {
+                    display: none;
+                }
+
+                .mobile-nav {
+                    display: block;
+                    flex: 0 0 auto;
                 }
 
                 .page-head,
@@ -1020,20 +1215,27 @@
     <body>
         @php
             $brandLogoPath = trim((string) config('helpdesk.brand.logo_path', ''));
+            $brandFallbackText = trim((string) config('helpdesk.brand.fallback_text', 'HD')) ?: 'HD';
+            $configuredBrandLogoMode = trim((string) config('helpdesk.brand.logo_mode', 'mark'));
+            $brandLogoMode = in_array($configuredBrandLogoMode, ['mark', 'wide'], true) ? $configuredBrandLogoMode : 'mark';
             $availableThemes = ['default', 'dark', 'pastel', 'contrast'];
         @endphp
         <div class="shell">
             <header class="topbar">
-                <div class="brand">
-                    @if ($brandLogoPath !== '')
-                        <img
-                            class="brand-logo"
-                            src="{{ $brandLogoPath }}"
-                            alt="{{ config('app.name', 'Helpdesk') }}"
-                        >
-                    @else
-                        <div class="brand-mark">HD</div>
-                    @endif
+                <div class="brand {{ $brandLogoPath !== '' && $brandLogoMode === 'wide' ? 'brand--wide' : '' }}">
+                    <div class="brand-media">
+                        @if ($brandLogoPath !== '')
+                            <img
+                                class="brand-logo {{ $brandLogoMode === 'wide' ? 'brand-logo-wide' : 'brand-logo-mark' }}"
+                                src="{{ $brandLogoPath }}"
+                                alt="{{ config('app.name', 'Helpdesk') }}"
+                                onerror="this.hidden=true;this.nextElementSibling.hidden=false;"
+                            >
+                            <div class="brand-mark" hidden>{{ $brandFallbackText }}</div>
+                        @else
+                            <div class="brand-mark">{{ $brandFallbackText }}</div>
+                        @endif
+                    </div>
                     <div class="brand-copy">
                         <h1>{{ config('app.name', 'Helpdesk') }}</h1>
                         <p>{{ __('layout.brand.subtitle') }}</p>
@@ -1122,6 +1324,77 @@
                         </form>
                     @endauth
                 </nav>
+
+                <details class="mobile-nav">
+                    <summary class="mobile-nav-toggle" aria-label="{{ __('layout.nav.mobile_menu') }}">
+                        <span class="mobile-nav-lines" aria-hidden="true">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </span>
+                    </summary>
+
+                    <div class="mobile-nav-panel">
+                        <div class="mobile-nav-section">
+                            <a class="mobile-nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
+                                {{ __('layout.nav.dashboard') }}
+                            </a>
+                            <a class="mobile-nav-link {{ request()->routeIs('tickets.index') ? 'active' : '' }}" href="{{ route('tickets.index') }}">
+                                {{ __('layout.nav.tickets') }}
+                            </a>
+                            <a class="mobile-nav-link {{ request()->routeIs('announcements.*') ? 'active' : '' }}" href="{{ route('announcements.active') }}">
+                                {{ __('layout.nav.announcements') }}
+                            </a>
+                        </div>
+
+                        <div class="mobile-nav-section" aria-label="{{ __('layout.nav.language') }}">
+                            <div class="mobile-nav-caption">{{ __('layout.nav.language') }}</div>
+                            @foreach (($supportedLocales ?? config('helpdesk.supported_locales', [])) as $supportedLocale)
+                                <form class="locale-form" method="post" action="{{ route('locale.update') }}">
+                                    @csrf
+                                    <input type="hidden" name="locale" value="{{ $supportedLocale }}">
+                                    <button
+                                        class="locale-option {{ $activeLocale === $supportedLocale ? 'active' : '' }}"
+                                        type="submit"
+                                        aria-pressed="{{ $activeLocale === $supportedLocale ? 'true' : 'false' }}"
+                                    >
+                                        <span class="locale-option-label">{{ __('layout.nav.locales.'.$supportedLocale) }}</span>
+                                        @if ($activeLocale === $supportedLocale)
+                                            <span class="locale-option-check" aria-hidden="true">✓</span>
+                                        @endif
+                                    </button>
+                                </form>
+                            @endforeach
+                        </div>
+
+                        <div class="mobile-nav-section" data-theme-switcher aria-label="{{ __('layout.nav.theme') }}">
+                            <div class="mobile-nav-caption">{{ __('layout.nav.theme') }}</div>
+                            @foreach ($availableThemes as $theme)
+                                <button
+                                    class="theme-option"
+                                    type="button"
+                                    role="menuitemradio"
+                                    aria-checked="false"
+                                    data-theme-option="{{ $theme }}"
+                                    data-theme-label="{{ __('layout.nav.themes.'.$theme) }}"
+                                >
+                                    <span class="theme-option-label">{{ __('layout.nav.themes.'.$theme) }}</span>
+                                    <span class="theme-option-check" aria-hidden="true" hidden>✓</span>
+                                </button>
+                            @endforeach
+                        </div>
+
+                        @auth
+                            <div class="mobile-nav-section">
+                                <span class="mobile-nav-account">{{ $currentUser?->loginName() }}</span>
+                                <form class="logout-form" method="post" action="{{ route('logout') }}">
+                                    @csrf
+                                    <button class="logout-button" type="submit">{{ __('layout.nav.logout') }}</button>
+                                </form>
+                            </div>
+                        @endauth
+                    </div>
+                </details>
             </header>
 
             <main class="page-card">
@@ -1169,14 +1442,10 @@
 
         <script>
             document.addEventListener('DOMContentLoaded', () => {
-                const themeSwitcher = document.querySelector('[data-theme-switcher]');
+                const themeSwitchers = Array.from(document.querySelectorAll('[data-theme-switcher]'));
 
-                if (themeSwitcher) {
+                if (themeSwitchers.length > 0) {
                     const themes = ['default', 'dark', 'pastel', 'contrast'];
-                    const current = themeSwitcher.querySelector('[data-theme-current]');
-                    const summary = themeSwitcher.querySelector('.theme-toggle');
-                    const summaryLabel = summary?.dataset.themeCurrentLabel || '';
-                    const options = Array.from(themeSwitcher.querySelectorAll('[data-theme-option]'));
                     const normalizeTheme = (theme) => themes.includes(theme) ? theme : 'default';
                     const storedTheme = () => {
                         try {
@@ -1194,36 +1463,62 @@
                     };
                     const applyTheme = (theme) => {
                         const activeTheme = normalizeTheme(theme);
-                        const activeOption = options.find((option) => option.dataset.themeOption === activeTheme);
-                        const label = activeOption?.dataset.themeLabel || activeTheme;
 
                         document.documentElement.dataset.theme = activeTheme;
                         storeTheme(activeTheme);
 
-                        if (current) {
-                            current.textContent = label;
-                        }
+                        themeSwitchers.forEach((themeSwitcher) => {
+                            const current = themeSwitcher.querySelector('[data-theme-current]');
+                            const summary = themeSwitcher.querySelector('.theme-toggle');
+                            const summaryLabel = summary?.dataset.themeCurrentLabel || '';
+                            const options = Array.from(themeSwitcher.querySelectorAll('[data-theme-option]'));
+                            const activeOption = options.find((option) => option.dataset.themeOption === activeTheme);
+                            const label = activeOption?.dataset.themeLabel || activeTheme;
 
-                        if (summary && summaryLabel !== '') {
-                            summary.setAttribute('aria-label', summaryLabel.replace('__THEME__', label));
-                        }
+                            if (current) {
+                                current.textContent = label;
+                            }
 
-                        options.forEach((option) => {
-                            const isActive = option.dataset.themeOption === activeTheme;
-                            option.classList.toggle('active', isActive);
-                            option.setAttribute('aria-checked', isActive ? 'true' : 'false');
-                            option.querySelector('.theme-option-check').hidden = ! isActive;
+                            if (summary && summaryLabel !== '') {
+                                summary.setAttribute('aria-label', summaryLabel.replace('__THEME__', label));
+                            }
+
+                            options.forEach((option) => {
+                                const isActive = option.dataset.themeOption === activeTheme;
+                                option.classList.toggle('active', isActive);
+                                option.setAttribute('aria-checked', isActive ? 'true' : 'false');
+                                option.querySelector('.theme-option-check').hidden = ! isActive;
+                            });
                         });
                     };
 
-                    options.forEach((option) => {
-                        option.addEventListener('click', () => {
-                            applyTheme(option.dataset.themeOption);
-                            themeSwitcher.removeAttribute('open');
+                    themeSwitchers.forEach((themeSwitcher) => {
+                        themeSwitcher.querySelectorAll('[data-theme-option]').forEach((option) => {
+                            option.addEventListener('click', () => {
+                                applyTheme(option.dataset.themeOption);
+                                themeSwitcher.removeAttribute('open');
+                                themeSwitcher.closest('.mobile-nav')?.removeAttribute('open');
+                            });
                         });
                     });
 
                     applyTheme(document.documentElement.dataset.theme || storedTheme());
+                }
+
+                const mobileNav = document.querySelector('.mobile-nav');
+
+                if (mobileNav) {
+                    document.addEventListener('click', (event) => {
+                        if (mobileNav.open && ! mobileNav.contains(event.target)) {
+                            mobileNav.removeAttribute('open');
+                        }
+                    });
+
+                    document.addEventListener('keydown', (event) => {
+                        if (event.key === 'Escape') {
+                            mobileNav.removeAttribute('open');
+                        }
+                    });
                 }
 
                 const formatFileSize = (bytes) => {

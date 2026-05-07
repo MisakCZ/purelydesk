@@ -124,10 +124,14 @@ HELPDESK_ATTACHMENT_MAX_FILES=10
 Hlavička aplikace může místo výchozího monogramu `HD` zobrazit nasazené logo. Ve `.env` nastavte veřejnou cestu k logu:
 
 ```env
-HELPDESK_BRAND_LOGO_PATH=/branding/logo.svg
+HELPDESK_BRAND_LOGO_PATH=/helpdesk-logo.svg
+HELPDESK_BRAND_FALLBACK_TEXT=HD
+HELPDESK_BRAND_LOGO_MODE=wide
 ```
 
-Cesta má ukazovat na veřejný asset servírovaný aplikací nebo web serverem. Skutečná interní loga ani organizačně specifické brandové soubory necommitujte do veřejného repozitáře.
+Cesta má ukazovat na veřejný asset servírovaný aplikací nebo web serverem. Jednoduchá provozní varianta je uložit instalační logo přímo do `public/helpdesk-logo.svg` a jako cestu použít `/helpdesk-logo.svg`. Skutečná interní loga ani organizačně specifické brandové soubory necommitujte do veřejného repozitáře.
+
+`HELPDESK_BRAND_LOGO_MODE=mark` bere logo jako malou ikonku v prostoru původního monogramu a nechává vedle ní název aplikace. `HELPDESK_BRAND_LOGO_MODE=wide` bere logo jako širší horizontální brand a skryje duplicitní viditelný název aplikace, aby hlavička zůstala kompaktní. Pokud cesta k logu není vyplněná nebo se obrázek nenačte, hlavička použije fallback z `HELPDESK_BRAND_FALLBACK_TEXT`.
 
 Uživatel může barevné schéma UI přepnout v hlavičce aplikace. Dostupná schémata jsou Výchozí, Tmavé, Pastelové a Kontrastní. Vybrané schéma se ukládá pouze v prohlížeči do `localStorage`; neukládá se do databáze a neovlivňuje ostatní uživatele.
 
