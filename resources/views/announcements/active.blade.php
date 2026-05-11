@@ -57,11 +57,21 @@
             line-height: 1.35;
         }
 
-        .active-announcement p {
+        .active-announcement p,
+        .active-announcement-body {
             margin: 0;
             color: #475569;
             font-size: 0.82rem;
             line-height: 1.5;
+        }
+
+        .active-announcement-body {
+            white-space: pre-line;
+        }
+
+        .active-announcement-body a {
+            color: #0f766e;
+            font-weight: 700;
         }
 
         .active-announcement-meta {
@@ -109,7 +119,7 @@
                             </span>
                         </div>
 
-                        <p>{{ $announcement->body }}</p>
+                        <div class="active-announcement-body">{!! $announcement->bodyHtml() !!}</div>
 
                         @if ($announcement->starts_at || $announcement->ends_at)
                             <p class="active-announcement-meta">

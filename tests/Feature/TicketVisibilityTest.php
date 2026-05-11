@@ -3250,6 +3250,34 @@ class TicketVisibilityTest extends TestCase
         ]);
     }
 
+    public function test_announcements_support_sanitized_html_body(): void
+    {
+        $solver = $this->createUserWithRole($this->solverRole);
+
+        $this->actingAs($solver);
+
+        $this->post(route('announcements.store'), [
+            'title' => 'HTML announcement',
+            'body' => 'Read <a href="https://example.org/status" onclick="alert(1)" target="_blank">status page</a><script>alert(1)</script>',
+            'type' => Announcement::TYPE_INFO,
+            'is_active' => '1',
+        ])->assertRedirect(route('announcements.index'));
+
+        $announcement = Announcement::query()
+            ->where('title', 'HTML announcement')
+            ->firstOrFail();
+
+        $this->assertStringContainsString('<a href="https://example.org/status" target="_blank" rel="noopener noreferrer">status page</a>', $announcement->body);
+        $this->assertStringNotContainsString('onclick', $announcement->body);
+        $this->assertStringNotContainsString('<script>', $announcement->body);
+
+        $this->get(route('announcements.index'))
+            ->assertOk()
+            ->assertSee('<a href="https://example.org/status" target="_blank" rel="noopener noreferrer">status page</a>', false)
+            ->assertDontSee('onclick', false)
+            ->assertDontSee('alert(1)', false);
+    }
+
     public function test_regular_user_cannot_manage_announcements(): void
     {
         $user = $this->createUserWithRole($this->userRole);

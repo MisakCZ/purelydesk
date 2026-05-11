@@ -121,7 +121,7 @@ class AnnouncementController extends Controller
             'department_id' => null,
             'author_id' => $authorId,
             'title' => $validated['title'],
-            'body' => $validated['body'],
+            'body' => Announcement::sanitizeBodyHtml($validated['body']),
             'visibility' => 'public',
             'is_active' => $request->has('is_active'),
             'starts_at' => $this->parseDateTime($validated['starts_at'] ?? null),

@@ -30,6 +30,7 @@
 <div class="form-field">
     <label class="form-label" for="body">{{ __('announcements.form.body') }}</label>
     <textarea class="form-textarea" id="body" name="body" required>{{ old('body', $announcement?->body) }}</textarea>
+    <div class="hint">{{ __('announcements.form.body_hint') }}</div>
     @error('body')
         <div class="field-error">{{ $message }}</div>
     @enderror

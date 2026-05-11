@@ -70,6 +70,7 @@ return [
         'title' => 'Nadpis',
         'type' => 'Typ',
         'body' => 'Text',
+        'body_hint' => 'Můžete použít základní HTML, například odkazy, tučné písmo a seznamy. Nebezpečné tagy a atributy se při uložení odstraní.',
         'starts_at' => 'Aktivní od',
         'ends_at' => 'Aktivní do',
         'is_active' => 'Oznámení je aktivní',

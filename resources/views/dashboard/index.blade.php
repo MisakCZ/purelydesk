@@ -163,6 +163,15 @@
             line-height: 1.45;
         }
 
+        .dashboard-announcement-body {
+            white-space: pre-line;
+        }
+
+        .dashboard-announcement-body a {
+            color: #0f766e;
+            font-weight: 750;
+        }
+
         .dashboard-announcement-foot {
             display: flex;
             flex-wrap: wrap;
@@ -437,7 +446,7 @@
                                 </span>
                             </div>
 
-                            <p class="dashboard-announcement-body">{{ \Illuminate\Support\Str::limit($announcement->body, 180) }}</p>
+                            <div class="dashboard-announcement-body">{!! $announcement->bodyHtml() !!}</div>
 
                             <div class="dashboard-announcement-foot">
                                 @if ($announcement->starts_at || $announcement->ends_at)

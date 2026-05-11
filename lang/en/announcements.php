@@ -70,6 +70,7 @@ return [
         'title' => 'Title',
         'type' => 'Type',
         'body' => 'Text',
+        'body_hint' => 'You can use basic HTML, such as links, bold text, and lists. Unsafe tags and attributes are removed when saved.',
         'starts_at' => 'Active from',
         'ends_at' => 'Active until',
         'is_active' => 'Announcement is active',

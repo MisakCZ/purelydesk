@@ -73,11 +73,17 @@
             color: #13202b;
         }
 
-        .announcement-item p {
+        .announcement-item p,
+        .announcement-body {
             margin: 0.5rem 0 0;
             color: #334155;
             line-height: 1.6;
             white-space: pre-line;
+        }
+
+        .announcement-body a {
+            color: #0f766e;
+            font-weight: 700;
         }
 
         .announcement-detail {
@@ -239,7 +245,7 @@
                                     </span>
                                 </div>
 
-                                <p>{{ $announcement->body }}</p>
+                                <div class="announcement-body">{!! $announcement->bodyHtml() !!}</div>
 
                                 <div class="announcement-detail">
                                     {{ __('announcements.index.meta.visibility', ['value' => \App\Models\Announcement::translatedVisibilityLabel($announcement->visibility)]) }}

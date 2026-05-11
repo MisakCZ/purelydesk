@@ -67,6 +67,11 @@
             white-space: pre-line;
         }
 
+        .announcement-body a {
+            color: #0f766e;
+            font-weight: 700;
+        }
+
         .announcement-meta {
             margin-top: 0.75rem;
             color: #5b6b79;
@@ -1312,7 +1317,7 @@
                             </span>
                         </div>
 
-                        <p class="announcement-body">{{ $announcement->body }}</p>
+                        <div class="announcement-body">{!! $announcement->bodyHtml() !!}</div>
 
                         @if ($announcement->starts_at || $announcement->ends_at)
                             <div class="announcement-meta">

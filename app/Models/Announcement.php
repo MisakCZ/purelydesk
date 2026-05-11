@@ -13,6 +13,8 @@ class Announcement extends Model
 {
     use HasFactory;
 
+    private const ALLOWED_BODY_HTML_TAGS = '<a><br><p><strong><b><em><i><u><ul><ol><li>';
+
     public const TYPE_INFO = 'info';
     public const TYPE_WARNING = 'warning';
     public const TYPE_OUTAGE = 'outage';
@@ -75,6 +77,83 @@ class Announcement extends Model
         }
 
         return Str::headline(str_replace('_', ' ', $visibility));
+    }
+
+    public static function sanitizeBodyHtml(?string $body): string
+    {
+        $html = preg_replace('/<(script|style|iframe|object|embed)\b[^>]*>.*?<\/\1>/is', '', (string) $body) ?? '';
+        $html = strip_tags($html, self::ALLOWED_BODY_HTML_TAGS);
+
+        return preg_replace_callback('/<([a-z][a-z0-9]*)(\s[^>]*)?>/i', function (array $matches): string {
+            $tag = strtolower($matches[1]);
+
+            if ($tag !== 'a') {
+                return '<'.$tag.'>';
+            }
+
+            $attributes = self::sanitizeLinkAttributes($matches[2] ?? '');
+
+            return '<a'.$attributes.'>';
+        }, $html) ?? '';
+    }
+
+    public function bodyHtml(): string
+    {
+        return self::sanitizeBodyHtml($this->body);
+    }
+
+    private static function sanitizeLinkAttributes(string $attributeText): string
+    {
+        preg_match_all(
+            '/([a-zA-Z_:][-a-zA-Z0-9_:.]*)\s*=\s*("([^"]*)"|\'([^\']*)\'|([^"\'>\s]+))/',
+            $attributeText,
+            $matches,
+            PREG_SET_ORDER,
+        );
+
+        $attributes = [];
+
+        foreach ($matches as $match) {
+            $name = strtolower($match[1]);
+            $value = html_entity_decode($match[3] ?? $match[4] ?? $match[5] ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+            if ($name === 'href' && self::isSafeLinkHref($value)) {
+                $attributes['href'] = e($value);
+            }
+
+            if ($name === 'title') {
+                $attributes['title'] = e($value);
+            }
+
+            if ($name === 'target' && in_array($value, ['_blank', '_self'], true)) {
+                $attributes['target'] = e($value);
+            }
+        }
+
+        if (isset($attributes['target']) && $attributes['target'] === '_blank') {
+            $attributes['rel'] = 'noopener noreferrer';
+        }
+
+        return collect($attributes)
+            ->map(fn (string $value, string $name): string => ' '.$name.'="'.$value.'"')
+            ->implode('');
+    }
+
+    private static function isSafeLinkHref(string $href): bool
+    {
+        $href = trim($href);
+
+        if ($href === '') {
+            return false;
+        }
+
+        if (str_starts_with($href, '/') || str_starts_with($href, '#')) {
+            return true;
+        }
+
+        $scheme = parse_url($href, PHP_URL_SCHEME);
+
+        return $scheme !== null && in_array(strtolower($scheme), ['http', 'https', 'mailto', 'tel'], true);
     }
 
     public static function hasTypeColumn(): bool
