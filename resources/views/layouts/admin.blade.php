@@ -182,6 +182,8 @@
                 gap: 0.9rem;
                 min-width: 0;
                 max-width: min(100%, 32rem);
+                color: inherit;
+                text-decoration: none;
             }
 
             .brand--wide {
@@ -755,6 +757,24 @@
                 overflow: hidden;
             }
 
+            .site-footer {
+                margin-top: 1rem;
+                color: var(--muted);
+                font-size: 0.82rem;
+                line-height: 1.5;
+                text-align: center;
+            }
+
+            .site-footer a {
+                color: var(--accent);
+                font-weight: 650;
+                text-decoration: none;
+            }
+
+            .site-footer a:hover {
+                text-decoration: underline;
+            }
+
             .page-head {
                 padding: 1.5rem 1.5rem 1rem;
                 border-bottom: 1px solid var(--line);
@@ -1218,11 +1238,12 @@
             $brandFallbackText = trim((string) config('helpdesk.brand.fallback_text', 'HD')) ?: 'HD';
             $configuredBrandLogoMode = trim((string) config('helpdesk.brand.logo_mode', 'mark'));
             $brandLogoMode = in_array($configuredBrandLogoMode, ['mark', 'wide'], true) ? $configuredBrandLogoMode : 'mark';
+            $footerCopyrightHtml = trim((string) config('helpdesk.footer.copyright_html', ''));
             $availableThemes = ['default', 'dark', 'pastel', 'contrast'];
         @endphp
         <div class="shell">
             <header class="topbar">
-                <div class="brand {{ $brandLogoPath !== '' && $brandLogoMode === 'wide' ? 'brand--wide' : '' }}">
+                <a class="brand {{ $brandLogoPath !== '' && $brandLogoMode === 'wide' ? 'brand--wide' : '' }}" href="{{ route('dashboard') }}" aria-label="{{ config('app.name', 'Helpdesk') }}">
                     <div class="brand-media">
                         @if ($brandLogoPath !== '')
                             <img
@@ -1240,7 +1261,7 @@
                         <h1>{{ config('app.name', 'Helpdesk') }}</h1>
                         <p>{{ __('layout.brand.subtitle') }}</p>
                     </div>
-                </div>
+                </a>
 
                 <nav class="nav" aria-label="{{ __('layout.nav.main') }}">
                     @php($activeLocale = $currentLocale ?? app()->getLocale())
@@ -1400,6 +1421,12 @@
             <main class="page-card">
                 @yield('content')
             </main>
+
+            @if ($footerCopyrightHtml !== '')
+                <footer class="site-footer">
+                    {!! $footerCopyrightHtml !!}
+                </footer>
+            @endif
         </div>
 
         <div

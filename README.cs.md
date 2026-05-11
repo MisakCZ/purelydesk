@@ -69,6 +69,12 @@ Nejdůležitější oblasti konfigurace jsou:
 
 Do Gitu neukládejte skutečná tajemství, LDAP bind hesla, produkční hodnoty `APP_KEY` ani názvy serverů konkrétního prostředí.
 
+## Autor
+
+Autorem a správcem projektu je Michal Hradecký, misak.cz.
+
+Aplikace byla vyvíjena za pomoci OpenAI Codexu.
+
 ## Licence
 
-Projekt je distribuován jako Laravel aplikace. Použijte licenční soubor v repozitáři, pokud ho vlastník projektu doplní.
+Projekt je zveřejněn pod licencí MIT. Plné znění licence najdete v souboru [LICENSE](LICENSE).

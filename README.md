@@ -69,6 +69,12 @@ The most important configuration areas are:
 
 Do not commit real secrets, LDAP bind passwords, production `APP_KEY` values, or environment-specific server names to Git.
 
+## Author
+
+Created and maintained by Michal Hradecký, misak.cz.
+
+Development of this application was assisted by OpenAI Codex.
+
 ## License
 
-This project is distributed as a Laravel application. Use the license file in the repository if one is added by the project owner.
+This project is released under the MIT License. See [LICENSE](LICENSE) for the full license text.

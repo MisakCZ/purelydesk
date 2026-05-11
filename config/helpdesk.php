@@ -41,6 +41,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Helpdesk Footer
+    |--------------------------------------------------------------------------
+    |
+    | Optional footer copyright text. This value is rendered as trusted HTML so
+    | deployments can include links or simple formatting from environment config.
+    |
+    */
+    'footer' => [
+        'copyright_html' => env('HELPDESK_FOOTER_COPYRIGHT_HTML', '&copy; '.date('Y').' '.env('APP_NAME', 'Helpdesk')),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Helpdesk Authentication
     |--------------------------------------------------------------------------
     |
