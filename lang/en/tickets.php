@@ -81,7 +81,7 @@ return [
             'toggle' => 'Sort by :column',
         ],
         'meta' => [
-            'requester' => 'Requested by :name',
+            'requester' => 'Requester: :name',
             'assignee' => 'Assignee: :name',
             'assignee_unassigned' => 'Unassigned',
             'comments' => '{0} No comments|{1} 1 comment|[2,*] :count comments',

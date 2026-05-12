@@ -1641,7 +1641,7 @@
 
                                     <div class="subject-meta">
                                         <span class="subject-meta-item">
-                                            {{ $ticket->translatedVisibilityLabel() }}
+                                            {{ __('tickets.index.meta.requester', ['name' => $ticket->requester?->displayName() ?? __('tickets.common.not_available')]) }}
                                         </span>
                                         <span class="subject-meta-separator" aria-hidden="true">&middot;</span>
                                         <span class="subject-meta-item">
@@ -1794,7 +1794,7 @@
                         </div>
 
                         <div class="ticket-mobile-meta">
-                            <span>{{ $ticket->translatedVisibilityLabel() }}</span>
+                            <span>{{ __('tickets.index.meta.requester', ['name' => $ticket->requester?->displayName() ?? __('tickets.common.not_available')]) }}</span>
                             <span aria-hidden="true">&middot;</span>
                             <span>
                                 {{ $ticket->assignee

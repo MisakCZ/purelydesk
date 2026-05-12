@@ -81,7 +81,7 @@ return [
             'toggle' => 'Seřadit podle sloupce :column',
         ],
         'meta' => [
-            'requester' => 'Zadal :name',
+            'requester' => 'Zadavatel: :name',
             'assignee' => 'Řešitel: :name',
             'assignee_unassigned' => 'Bez přiřazení',
             'comments' => '{0} Bez komentářů|{1} 1 komentář|[2,4] :count komentáře|[5,*] :count komentářů',
