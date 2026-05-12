@@ -28,6 +28,10 @@
         </span>
     </div>
 
+    <div class="dashboard-ticket-requester">
+        {{ __('tickets.index.meta.requester', ['name' => $ticket->requester?->displayName() ?? __('tickets.common.not_available')]) }}
+    </div>
+
     <div class="dashboard-ticket-meta">
         {{ __('dashboard.ticket.updated_at', ['date' => $updatedAt]) }}
         @if ($expectedResolutionAt)

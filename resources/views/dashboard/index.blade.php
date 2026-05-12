@@ -299,6 +299,14 @@
             font-weight: 600;
         }
 
+        .dashboard-ticket-requester {
+            grid-column: 1 / -1;
+            color: #475569;
+            font-size: 0.75rem;
+            font-weight: 650;
+            line-height: 1.35;
+        }
+
         .dashboard-empty {
             padding: 0.5rem 0.62rem;
             border: 1px dashed #cfd8e3;

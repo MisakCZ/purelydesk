@@ -275,6 +275,7 @@ class DashboardDataService
         $query = Ticket::query()
             ->visibleTo($user)
             ->with([
+                'requester:id,name,display_name,username',
                 'status:id,name,slug',
                 'priority:id,name,slug',
             ]);
