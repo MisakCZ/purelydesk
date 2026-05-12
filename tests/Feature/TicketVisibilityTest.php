@@ -1123,7 +1123,7 @@ class TicketVisibilityTest extends TestCase
         Notification::assertNothingSent();
     }
 
-    public function test_assignee_change_notifies_new_assignee(): void
+    public function test_assignee_change_notifies_requester_and_new_assignee(): void
     {
         config()->set('helpdesk.notifications.mail.enabled', true);
         Notification::fake();
@@ -1159,11 +1159,16 @@ class TicketVisibilityTest extends TestCase
             fn (TicketEventNotification $notification) => $notification->event === 'assignee_changed'
                 && (int) $notification->ticket->id === (int) $ticket->id,
         );
-        Notification::assertNotSentTo($requester, TicketEventNotification::class);
+        Notification::assertSentTo(
+            $requester,
+            TicketEventNotification::class,
+            fn (TicketEventNotification $notification) => $notification->event === 'assignee_changed'
+                && (int) $notification->ticket->id === (int) $ticket->id,
+        );
         Notification::assertNotSentTo($watcher, TicketEventNotification::class);
     }
 
-    public function test_assignee_change_does_not_notify_actor_when_assigning_to_self(): void
+    public function test_assignee_change_notifies_requester_but_not_actor_when_assigning_to_self(): void
     {
         config()->set('helpdesk.notifications.mail.enabled', true);
         Notification::fake();
@@ -1186,7 +1191,13 @@ class TicketVisibilityTest extends TestCase
             ])
             ->assertRedirect(route('tickets.show', $ticket));
 
-        Notification::assertNothingSent();
+        Notification::assertSentTo(
+            $requester,
+            TicketEventNotification::class,
+            fn (TicketEventNotification $notification) => $notification->event === 'assignee_changed'
+                && (int) $notification->ticket->id === (int) $ticket->id,
+        );
+        Notification::assertNotSentTo($solver, TicketEventNotification::class);
     }
 
     public function test_disabled_mail_notifications_prevent_ticket_notification(): void
@@ -3061,7 +3072,11 @@ class TicketVisibilityTest extends TestCase
             TicketEventNotification::class,
             fn (TicketEventNotification $notification) => $notification->event === 'assignee_changed'
         );
-        Notification::assertNotSentTo($requester, TicketEventNotification::class);
+        Notification::assertSentTo(
+            $requester,
+            TicketEventNotification::class,
+            fn (TicketEventNotification $notification) => $notification->event === 'assignee_changed'
+        );
 
         Carbon::setTestNow();
     }

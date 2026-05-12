@@ -61,7 +61,7 @@ Ticket notification recipients depend on the event type:
 
 - New ticket: the requester is notified as confirmation. Solver queue users are notified only when `HELPDESK_NOTIFY_SOLVERS_ON_NEW_TICKETS=true`. Admins are notified only when `HELPDESK_NOTIFY_ADMINS_ON_NEW_TICKETS=true`. Existing assignee or watcher records are not used as a general reason for a created-ticket notification.
 - Public comment: requester, current assignee, and watchers are notified. The comment author is excluded.
-- Assignee change: only the new assignee is notified. If the actor assigns the ticket to themselves, no assignee-change e-mail is sent to that actor.
+- Assignee change: the requester and the new assignee are notified. If the actor assigns the ticket to themselves, no assignee-change e-mail is sent to that actor.
 - Expected resolution change: only the requester is notified. If the requester is also the actor, no e-mail is sent to that actor.
 - Status changes, resolved, closed, problem persists, and automatic close: requester, assignee, and watchers are considered. The actor is excluded when there is one; automatic close has no actor.
 - Internal notes do not send outbound ticket notifications.

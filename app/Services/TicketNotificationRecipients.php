@@ -47,6 +47,7 @@ class TicketNotificationRecipients
                 ...$this->operationalRecipientsForCreatedTicket($event),
             ],
             'assignee_changed' => [
+                $ticket->requester,
                 $ticket->assignee,
             ],
             'expected_resolution_changed' => [

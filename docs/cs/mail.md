@@ -61,7 +61,7 @@ Příjemci ticketových notifikací závisí na typu události:
 
 - Nový ticket: zadavatel dostane potvrzení o založení. Uživatelé ve frontě solverů dostanou notifikaci jen při `HELPDESK_NOTIFY_SOLVERS_ON_NEW_TICKETS=true`. Admini dostanou notifikaci jen při `HELPDESK_NOTIFY_ADMINS_ON_NEW_TICKETS=true`. Existující řešitel nebo watcher záznam nejsou samy o sobě obecným důvodem pro notifikaci o novém ticketu.
 - Veřejný komentář: notifikaci dostane zadavatel, aktuální řešitel a sledující. Autor komentáře je vyloučen.
-- Změna řešitele: notifikaci dostane pouze nový řešitel. Pokud si aktér přiřadí ticket sám sobě, e-mail o změně řešitele se mu neposílá.
+- Změna řešitele: notifikaci dostane zadavatel a nový řešitel. Pokud si aktér přiřadí ticket sám sobě, e-mail o změně řešitele se mu neposílá.
 - Změna očekávaného termínu vyřešení: notifikaci dostane pouze zadavatel. Pokud je zadavatel zároveň aktér, e-mail se mu neposílá.
 - Změny statusu, vyřešeno, uzavřeno, problém trvá a automatické uzavření: posuzuje se zadavatel, řešitel a sledující. Aktér je vyloučen, pokud existuje; automatické uzavření aktéra nemá.
 - Interní poznámky neodesílají outbound ticketové notifikace.
