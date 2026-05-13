@@ -1,6 +1,8 @@
 # E-mailové notifikace
 
-Helpdesk odesílá odchozí e-mailové notifikace přes standardní Laravel mail konfiguraci. Umí také načítat odpovědi k existujícím ticketům z lokálního Postfix Maildiru. Aplikace nepoužívá IMAP a nezakládá nové tickety z e-mailu.
+PurelyDesk odesílá odchozí e-mailové notifikace přes standardní Laravel mail konfiguraci.
+
+Zpracování příchozích odpovědí přes lokální Maildir je dokumentované jako experimentální funkcionalita ve vývoji. Je určeno pro pokročilejší nasazení, kde správce dokáže naroutovat dedikovanou reply adresu nebo reply doménu do lokálního MTA/Postfix Maildiru. Před produkčním použitím musí být ověřeno end-to-end.
 
 ## Zapnutí notifikací
 
@@ -79,9 +81,9 @@ Příjemci notifikací jsou filtrováni přes aktuální pravidla viditelnosti t
 
 Tím se zabrání úniku informací o privátních ticketech přes watcher záznam.
 
-## Příchozí odpovědi z lokálního Maildiru
+## Experimentální příchozí odpovědi z lokálního Maildiru
 
-Příchozí odpovědi se zpracovávají z lokálního Postfix Maildiru. Aplikace nepoužívá IMAP. Převádí pouze validní odpovědi na notifikace existujících ticketů na veřejné komentáře u existujících ticketů.
+Příchozí odpovědi se zpracovávají z lokálního Postfix Maildiru. Aplikace nepoužívá IMAP. Tato funkcionalita je experimentální a aktuálně převádí pouze validní odpovědi na notifikace existujících ticketů na veřejné komentáře u existujících ticketů.
 
 Očekávaný tok:
 
@@ -250,7 +252,7 @@ Konkrétní nastavení závisí na topologii pošty. Po změnách kontrolujte Po
 
 ### Laravel konfigurace
 
-Příchozí odpovědi jsou volitelné a defaultně vypnuté:
+Příchozí odpovědi jsou volitelné, experimentální a defaultně vypnuté:
 
 ```env
 HELPDESK_INBOUND_MAIL_ENABLED=false
@@ -265,7 +267,7 @@ HELPDESK_INBOUND_IMPORT_ATTACHMENTS=false
 HELPDESK_INBOUND_NOTIFY_REJECTED_ATTACHMENTS=true
 ```
 
-Token se nedává do `HELPDESK_INBOUND_REPLY_ADDRESS`. Aplikace token generuje automaticky přes plus addressing. `HELPDESK_INBOUND_MAIL_ENABLED` nechte `false`, dokud není serverové doručování do Maildiru otestované.
+Token se nedává do `HELPDESK_INBOUND_REPLY_ADDRESS`. Aplikace token generuje automaticky přes plus addressing. `HELPDESK_INBOUND_MAIL_ENABLED` ponechte `false`, pokud výslovně netestujete doručení do Maildiru a routing reply adresy/domény.
 
 Po změně `.env` vyčistěte Laravel cache konfigurace:
 
@@ -325,15 +327,15 @@ Pokud validní odpověď obsahuje skutečné přílohy, text odpovědi se přest
 
 Inline loga v podpisech, tracking pixely a nepojmenované inline obrázky se ignorují, pokud je lze rozumně rozlišit.
 
-### Omezení první verze
+### Omezení experimentálních příchozích odpovědí
 
-- Inbound e-mail vytváří pouze veřejné komentáře k existujícím ticketům.
-- Nezakládá nové tickety e-mailem.
-- Nemění status, prioritu, řešitele ani viditelnost.
-- Nepotvrzuje ani neodmítá resolved workflow e-mailem.
-- Neimportuje inbound přílohy.
-- Pokud inbound zpráva obsahuje skutečné přílohy, systém přidá poznámku do komentáře a může upozornit odesílatele.
-- Přílohy je nutné nahrávat přes webové UI.
+- Příchozí e-mail může pouze přidat veřejný komentář k existujícímu ticketu.
+- Nezakládá nové tickety.
+- Nemění stav, prioritu, řešitele, kategorii ani viditelnost.
+- Nepotvrzuje ani nevrací resolved workflow.
+- Neimportuje přílohy z e-mailu.
+- Přílohy musí uživatel nahrát přes webové rozhraní.
+- Routing e-mailů, doručení přes gateway, konfiguraci Postfixu, filesystem permissions a SELinux/AppArmor pravidla musí ověřit správce konkrétního nasazení.
 
 ### Test doručení do Maildiru
 

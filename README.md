@@ -19,7 +19,8 @@ The application uses local user profiles synchronized from LDAP, while authentic
 - Attachments for tickets and public comments.
 - Protected attachment preview and download through Laravel controllers.
 - Image attachment lightbox gallery.
-- Outgoing e-mail notifications and inbound replies through local Maildir polling.
+- Outgoing e-mail notifications.
+- Inbound reply processing is under development and documented as an experimental Maildir-based feature.
 - Czech and English UI localization.
 - Conventional Laravel Blade UI without a SPA frontend.
 
@@ -56,6 +57,14 @@ php artisan test
 
 After cloning, update `.env` for your database, LDAP server, mail settings, and application URL. See the documentation links above for details.
 
+## Current Inbound E-mail Status
+
+Inbound e-mail processing is currently documented as an experimental feature. The intended first version processes replies to existing ticket notifications and stores valid replies as public comments.
+
+It does not create new tickets, change ticket status, priority, assignee, category, or visibility, confirm resolved tickets, or import inbound attachments.
+
+Production use depends on correct mail routing to a local MTA/Postfix Maildir and must be tested end to end in the target environment.
+
 ## Local Demo Login Without LDAP
 
 PurelyDesk normally authenticates users through LDAP. For quick local evaluation, you can enable the local demo login. This mode is intended only for local development and is automatically disabled outside `local` and `testing` environments.
@@ -89,7 +98,8 @@ The most important configuration areas are:
 - `DB_*` for MariaDB/MySQL connection settings.
 - `LDAP_*` for LDAP login and role mapping.
 - `HELPDESK_DEMO_LOGIN_ENABLED` for explicit local-only demo login without LDAP.
-- `MAIL_*`, `HELPDESK_MAIL_NOTIFICATIONS`, and `HELPDESK_INBOUND_*` for outgoing notifications and optional inbound reply processing.
+- `MAIL_*` and `HELPDESK_MAIL_NOTIFICATIONS` for outgoing notifications.
+- `HELPDESK_INBOUND_*` for optional experimental inbound reply processing through Maildir.
 - `HELPDESK_BRAND_LOGO_PATH`, `HELPDESK_BRAND_FALLBACK_TEXT`, and `HELPDESK_BRAND_LOGO_MODE` for optional deployed header branding. Do not commit real internal logos.
 - `HELPDESK_RESOLVED_AUTO_CLOSE_DAYS` for automatic closing of resolved tickets.
 - `HELPDESK_EXPECTED_RESOLUTION_*` for priority-based expected resolution defaults and due-soon / overdue assignee reminders.

@@ -19,7 +19,8 @@ Aplikace používá lokální uživatelské profily synchronizované z LDAPu, za
 - Přílohy k ticketům a veřejným komentářům.
 - Chráněný náhled a stahování příloh přes Laravel controllery.
 - Lightbox galerie pro obrázkové přílohy.
-- Odchozí e-mailové notifikace a příchozí odpovědi přes lokální Maildir polling.
+- Odchozí e-mailové notifikace.
+- Příchozí e-mailové odpovědi přes lokální Maildir polling jsou experimentální funkcionalita ve vývoji.
 - Česká a anglická lokalizace UI.
 - Konvenční Laravel Blade UI bez SPA frontendu.
 
@@ -56,6 +57,14 @@ php artisan test
 
 Po stažení upravte `.env` pro databázi, LDAP server, poštu a URL aplikace. Podrobnosti jsou v odkazované dokumentaci výše.
 
+## Aktuální stav příchozích e-mailů
+
+Zpracování příchozích e-mailů je aktuálně dokumentované jako experimentální funkcionalita ve vývoji. Zamýšlená první verze zpracovává odpovědi na existující ticket notifikace a ukládá platné odpovědi jako veřejné komentáře.
+
+Nezakládá nové tickety, nemění stav, prioritu, řešitele, kategorii ani viditelnost ticketu, nepotvrzuje resolved workflow a neimportuje přílohy z e-mailu.
+
+Produkční použití závisí na správném routingu e-mailů do lokálního MTA/Postfix Maildiru a musí být ověřeno end-to-end v cílovém prostředí.
+
 ## Lokální demo přihlášení bez LDAPu
 
 PurelyDesk běžně ověřuje uživatele přes LDAP. Pro rychlé lokální vyzkoušení lze zapnout lokální demo přihlášení. Tento režim je určený pouze pro lokální vývoj a mimo prostředí `local` a `testing` je automaticky zakázaný.
@@ -89,7 +98,8 @@ Nejdůležitější oblasti konfigurace jsou:
 - `DB_*` pro připojení k MariaDB/MySQL.
 - `LDAP_*` pro LDAP přihlášení a mapování rolí.
 - `HELPDESK_DEMO_LOGIN_ENABLED` pro explicitní lokální demo přihlášení bez LDAPu.
-- `MAIL_*`, `HELPDESK_MAIL_NOTIFICATIONS` a `HELPDESK_INBOUND_*` pro odchozí notifikace a volitelné zpracování příchozích odpovědí.
+- `MAIL_*` a `HELPDESK_MAIL_NOTIFICATIONS` pro odchozí notifikace.
+- `HELPDESK_INBOUND_*` pro volitelné experimentální zpracování příchozích odpovědí přes Maildir.
 - `HELPDESK_BRAND_LOGO_PATH`, `HELPDESK_BRAND_FALLBACK_TEXT` a `HELPDESK_BRAND_LOGO_MODE` pro volitelný branding hlavičky. Skutečná interní loga necommitujte.
 - `HELPDESK_RESOLVED_AUTO_CLOSE_DAYS` pro automatické uzavírání vyřešených ticketů.
 - `HELPDESK_EXPECTED_RESOLUTION_*` pro výchozí očekávané termíny podle priority a připomínky řešiteli při blížícím se nebo překročeném termínu.

@@ -1,6 +1,8 @@
 # Mail Notifications
 
-The helpdesk sends outgoing e-mail notifications through Laravel's standard mail configuration. It can also poll a local Postfix Maildir for replies to existing tickets. The application does not use IMAP and does not create new tickets from e-mail.
+PurelyDesk sends outgoing e-mail notifications through Laravel's standard mail configuration.
+
+Inbound reply processing through a local Maildir is documented as an experimental feature under development. It is intended for advanced deployments where the administrator can route a dedicated reply address or reply domain to a local MTA/Postfix Maildir. It should be tested end to end before production use.
 
 ## Enable Notifications
 
@@ -79,9 +81,9 @@ Notification recipients are filtered through current ticket visibility rules:
 
 This prevents a watcher record from leaking information about private tickets.
 
-## Inbound Replies from Local Maildir
+## Experimental Inbound Replies from Local Maildir
 
-Inbound replies are processed from a local Postfix Maildir. The application does not use IMAP. It only converts valid replies to existing ticket notifications into public comments on existing tickets.
+Inbound replies are processed from a local Postfix Maildir. The application does not use IMAP. This feature is experimental and currently only converts valid replies to existing ticket notifications into public comments on existing tickets.
 
 The expected flow is:
 
@@ -250,7 +252,7 @@ Exact settings depend on your mail topology. Review Postfix logs after changes.
 
 ### Laravel Configuration
 
-Inbound replies are optional and disabled by default:
+Inbound replies are optional, experimental, and disabled by default:
 
 ```env
 HELPDESK_INBOUND_MAIL_ENABLED=false
@@ -265,7 +267,7 @@ HELPDESK_INBOUND_IMPORT_ATTACHMENTS=false
 HELPDESK_INBOUND_NOTIFY_REJECTED_ATTACHMENTS=true
 ```
 
-Do not put the token into `HELPDESK_INBOUND_REPLY_ADDRESS`. The application generates the token automatically through plus addressing. Keep `HELPDESK_INBOUND_MAIL_ENABLED=false` until server-side Maildir delivery has been tested.
+Do not put the token into `HELPDESK_INBOUND_REPLY_ADDRESS`. The application generates the token automatically through plus addressing. Keep `HELPDESK_INBOUND_MAIL_ENABLED=false` unless you are explicitly testing Maildir delivery and reply routing.
 
 After changing `.env`, clear Laravel's cached configuration:
 
@@ -325,15 +327,15 @@ If a valid reply contains real attachments, the text reply is still saved as a p
 
 Inline signature logos, tracking pixels, and unnamed inline images are ignored where they can be reasonably detected.
 
-### Limitations of the First Version
+### Limitations of Experimental Inbound Replies
 
-- Inbound e-mail creates only public comments on existing tickets.
-- It does not create new tickets by e-mail.
-- It does not change status, priority, assignee, or visibility.
-- It does not confirm or reject the resolved workflow by e-mail.
+- Inbound e-mail can only add public comments to existing tickets.
+- It does not create new tickets.
+- It does not change status, priority, assignee, category, or visibility.
+- It does not confirm or reject resolved-ticket workflow.
 - It does not import inbound attachments.
-- If an inbound message contains real attachments, the system appends a note to the comment and may notify the sender.
 - Attachments must be uploaded through the web UI.
+- Mail routing, gateway delivery, Postfix configuration, filesystem permissions, and SELinux/AppArmor policies must be validated by the deployment administrator.
 
 ### Test Maildir Delivery
 

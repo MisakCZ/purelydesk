@@ -221,7 +221,7 @@ Replace `www-data`, the group, `/var/www/helpdesk`, and `/usr/bin/php` according
 
 The application schedules `helpdesk:close-resolved-tickets` hourly. This command closes resolved tickets after their `auto_close_at` deadline, writes a history record, and sends the standard ticket notification if mail notifications are enabled.
 
-The application also schedules `helpdesk:fetch-inbound-mail` every five minutes. This command does nothing unless `HELPDESK_INBOUND_MAIL_ENABLED=true`. When enabled, it reads the configured local Maildir and moves handled messages to the configured `Processed` or `Failed` directories. Maildir delivery, inbound reply domain routing to the helpdesk SMTP server, Postfix aliases, ACLs for the PHP user, and SELinux/AppArmor troubleshooting are described in [Mail notifications](mail.md).
+The application also schedules `helpdesk:fetch-inbound-mail` every five minutes. Inbound reply processing is optional and experimental; the command does nothing unless `HELPDESK_INBOUND_MAIL_ENABLED=true`. When enabled, it reads the configured local Maildir and moves handled messages to the configured `Processed` or `Failed` directories. Use it only after Maildir delivery, reply-domain routing to the helpdesk SMTP server, Postfix aliases, ACLs for the PHP user, and SELinux/AppArmor behavior have been tested end to end. Details are described in [Mail notifications](mail.md).
 
 You can run it manually for testing:
 

@@ -49,6 +49,8 @@ Upravte `.env` a nastavte alespoň:
 - `LDAP_*`, pokud má být aktivní LDAP přihlášení
 - `MAIL_*`, pokud mají být aktivní odchozí notifikace
 
+Zpracování příchozích odpovědí je volitelné a experimentální. Ponechte `HELPDESK_INBOUND_MAIL_ENABLED=false`, pokud výslovně netestujete doručení do Maildiru a routing reply adresy/domény.
+
 ## Vygenerování aplikačního klíče
 
 ```bash

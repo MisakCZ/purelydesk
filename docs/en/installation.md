@@ -49,6 +49,8 @@ Edit `.env` and configure at least:
 - `LDAP_*` settings if LDAP login should be active
 - `MAIL_*` settings if outgoing notifications should be active
 
+Inbound reply processing is optional and experimental. Keep `HELPDESK_INBOUND_MAIL_ENABLED=false` unless you are explicitly testing Maildir delivery and reply routing.
+
 ## Generate the Application Key
 
 ```bash
