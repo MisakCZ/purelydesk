@@ -31,7 +31,7 @@ Continuous integration runs Composer validation, Laravel tests, frontend build, 
 ## Technology Stack
 
 - Laravel
-- PHP 8.3+
+- PHP 8.4+
 - MariaDB or MySQL
 - LDAP-compatible directory server
 - Nginx or Apache compatible deployment

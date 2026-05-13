@@ -31,7 +31,7 @@ Continuous integration ověřuje Composer metadata, Laravel testy, frontend buil
 ## Technologický stack
 
 - Laravel
-- PHP 8.3+
+- PHP 8.4+
 - MariaDB nebo MySQL
 - LDAP kompatibilní adresářový server
 - Nasazení kompatibilní s Nginx nebo Apache

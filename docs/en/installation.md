@@ -4,7 +4,7 @@ This guide describes a clean development or test installation after cloning the 
 
 ## Requirements
 
-- PHP 8.3 or newer, matching `composer.json`.
+- PHP 8.4 or newer, matching `composer.json`.
 - Composer.
 - MariaDB or MySQL.
 - A web server for browser testing, for example Nginx or Apache.

@@ -4,7 +4,7 @@ Tento návod popisuje čistou vývojovou nebo testovací instalaci po stažení 
 
 ## Požadavky
 
-- PHP 8.3 nebo novější podle `composer.json`.
+- PHP 8.4 nebo novější podle `composer.json`.
 - Composer.
 - MariaDB nebo MySQL.
 - Web server pro testování v prohlížeči, například Nginx nebo Apache.
