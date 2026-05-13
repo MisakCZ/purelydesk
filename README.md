@@ -1,10 +1,14 @@
 # Helpdesk
 
+[![CI](https://github.com/MisakCZ/purelydesk/actions/workflows/ci.yml/badge.svg)](https://github.com/MisakCZ/purelydesk/actions/workflows/ci.yml)
+
 [Česká verze](README.cs.md)
 
 Helpdesk is a Laravel-based internal helpdesk application for organizations that need a simple ticket workflow integrated with LDAP authentication. It is designed as a general open-source friendly application, not as software tied to a specific company, network, or directory structure.
 
 The application uses local user profiles synchronized from LDAP, while authentication and role assignment are driven by an external LDAP-compatible directory.
+
+Continuous integration runs Composer validation, Laravel tests, frontend build, and whitespace checks.
 
 ## Features
 
