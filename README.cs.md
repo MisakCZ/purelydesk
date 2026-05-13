@@ -46,6 +46,12 @@ Continuous integration ověřuje Composer metadata, Laravel testy, frontend buil
 - [Přílohy](docs/cs/attachments.md)
 - [Bezpečnost](docs/cs/security.md)
 
+## Informace o projektu
+
+- [Bezpečnostní politika](SECURITY.md)
+- [Jak přispívat](CONTRIBUTING.md)
+- [Přehled změn](CHANGELOG.md)
+
 ## Rychlý start
 
 ```bash

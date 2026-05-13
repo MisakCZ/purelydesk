@@ -46,6 +46,12 @@ Continuous integration runs Composer validation, Laravel tests, frontend build, 
 - [Attachments](docs/en/attachments.md)
 - [Security](docs/en/security.md)
 
+## Project Information
+
+- [Security policy](SECURITY.md)
+- [Contributing](CONTRIBUTING.md)
+- [Changelog](CHANGELOG.md)
+
 ## Quick Start
 
 ```bash
