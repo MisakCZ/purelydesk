@@ -40,6 +40,7 @@ Continuous integration runs Composer validation, Laravel tests, frontend build, 
 ## Documentation
 
 - [Installation](docs/en/installation.md)
+- [Architecture and ticket flow](docs/en/architecture.md)
 - [Deployment](docs/en/deployment.md)
 - [LDAP configuration](docs/en/ldap.md)
 - [Mail notifications](docs/en/mail.md)
@@ -51,6 +52,7 @@ Continuous integration runs Composer validation, Laravel tests, frontend build, 
 - [Security policy](SECURITY.md)
 - [Contributing](CONTRIBUTING.md)
 - [Changelog](CHANGELOG.md)
+- [Roadmap](ROADMAP.md)
 
 ## Quick Start
 

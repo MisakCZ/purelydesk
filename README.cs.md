@@ -40,6 +40,7 @@ Continuous integration ověřuje Composer metadata, Laravel testy, frontend buil
 ## Dokumentace
 
 - [Instalace](docs/cs/installation.md)
+- [Architektura a tok ticketu](docs/cs/architecture.md)
 - [Nasazení](docs/cs/deployment.md)
 - [LDAP konfigurace](docs/cs/ldap.md)
 - [E-mailové notifikace](docs/cs/mail.md)
@@ -51,6 +52,7 @@ Continuous integration ověřuje Composer metadata, Laravel testy, frontend buil
 - [Bezpečnostní politika](SECURITY.md)
 - [Jak přispívat](CONTRIBUTING.md)
 - [Přehled změn](CHANGELOG.md)
+- [Roadmapa](ROADMAP.md)
 
 ## Rychlý start
 
