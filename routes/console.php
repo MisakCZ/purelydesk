@@ -30,5 +30,14 @@ Artisan::command('helpdesk:fetch-inbound-mail', function (): int {
     return 0;
 })->purpose('Fetch and process inbound helpdesk replies from Maildir');
 
+Artisan::command('helpdesk:notify-expected-resolution-deadlines', function (): int {
+    $counts = app(\App\Services\ExpectedResolutionDeadlineNotificationService::class)->notifyDueDeadlines();
+
+    $this->info(__('notifications.expected_resolution_deadlines.console.finished', $counts));
+
+    return 0;
+})->purpose('Send expected resolution due soon and overdue reminders');
+
 Schedule::command('helpdesk:close-resolved-tickets')->hourly();
 Schedule::command('helpdesk:fetch-inbound-mail')->everyFiveMinutes();
+Schedule::command('helpdesk:notify-expected-resolution-deadlines')->hourly();

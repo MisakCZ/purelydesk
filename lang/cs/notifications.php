@@ -16,6 +16,8 @@ return [
             'problem_persists' => 'Problém trvá',
             'closed' => 'Ticket uzavřen',
             'expected_resolution_changed' => 'Změna předpokládaného vyřešení',
+            'expected_resolution_due_soon' => 'Blíží se termín vyřešení',
+            'expected_resolution_overdue' => 'Termín vyřešení byl překročen',
         ],
         'lines' => [
             'event' => 'Událost: :event',
@@ -36,6 +38,13 @@ return [
             'closed_by_requester' => 'Zadavatel potvrdil vyřešení ticketu. Ticket byl proto uzavřen.',
             'closed_automatically' => 'Ticket byl automaticky uzavřen, protože po označení jako vyřešený nepřišla během :days dnů žádná reakce zadavatele.',
             'expected_resolution_changed' => 'Předpokládané vyřešení bylo změněno z :old_expected_resolution_at na :expected_resolution_at.',
+            'expected_resolution_due_soon' => 'Očekávaný termín vyřešení je :expected_resolution_at. Pokud termín nelze splnit, můžeš v detailu ticketu upravit očekávaný termín vyřešení. Zadavatel bude o změně termínu informován e-mailem. Přidej prosím k ticketu srozumitelný důvod posunu, ideálně jako veřejný komentář, pokud má být důvod viditelný pro zadavatele.',
+            'expected_resolution_overdue' => 'Očekávaný termín vyřešení :expected_resolution_at byl překročen. Pokud termín nelze splnit, můžeš v detailu ticketu upravit očekávaný termín vyřešení. Zadavatel bude o změně termínu informován e-mailem. Přidej prosím k ticketu srozumitelný důvod posunu, ideálně jako veřejný komentář, pokud má být důvod viditelný pro zadavatele.',
+        ],
+    ],
+    'expected_resolution_deadlines' => [
+        'console' => [
+            'finished' => 'Upozornění na termíny vyřešení zpracována: :due_soon blížících se termínů, :overdue překročených termínů.',
         ],
     ],
     'inbound' => [

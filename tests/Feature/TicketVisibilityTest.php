@@ -2923,7 +2923,7 @@ class TicketVisibilityTest extends TestCase
         Carbon::setTestNow();
     }
 
-    public function test_priority_update_recalculating_auto_expected_resolution_notifies_requester_only(): void
+    public function test_priority_update_recalculating_auto_expected_resolution_does_not_notify_requester(): void
     {
         config()->set('helpdesk.notifications.mail.enabled', true);
         $this->configureExpectedResolutionDays();
@@ -2961,11 +2961,10 @@ class TicketVisibilityTest extends TestCase
         $ticket->refresh();
 
         $this->assertTrue($ticket->expected_resolution_at?->equalTo(Carbon::parse('2026-05-06 11:00:00')) ?? false);
-        Notification::assertSentTo(
+        Notification::assertNotSentTo(
             $requester,
             TicketEventNotification::class,
-            fn (TicketEventNotification $notification) => $notification->event === 'expected_resolution_changed'
-                && (int) $notification->ticket->id === (int) $ticket->id,
+            fn (TicketEventNotification $notification) => $notification->event === 'expected_resolution_changed',
         );
         Notification::assertNotSentTo($assignee, TicketEventNotification::class);
         Notification::assertNotSentTo($watcher, TicketEventNotification::class);

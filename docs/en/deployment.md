@@ -247,11 +247,16 @@ HELPDESK_EXPECTED_RESOLUTION_LOW_DAYS=10
 HELPDESK_EXPECTED_RESOLUTION_NORMAL_DAYS=5
 HELPDESK_EXPECTED_RESOLUTION_HIGH_DAYS=2
 HELPDESK_EXPECTED_RESOLUTION_CRITICAL_DAYS=1
+HELPDESK_EXPECTED_RESOLUTION_DEADLINE_NOTIFICATIONS=true
+HELPDESK_EXPECTED_RESOLUTION_DUE_SOON_HOURS=24
+HELPDESK_EXPECTED_RESOLUTION_OVERDUE_REPEAT_HOURS=24
 ```
 
 The application tracks whether the deadline was set automatically or manually. Automatically set deadlines are recalculated when the priority changes. Manually set deadlines are not overwritten by priority changes. Changing the assignee does not extend or recalculate an existing deadline; the new assignee inherits the current value.
 
 Solver and admin users can set or change the expected resolution date manually from the ticket edit form. Regular users can see the date on the ticket detail when it exists, but cannot submit or change it. Dashboard and ticket list filters can highlight assigned open tickets without a deadline, overdue tickets, and tickets due soon.
+
+The scheduler runs `helpdesk:notify-expected-resolution-deadlines` hourly. It sends due-soon and overdue reminder e-mails only to the current assignee. The requester is not reminded about overdue tickets by this command, but the requester is notified when a solver/admin manually changes the expected resolution date. If a deadline is postponed, the solver should add a clear reason, preferably as a public comment when the requester should see it.
 
 ## Backups
 

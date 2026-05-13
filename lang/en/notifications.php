@@ -16,6 +16,8 @@ return [
             'problem_persists' => 'Problem persists',
             'closed' => 'Ticket closed',
             'expected_resolution_changed' => 'Expected resolution changed',
+            'expected_resolution_due_soon' => 'Expected resolution is due soon',
+            'expected_resolution_overdue' => 'Expected resolution is overdue',
         ],
         'lines' => [
             'event' => 'Event: :event',
@@ -36,6 +38,13 @@ return [
             'closed_by_requester' => 'The requester confirmed the resolution. The ticket has therefore been closed.',
             'closed_automatically' => 'The ticket was automatically closed because the requester did not respond within :days days after it was marked as resolved.',
             'expected_resolution_changed' => 'The expected resolution changed from :old_expected_resolution_at to :expected_resolution_at.',
+            'expected_resolution_due_soon' => 'The expected resolution date is :expected_resolution_at. If the deadline cannot be met, you can update the expected resolution date from the ticket detail/edit form. The requester will be notified by e-mail about the changed deadline. Please add a clear reason for the postponement, preferably as a public comment if the requester should see the reason.',
+            'expected_resolution_overdue' => 'The expected resolution date :expected_resolution_at has passed. If the deadline cannot be met, you can update the expected resolution date from the ticket detail/edit form. The requester will be notified by e-mail about the changed deadline. Please add a clear reason for the postponement, preferably as a public comment if the requester should see the reason.',
+        ],
+    ],
+    'expected_resolution_deadlines' => [
+        'console' => [
+            'finished' => 'Expected resolution deadline reminders processed: :due_soon due soon, :overdue overdue.',
         ],
     ],
     'inbound' => [

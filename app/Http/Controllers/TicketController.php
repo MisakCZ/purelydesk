@@ -551,6 +551,7 @@ class TicketController extends Controller
     ): RedirectResponse|JsonResponse {
         $actor = $this->currentHelpdeskUser();
         $beforeNotificationSnapshot = $this->ticketNotificationSnapshot($ticket);
+        $attributes = $this->withExpectedResolutionNotificationReset($ticket, $attributes);
         $ticket = $this->ticketHistoryService()->applyUpdateWithHistory(
             $ticket,
             $attributes,
@@ -574,6 +575,32 @@ class TicketController extends Controller
         return redirect()
             ->route('tickets.show', $ticket)
             ->with('status', $successMessage);
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     * @return array<string, mixed>
+     */
+    private function withExpectedResolutionNotificationReset(Ticket $ticket, array $attributes): array
+    {
+        if (! array_key_exists('expected_resolution_at', $attributes)) {
+            return $attributes;
+        }
+
+        $newExpectedResolutionAt = $attributes['expected_resolution_at'];
+        $newValue = $newExpectedResolutionAt instanceof \DateTimeInterface
+            ? $newExpectedResolutionAt->format('c')
+            : (is_string($newExpectedResolutionAt) ? $newExpectedResolutionAt : null);
+        $oldValue = $ticket->expected_resolution_at?->format('c');
+
+        if ($oldValue === $newValue) {
+            return $attributes;
+        }
+
+        return array_replace($attributes, [
+            'expected_resolution_due_soon_notified_at' => null,
+            'expected_resolution_overdue_notified_at' => null,
+        ]);
     }
 
     private function inlineTicketResponsePayload(Ticket $ticket, ?string $locale = null): array
@@ -642,7 +669,7 @@ class TicketController extends Controller
         }
 
         if ($event === null
-            && in_array($action, ['ticket_update', 'priority_update'], true)
+            && $action === 'ticket_update'
             && ($before['expected_resolution_at'] ?? null) !== $ticket->expected_resolution_at?->toIso8601String()
         ) {
             $event = 'expected_resolution_changed';

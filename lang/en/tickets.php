@@ -151,7 +151,7 @@ return [
             'subject' => 'Short ticket title for the list and quick orientation.',
             'description' => 'More detailed description of the issue or request.',
             'visibility' => 'Internal tickets are visible to the requester, solvers, and administration. Private tickets are visible only to the requester, the assigned solver, and administration.',
-            'expected_resolution_at' => 'Internal estimate of the resolution date. Users will see it on the ticket detail.',
+            'expected_resolution_at' => 'Changing the deadline sends a notification to the requester. If you postpone the deadline, please add a reason to the ticket, preferably as a public comment.',
             'pinned' => 'Pinned tickets are also shown in the highlighted pinned tickets section.',
             'pinned_unavailable' => 'Pinning will work after the database migration for ticket pinning is run.',
             'sensitive' => 'Select this if regular users should not see this ticket. It will be visible to you and the helpdesk team.',

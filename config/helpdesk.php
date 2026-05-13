@@ -81,6 +81,9 @@ return [
             'enabled' => env('HELPDESK_MAIL_NOTIFICATIONS', false),
             'notify_solvers_on_new_tickets' => env('HELPDESK_NOTIFY_SOLVERS_ON_NEW_TICKETS', true),
             'notify_admins_on_new_tickets' => env('HELPDESK_NOTIFY_ADMINS_ON_NEW_TICKETS', false),
+            'expected_resolution_deadline_notifications_enabled' => env('HELPDESK_EXPECTED_RESOLUTION_DEADLINE_NOTIFICATIONS', true),
+            'expected_resolution_due_soon_hours' => (int) env('HELPDESK_EXPECTED_RESOLUTION_DUE_SOON_HOURS', 24),
+            'expected_resolution_overdue_repeat_hours' => (int) env('HELPDESK_EXPECTED_RESOLUTION_OVERDUE_REPEAT_HOURS', 24),
         ],
     ],
 

@@ -151,7 +151,7 @@ return [
             'subject' => 'Stručný název ticketu pro seznam a orientaci.',
             'description' => 'Detailnější popis problému nebo požadavku.',
             'visibility' => 'Interní ticket uvidí zadavatel, řešitelé a administrace. Privátní ticket uvidí jen zadavatel, přiřazený řešitel a administrace.',
-            'expected_resolution_at' => 'Interní odhad termínu vyřešení. Uživatel ho uvidí na detailu ticketu.',
+            'expected_resolution_at' => 'Změna termínu odešle zadavateli notifikaci. Pokud termín posouváš, doplň prosím k ticketu důvod, ideálně veřejným komentářem.',
             'pinned' => 'Připnutý ticket se zobrazí i v horním bloku připnutých ticketů.',
             'pinned_unavailable' => 'Připnutí bude funkční po spuštění databázové migrace pro pinning ticketů.',
             'sensitive' => 'Zaškrtněte, pokud ticket nemají vidět ostatní běžní uživatelé. Ticket uvidíte vy a řešitelé helpdesku.',

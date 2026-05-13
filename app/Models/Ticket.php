@@ -34,6 +34,8 @@ class Ticket extends Model
         'due_at',
         'expected_resolution_at',
         'expected_resolution_source',
+        'expected_resolution_due_soon_notified_at',
+        'expected_resolution_overdue_notified_at',
         'last_activity_at',
         'resolved_at',
         'auto_close_at',
@@ -49,6 +51,8 @@ class Ticket extends Model
         return [
             'due_at' => 'datetime',
             'expected_resolution_at' => 'datetime',
+            'expected_resolution_due_soon_notified_at' => 'datetime',
+            'expected_resolution_overdue_notified_at' => 'datetime',
             'last_activity_at' => 'datetime',
             'resolved_at' => 'datetime',
             'auto_close_at' => 'datetime',

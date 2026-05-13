@@ -62,7 +62,8 @@ Ticket notification recipients depend on the event type:
 - New ticket: the requester is notified as confirmation. Solver queue users are notified only when `HELPDESK_NOTIFY_SOLVERS_ON_NEW_TICKETS=true`. Admins are notified only when `HELPDESK_NOTIFY_ADMINS_ON_NEW_TICKETS=true`. Existing assignee or watcher records are not used as a general reason for a created-ticket notification.
 - Public comment: requester, current assignee, and watchers are notified. The comment author is excluded.
 - Assignee change: the requester and the new assignee are notified. If the actor assigns the ticket to themselves, no assignee-change e-mail is sent to that actor.
-- Expected resolution change: only the requester is notified. If the requester is also the actor, no e-mail is sent to that actor.
+- Manual expected resolution change: only the requester is notified. If the requester is also the actor, no e-mail is sent to that actor.
+- Expected resolution due-soon and overdue reminders: only the current assignee is notified. Requesters, admins, and watchers are not recipients of these reminder e-mails.
 - Status changes, resolved, closed, problem persists, and automatic close: requester, assignee, and watchers are considered. The actor is excluded when there is one; automatic close has no actor.
 - Internal notes do not send outbound ticket notifications.
 
@@ -415,6 +416,27 @@ The resolved-ticket workflow uses the same notification pipeline and permission 
 - When the requester confirms the resolution, the ticket is closed and the usual ticket recipients can be notified according to their access.
 - When the requester reports that the problem persists, the ticket returns to an active state and the assignee/watchers can be notified according to their access.
 - When `helpdesk:close-resolved-tickets` closes a ticket automatically, requester, assignee, and authorized watchers can receive the standard closed-ticket notification.
+
+## Expected Resolution Deadline Reminders
+
+If expected resolution deadline notifications are enabled, the scheduler can notify the current assignee when a ticket deadline is approaching or already overdue:
+
+- A due-soon reminder is sent once when `expected_resolution_at` is within the configured window, 24 hours by default.
+- An overdue reminder is sent after `expected_resolution_at` has passed.
+- Overdue reminders repeat at most once per configured interval, 24 hours by default, while the ticket is still active and overdue.
+- Requesters, admins, and watchers are not recipients of these reminders.
+- The requester is notified separately when a solver or admin manually changes the expected resolution date.
+- The assignee should add a clear reason when postponing a deadline, preferably as a public comment if the requester should see it.
+
+Relevant environment variables:
+
+```env
+HELPDESK_EXPECTED_RESOLUTION_DEADLINE_NOTIFICATIONS=true
+HELPDESK_EXPECTED_RESOLUTION_DUE_SOON_HOURS=24
+HELPDESK_EXPECTED_RESOLUTION_OVERDUE_REPEAT_HOURS=24
+```
+
+These reminders require the Laravel scheduler. The scheduled command is `helpdesk:notify-expected-resolution-deadlines`.
 
 ## Test from Laravel
 

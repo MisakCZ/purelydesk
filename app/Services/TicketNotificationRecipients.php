@@ -53,6 +53,9 @@ class TicketNotificationRecipients
             'expected_resolution_changed' => [
                 $ticket->requester,
             ],
+            'expected_resolution_due_soon', 'expected_resolution_overdue' => [
+                $ticket->assignee,
+            ],
             default => [
                 $ticket->requester,
                 $ticket->assignee,

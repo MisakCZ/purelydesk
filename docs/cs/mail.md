@@ -62,7 +62,8 @@ Příjemci ticketových notifikací závisí na typu události:
 - Nový ticket: zadavatel dostane potvrzení o založení. Uživatelé ve frontě solverů dostanou notifikaci jen při `HELPDESK_NOTIFY_SOLVERS_ON_NEW_TICKETS=true`. Admini dostanou notifikaci jen při `HELPDESK_NOTIFY_ADMINS_ON_NEW_TICKETS=true`. Existující řešitel nebo watcher záznam nejsou samy o sobě obecným důvodem pro notifikaci o novém ticketu.
 - Veřejný komentář: notifikaci dostane zadavatel, aktuální řešitel a sledující. Autor komentáře je vyloučen.
 - Změna řešitele: notifikaci dostane zadavatel a nový řešitel. Pokud si aktér přiřadí ticket sám sobě, e-mail o změně řešitele se mu neposílá.
-- Změna očekávaného termínu vyřešení: notifikaci dostane pouze zadavatel. Pokud je zadavatel zároveň aktér, e-mail se mu neposílá.
+- Ruční změna očekávaného termínu vyřešení: notifikaci dostane pouze zadavatel. Pokud je zadavatel zároveň aktér, e-mail se mu neposílá.
+- Připomínky blížícího se nebo překročeného očekávaného termínu vyřešení: notifikaci dostane pouze aktuální řešitel. Zadavatelé, admini ani sledující tyto připomínky nedostávají.
 - Změny statusu, vyřešeno, uzavřeno, problém trvá a automatické uzavření: posuzuje se zadavatel, řešitel a sledující. Aktér je vyloučen, pokud existuje; automatické uzavření aktéra nemá.
 - Interní poznámky neodesílají outbound ticketové notifikace.
 
@@ -415,6 +416,27 @@ Workflow vyřešených ticketů používá stejný notifikační mechanismus a f
 - Když zadavatel potvrdí vyřešení, ticket se uzavře a obvyklí příjemci ticketu mohou dostat notifikaci podle svého přístupu.
 - Když zadavatel oznámí, že problém trvá, ticket se vrátí do aktivního stavu a přiřazený řešitel / sledující mohou dostat notifikaci podle svého přístupu.
 - Když `helpdesk:close-resolved-tickets` uzavře ticket automaticky, zadavatel, řešitel a oprávnění sledující mohou dostat standardní notifikaci o uzavření ticketu.
+
+## Připomínky očekávaného termínu vyřešení
+
+Pokud jsou zapnuté notifikace očekávaných termínů, scheduler může upozornit aktuálního řešitele na blížící se nebo překročený termín ticketu:
+
+- Připomínka blížícího se termínu se pošle jednou, když je `expected_resolution_at` v nakonfigurovaném okně, výchozí hodnota je 24 hodin.
+- Připomínka překročeného termínu se pošle po překročení `expected_resolution_at`.
+- Připomínka překročeného termínu se opakuje nejvýše jednou za nakonfigurovaný interval, výchozí hodnota je 24 hodin, dokud je ticket aktivní a stále po termínu.
+- Zadavatelé, admini ani sledující nejsou příjemci těchto připomínek.
+- Zadavatel je notifikován samostatně, když solver nebo admin ručně změní očekávaný termín vyřešení.
+- Řešitel by měl při posunu termínu doplnit srozumitelný důvod, ideálně veřejným komentářem, pokud ho má vidět zadavatel.
+
+Relevantní proměnné prostředí:
+
+```env
+HELPDESK_EXPECTED_RESOLUTION_DEADLINE_NOTIFICATIONS=true
+HELPDESK_EXPECTED_RESOLUTION_DUE_SOON_HOURS=24
+HELPDESK_EXPECTED_RESOLUTION_OVERDUE_REPEAT_HOURS=24
+```
+
+Tyto připomínky vyžadují běžící Laravel scheduler. Naplánovaný command je `helpdesk:notify-expected-resolution-deadlines`.
 
 ## Test z Laravelu
 
