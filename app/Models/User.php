@@ -19,6 +19,7 @@ use Illuminate\Notifications\Notifiable;
     'display_name',
     'department',
     'email',
+    'email_verified_at',
     'password',
     'preferred_locale',
     'ldap_dn',

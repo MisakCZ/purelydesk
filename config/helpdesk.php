@@ -68,6 +68,34 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Local Demo Login
+    |--------------------------------------------------------------------------
+    |
+    | Demo login is intended only for local evaluation without LDAP. It is
+    | explicitly disabled outside local/testing environments by application
+    | code even if the environment variable is set incorrectly.
+    |
+    */
+    'demo' => [
+        'login_enabled' => env('HELPDESK_DEMO_LOGIN_ENABLED', false),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Local Demo Login
+    |--------------------------------------------------------------------------
+    |
+    | Demo login is intended only for local evaluation without LDAP. It is
+    | explicitly disabled outside local/testing environments by application
+    | code even if the environment variable is set incorrectly.
+    |
+    */
+    'demo' => [
+        'login_enabled' => env('HELPDESK_DEMO_LOGIN_ENABLED', false),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Helpdesk Notifications
     |--------------------------------------------------------------------------
     |

@@ -13,5 +13,14 @@ return [
         'username' => 'Username',
         'password' => 'Password',
         'submit' => 'Sign in',
+        'demo' => [
+            'title' => 'Demo login is enabled for local development.',
+            'description' => 'Use one of these local demo accounts:',
+            'accounts' => [
+                'admin@example.org / password',
+                'solver@example.org / password',
+                'user@example.org / password',
+            ],
+        ],
     ],
 ];

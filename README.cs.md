@@ -56,12 +56,39 @@ php artisan test
 
 Po stažení upravte `.env` pro databázi, LDAP server, poštu a URL aplikace. Podrobnosti jsou v odkazované dokumentaci výše.
 
+## Lokální demo přihlášení bez LDAPu
+
+PurelyDesk běžně ověřuje uživatele přes LDAP. Pro rychlé lokální vyzkoušení lze zapnout lokální demo přihlášení. Tento režim je určený pouze pro lokální vývoj a mimo prostředí `local` a `testing` je automaticky zakázaný.
+
+```env
+APP_ENV=local
+LDAP_ENABLED=false
+HELPDESK_DEMO_LOGIN_ENABLED=true
+```
+
+Demo uživatele vytvoříte příkazem:
+
+```bash
+php artisan db:seed --class=DemoUserSeeder
+```
+
+Tím se pro lokální vyzkoušení zároveň doplní základní role, stavy, priority a kategorie.
+
+Demo účty:
+
+- `admin@example.org` / `password`
+- `solver@example.org` / `password`
+- `user@example.org` / `password`
+
+Demo přihlášení nikdy nepoužívejte v produkci. Produkční autentizace má používat LDAP.
+
 ## Přehled konfigurace
 
 Nejdůležitější oblasti konfigurace jsou:
 
 - `DB_*` pro připojení k MariaDB/MySQL.
 - `LDAP_*` pro LDAP přihlášení a mapování rolí.
+- `HELPDESK_DEMO_LOGIN_ENABLED` pro explicitní lokální demo přihlášení bez LDAPu.
 - `MAIL_*`, `HELPDESK_MAIL_NOTIFICATIONS` a `HELPDESK_INBOUND_*` pro odchozí notifikace a volitelné zpracování příchozích odpovědí.
 - `HELPDESK_BRAND_LOGO_PATH`, `HELPDESK_BRAND_FALLBACK_TEXT` a `HELPDESK_BRAND_LOGO_MODE` pro volitelný branding hlavičky. Skutečná interní loga necommitujte.
 - `HELPDESK_RESOLVED_AUTO_CLOSE_DAYS` pro automatické uzavírání vyřešených ticketů.

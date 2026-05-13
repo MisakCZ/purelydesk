@@ -56,12 +56,39 @@ php artisan test
 
 After cloning, update `.env` for your database, LDAP server, mail settings, and application URL. See the documentation links above for details.
 
+## Local Demo Login Without LDAP
+
+PurelyDesk normally authenticates users through LDAP. For quick local evaluation, you can enable the local demo login. This mode is intended only for local development and is automatically disabled outside `local` and `testing` environments.
+
+```env
+APP_ENV=local
+LDAP_ENABLED=false
+HELPDESK_DEMO_LOGIN_ENABLED=true
+```
+
+Create the demo users with:
+
+```bash
+php artisan db:seed --class=DemoUserSeeder
+```
+
+This also ensures the basic roles, statuses, priorities, and categories exist for local evaluation.
+
+Demo accounts:
+
+- `admin@example.org` / `password`
+- `solver@example.org` / `password`
+- `user@example.org` / `password`
+
+Never use the demo login in production. Production authentication should use LDAP.
+
 ## Configuration Overview
 
 The most important configuration areas are:
 
 - `DB_*` for MariaDB/MySQL connection settings.
 - `LDAP_*` for LDAP login and role mapping.
+- `HELPDESK_DEMO_LOGIN_ENABLED` for explicit local-only demo login without LDAP.
 - `MAIL_*`, `HELPDESK_MAIL_NOTIFICATIONS`, and `HELPDESK_INBOUND_*` for outgoing notifications and optional inbound reply processing.
 - `HELPDESK_BRAND_LOGO_PATH`, `HELPDESK_BRAND_FALLBACK_TEXT`, and `HELPDESK_BRAND_LOGO_MODE` for optional deployed header branding. Do not commit real internal logos.
 - `HELPDESK_RESOLVED_AUTO_CLOSE_DAYS` for automatic closing of resolved tickets.

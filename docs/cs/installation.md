@@ -101,6 +101,38 @@ php artisan db:seed --class=TicketPrioritySeeder
 php artisan db:seed --class=TicketCategorySeeder
 ```
 
+## Volitelné lokální demo přihlášení bez LDAPu
+
+Produkční autentizace je založená na LDAPu. Pro rychlé lokální vyzkoušení po stažení repozitáře lze zapnout explicitní lokální demo přihlášení. Funguje pouze při splnění všech těchto podmínek:
+
+- `APP_ENV=local` nebo `APP_ENV=testing`
+- `LDAP_ENABLED=false`
+- `HELPDESK_DEMO_LOGIN_ENABLED=true`
+
+Demo přihlášení je mimo prostředí local/testing odmítnuté, i kdyby bylo omylem zapnuté v `.env`. Nepoužívejte ho v produkci.
+
+Příklad lokálních hodnot v `.env`:
+
+```env
+APP_ENV=local
+LDAP_ENABLED=false
+HELPDESK_DEMO_LOGIN_ENABLED=true
+```
+
+Demo účty vytvoříte příkazem:
+
+```bash
+php artisan db:seed --class=DemoUserSeeder
+```
+
+Seeder vytvoří tyto aktivní lokální demo uživatele:
+
+- `admin@example.org` / `password`
+- `solver@example.org` / `password`
+- `user@example.org` / `password`
+
+Demo uživatelé jsou vytvořeni s `auth_source=local-demo` a dostanou odpovídající roli `admin`, `solver` nebo `user`. Seeder zároveň zajistí existenci základních rolí, stavů ticketů, priorit a kategorií. Je idempotentní a nemaže existující uživatele.
+
 ## Spuštění testů
 
 ```bash

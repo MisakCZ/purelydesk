@@ -13,5 +13,14 @@ return [
         'username' => 'Uživatelské jméno',
         'password' => 'Heslo',
         'submit' => 'Přihlásit',
+        'demo' => [
+            'title' => 'Demo přihlášení je zapnuté pro lokální vývoj.',
+            'description' => 'Použijte jeden z těchto lokálních demo účtů:',
+            'accounts' => [
+                'admin@example.org / password',
+                'solver@example.org / password',
+                'user@example.org / password',
+            ],
+        ],
     ],
 ];

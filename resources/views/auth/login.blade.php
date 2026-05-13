@@ -20,6 +20,26 @@
             display: grid;
             gap: 1rem;
         }
+
+        .demo-login-note {
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            border: 1px solid var(--line);
+            border-radius: 0.75rem;
+            background: var(--panel-muted);
+            color: var(--muted);
+            font-size: 0.8125rem;
+            line-height: 1.45;
+        }
+
+        .demo-login-note strong {
+            color: var(--text);
+        }
+
+        .demo-login-note ul {
+            margin: 0.5rem 0 0;
+            padding-left: 1rem;
+        }
     </style>
 @endpush
 
@@ -36,6 +56,18 @@
     <div class="page-body">
         <div class="login-wrap">
             <div class="login-card">
+                @if ($demoLoginEnabled ?? false)
+                    <div class="demo-login-note">
+                        <strong>{{ __('auth.login.demo.title') }}</strong>
+                        <p>{{ __('auth.login.demo.description') }}</p>
+                        <ul>
+                            @foreach (__('auth.login.demo.accounts') as $account)
+                                <li>{{ $account }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
                 <form class="login-form" method="post" action="{{ route('login.store') }}">
                     @csrf
 

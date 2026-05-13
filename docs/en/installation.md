@@ -101,6 +101,38 @@ php artisan db:seed --class=TicketPrioritySeeder
 php artisan db:seed --class=TicketCategorySeeder
 ```
 
+## Optional Local Demo Login Without LDAP
+
+Production authentication is LDAP-based. For quick local evaluation after cloning the repository, you can enable an explicit local demo login. It works only when all of these conditions are true:
+
+- `APP_ENV=local` or `APP_ENV=testing`
+- `LDAP_ENABLED=false`
+- `HELPDESK_DEMO_LOGIN_ENABLED=true`
+
+The demo login is rejected outside local/testing environments, even if it is accidentally enabled in `.env`. Do not use it in production.
+
+Example local `.env` values:
+
+```env
+APP_ENV=local
+LDAP_ENABLED=false
+HELPDESK_DEMO_LOGIN_ENABLED=true
+```
+
+Create the demo accounts with:
+
+```bash
+php artisan db:seed --class=DemoUserSeeder
+```
+
+The seeder creates these active local demo users:
+
+- `admin@example.org` / `password`
+- `solver@example.org` / `password`
+- `user@example.org` / `password`
+
+The demo users are created with `auth_source=local-demo` and assigned the matching `admin`, `solver`, or `user` role. The seeder also ensures the basic roles, ticket statuses, priorities, and categories exist. It is idempotent and does not delete existing users.
+
 ## Run Tests
 
 ```bash

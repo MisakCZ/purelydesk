@@ -8,6 +8,7 @@ use App\Services\Ldap\LdapAuthenticator;
 use App\Services\Ldap\LdapRoleMapper;
 use App\Services\Ldap\LdapUserData;
 use App\Services\Ldap\LdapUserSynchronizer;
+use Database\Seeders\DemoUserSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -63,6 +64,8 @@ class LdapAuthenticationTest extends TestCase
 
     public function test_login_uses_ldap_and_starts_laravel_session(): void
     {
+        config(['helpdesk.ldap.enabled' => true]);
+
         $user = User::query()->create([
             'name' => 'LDAP User',
             'email' => 'ldap@example.com',
@@ -85,6 +88,119 @@ class LdapAuthenticationTest extends TestCase
             ->assertRedirect(route('dashboard'));
 
         $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_local_demo_login_can_authenticate_by_email_when_safe_and_enabled(): void
+    {
+        config([
+            'app.env' => 'local',
+            'helpdesk.ldap.enabled' => false,
+            'helpdesk.demo.login_enabled' => true,
+        ]);
+
+        $user = User::query()->create([
+            'username' => 'demo.user',
+            'name' => 'Demo User',
+            'email' => 'demo@example.org',
+            'password' => 'password',
+            'auth_source' => 'local-demo',
+            'is_active' => true,
+        ]);
+
+        $this->post(route('login.store'), [
+            'username' => 'demo@example.org',
+            'password' => 'password',
+        ])
+            ->assertRedirect(route('dashboard'));
+
+        $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_local_demo_login_can_authenticate_by_username_when_safe_and_enabled(): void
+    {
+        config([
+            'app.env' => 'testing',
+            'helpdesk.ldap.enabled' => false,
+            'helpdesk.demo.login_enabled' => true,
+        ]);
+
+        $user = User::query()->create([
+            'username' => 'demo.user',
+            'name' => 'Demo User',
+            'email' => 'demo@example.org',
+            'password' => 'password',
+            'auth_source' => 'local-demo',
+            'is_active' => true,
+        ]);
+
+        $this->post(route('login.store'), [
+            'username' => 'demo.user',
+            'password' => 'password',
+        ])
+            ->assertRedirect(route('dashboard'));
+
+        $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_local_demo_login_is_rejected_in_production_even_when_enabled(): void
+    {
+        config([
+            'app.env' => 'production',
+            'helpdesk.ldap.enabled' => false,
+            'helpdesk.demo.login_enabled' => true,
+        ]);
+
+        User::query()->create([
+            'username' => 'demo.user',
+            'name' => 'Demo User',
+            'email' => 'demo@example.org',
+            'password' => 'password',
+            'auth_source' => 'local-demo',
+            'is_active' => true,
+        ]);
+
+        $this->post(route('login.store'), [
+            'username' => 'demo@example.org',
+            'password' => 'password',
+        ])
+            ->assertSessionHasErrors('username');
+
+        $this->assertGuest();
+    }
+
+    public function test_login_page_shows_demo_accounts_only_when_demo_login_is_active(): void
+    {
+        config([
+            'app.env' => 'local',
+            'helpdesk.ldap.enabled' => false,
+            'helpdesk.demo.login_enabled' => true,
+        ]);
+
+        $this->get(route('login'))
+            ->assertOk()
+            ->assertSeeText('admin@example.org / password');
+
+        config(['app.env' => 'production']);
+
+        $this->get(route('login'))
+            ->assertOk()
+            ->assertDontSeeText('admin@example.org / password');
+    }
+
+    public function test_demo_user_seeder_creates_local_demo_users_with_roles(): void
+    {
+        $this->seed(DemoUserSeeder::class);
+
+        $admin = User::query()->where('email', 'admin@example.org')->firstOrFail();
+        $solver = User::query()->where('email', 'solver@example.org')->firstOrFail();
+        $user = User::query()->where('email', 'user@example.org')->firstOrFail();
+
+        $this->assertSame('local-demo', $admin->auth_source);
+        $this->assertSame('local-demo', $solver->auth_source);
+        $this->assertSame('local-demo', $user->auth_source);
+        $this->assertTrue($admin->hasRole(Role::SLUG_ADMIN));
+        $this->assertTrue($solver->hasRole(Role::SLUG_SOLVER));
+        $this->assertTrue($user->hasRole(Role::SLUG_USER));
     }
 
     public function test_role_mapper_prioritizes_admin_then_solver_then_user(): void
