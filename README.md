@@ -15,6 +15,7 @@ The application uses local user profiles synchronized from LDAP, while authentic
 - Sensitive request option during ticket creation.
 - Ticket comments and separate internal notes.
 - Resolved-ticket workflow with requester confirmation and automatic closing.
+- Expected resolution deadlines with priority-based defaults, assignee reminders, and requester notifications for manual deadline changes.
 - Attachments for tickets and public comments.
 - Protected attachment preview and download through Laravel controllers.
 - Image attachment lightbox gallery.
@@ -64,6 +65,7 @@ The most important configuration areas are:
 - `MAIL_*`, `HELPDESK_MAIL_NOTIFICATIONS`, and `HELPDESK_INBOUND_*` for outgoing notifications and optional inbound reply processing.
 - `HELPDESK_BRAND_LOGO_PATH`, `HELPDESK_BRAND_FALLBACK_TEXT`, and `HELPDESK_BRAND_LOGO_MODE` for optional deployed header branding. Do not commit real internal logos.
 - `HELPDESK_RESOLVED_AUTO_CLOSE_DAYS` for automatic closing of resolved tickets.
+- `HELPDESK_EXPECTED_RESOLUTION_*` for priority-based expected resolution defaults and due-soon / overdue assignee reminders.
 - `HELPDESK_ATTACHMENT_*` for attachment limits and storage path.
 - `APP_LOCALE` and `APP_FALLBACK_LOCALE` for the default UI language.
 

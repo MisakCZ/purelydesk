@@ -15,6 +15,7 @@ Aplikace používá lokální uživatelské profily synchronizované z LDAPu, za
 - Volba citlivého požadavku při založení ticketu.
 - Komentáře k ticketům a oddělené interní poznámky.
 - Workflow vyřešených ticketů s potvrzením zadavatelem a automatickým uzavřením.
+- Očekávané termíny vyřešení s výchozími hodnotami podle priority, připomínkami řešiteli a notifikací zadavatele při ruční změně termínu.
 - Přílohy k ticketům a veřejným komentářům.
 - Chráněný náhled a stahování příloh přes Laravel controllery.
 - Lightbox galerie pro obrázkové přílohy.
@@ -64,6 +65,7 @@ Nejdůležitější oblasti konfigurace jsou:
 - `MAIL_*`, `HELPDESK_MAIL_NOTIFICATIONS` a `HELPDESK_INBOUND_*` pro odchozí notifikace a volitelné zpracování příchozích odpovědí.
 - `HELPDESK_BRAND_LOGO_PATH`, `HELPDESK_BRAND_FALLBACK_TEXT` a `HELPDESK_BRAND_LOGO_MODE` pro volitelný branding hlavičky. Skutečná interní loga necommitujte.
 - `HELPDESK_RESOLVED_AUTO_CLOSE_DAYS` pro automatické uzavírání vyřešených ticketů.
+- `HELPDESK_EXPECTED_RESOLUTION_*` pro výchozí očekávané termíny podle priority a připomínky řešiteli při blížícím se nebo překročeném termínu.
 - `HELPDESK_ATTACHMENT_*` pro limity příloh a storage cestu.
 - `APP_LOCALE` a `APP_FALLBACK_LOCALE` pro výchozí jazyk UI.
 
