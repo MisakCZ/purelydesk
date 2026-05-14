@@ -1521,6 +1521,42 @@ class TicketVisibilityTest extends TestCase
             ->assertSeeInOrder([$firstTicket->subject, $secondTicket->subject]);
     }
 
+    public function test_ticket_index_filters_and_sorting_persist_for_next_login(): void
+    {
+        $admin = $this->createUserWithRole($this->adminRole);
+        $firstTicket = $this->createTicket([
+            'requester' => $admin,
+            'subject' => 'Alpha persisted ticket',
+        ]);
+        $secondTicket = $this->createTicket([
+            'requester' => $admin,
+            'subject' => 'Bravo persisted ticket',
+        ]);
+
+        $this->actingAs($admin);
+
+        $this->get(route('tickets.index', [
+            'relation' => 'requester',
+            'sort' => 'subject',
+            'direction' => 'desc',
+        ]))
+            ->assertOk()
+            ->assertSeeInOrder([$secondTicket->subject, $firstTicket->subject]);
+
+        $admin->refresh();
+
+        $this->assertSame('requester', $admin->ticket_index_preferences['relation']);
+        $this->assertSame('subject', $admin->ticket_index_preferences['sort']);
+        $this->assertSame('desc', $admin->ticket_index_preferences['direction']);
+
+        $this->app['session.store']->flush();
+        $this->actingAs($admin);
+
+        $this->get(route('tickets.index'))
+            ->assertOk()
+            ->assertSeeInOrder([$secondTicket->subject, $firstTicket->subject]);
+    }
+
     public function test_ticket_index_scope_filter_limits_open_and_finished_tickets(): void
     {
         $admin = $this->createUserWithRole($this->adminRole);
@@ -3188,7 +3224,7 @@ class TicketVisibilityTest extends TestCase
             ->assertSeeText('Resolved')
             ->assertSeeText('Critical')
             ->assertSeeText('Internal')
-            ->assertSeeText('Search subject')
+            ->assertSeeText('Search')
             ->assertDontSeeText('Vyřešeno')
             ->assertDontSeeText('Kritická');
     }

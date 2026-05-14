@@ -33,7 +33,7 @@ return [
         'filters' => [
             'section' => 'Ticket filtering',
             'toggle' => 'Filters',
-            'search' => 'Search subject',
+            'search' => 'Search',
             'search_placeholder' => 'e.g. printer, VPN',
             'status' => 'Status',
             'priority' => 'Priority',
@@ -41,6 +41,7 @@ return [
             'relation' => 'Relation',
             'watching' => 'Watching',
             'scope' => 'Range',
+            'due' => 'Deadline',
             'archive' => 'Archive',
             'all' => 'All',
             'all_tickets' => 'All tickets',
@@ -55,6 +56,8 @@ return [
             'scope_finished' => 'Finished',
             'archive_active' => 'Active',
             'archive_archived' => 'Archived',
+            'due_overdue_or_soon' => 'Overdue / due soon',
+            'due_missing_expected_resolution' => 'Without expected resolution',
             'clear_search' => 'Clear subject search',
             'clear_status' => 'Clear status filter',
             'clear_priority' => 'Clear priority filter',
@@ -64,6 +67,17 @@ return [
             'clear_scope' => 'Clear ticket range filter',
             'clear_archive' => 'Clear archive filter',
             'clear_all' => 'Clear filters',
+        ],
+        'filter_stats' => [
+            'label' => 'Filter summary',
+            'showing' => 'Showing',
+            'active_filters' => 'Active filters',
+            'sorting' => 'Sorting',
+            'overdue' => 'Overdue',
+        ],
+        'active_filters' => [
+            'label' => 'Active filters',
+            'remove' => 'Remove :filter filter',
         ],
         'pinned' => [
             'label' => 'Pinned tickets',

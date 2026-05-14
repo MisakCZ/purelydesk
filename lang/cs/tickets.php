@@ -33,7 +33,7 @@ return [
         'filters' => [
             'section' => 'Filtrování ticketů',
             'toggle' => 'Filtry',
-            'search' => 'Hledat v předmětu',
+            'search' => 'Hledat',
             'search_placeholder' => 'Např. tiskárna, VPN',
             'status' => 'Status',
             'priority' => 'Priorita',
@@ -41,6 +41,7 @@ return [
             'relation' => 'Vztah',
             'watching' => 'Sledování',
             'scope' => 'Rozsah',
+            'due' => 'Termín',
             'archive' => 'Archiv',
             'all' => 'Všechny',
             'all_tickets' => 'Všechny tickety',
@@ -55,6 +56,8 @@ return [
             'scope_finished' => 'Ukončené',
             'archive_active' => 'Aktivní',
             'archive_archived' => 'Archivované',
+            'due_overdue_or_soon' => 'Po termínu / blíží se termín',
+            'due_missing_expected_resolution' => 'Bez očekávaného termínu',
             'clear_search' => 'Zrušit hledání v předmětu',
             'clear_status' => 'Zrušit filtr statusu',
             'clear_priority' => 'Zrušit filtr priority',
@@ -64,6 +67,17 @@ return [
             'clear_scope' => 'Zrušit filtr rozsahu ticketů',
             'clear_archive' => 'Zrušit filtr archivu',
             'clear_all' => 'Vymazat filtry',
+        ],
+        'filter_stats' => [
+            'label' => 'Souhrn filtrování',
+            'showing' => 'Zobrazeno',
+            'active_filters' => 'Aktivní filtry',
+            'sorting' => 'Řazení',
+            'overdue' => 'Po termínu',
+        ],
+        'active_filters' => [
+            'label' => 'Aktivní filtry',
+            'remove' => 'Odebrat filtr :filter',
         ],
         'pinned' => [
             'label' => 'Připnuté tickety',

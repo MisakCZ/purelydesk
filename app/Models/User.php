@@ -22,6 +22,7 @@ use Illuminate\Notifications\Notifiable;
     'email_verified_at',
     'password',
     'preferred_locale',
+    'ticket_index_preferences',
     'ldap_dn',
     'external_id',
     'auth_source',
@@ -141,6 +142,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'is_active' => 'boolean',
             'last_login_at' => 'datetime',
+            'ticket_index_preferences' => 'array',
             'password' => 'hashed',
         ];
     }

@@ -94,11 +94,163 @@
         }
 
         .filter-reset-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.34rem;
             color: var(--color-primary, #0f766e);
             font-size: 0.84rem;
             font-weight: 760;
             text-decoration: none;
             white-space: nowrap;
+        }
+
+        .filter-reset-link svg {
+            width: 0.92rem;
+            height: 0.92rem;
+        }
+
+        .filter-insights {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0.58rem;
+            margin-bottom: 0.82rem;
+        }
+
+        .filter-insight {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr);
+            align-items: center;
+            gap: 0.58rem;
+            min-height: 3.85rem;
+            padding: 0.62rem 0.7rem;
+            border: 1px solid color-mix(in srgb, var(--color-border, #e5ebf1) 76%, transparent);
+            border-radius: 0.92rem;
+            background: color-mix(in srgb, var(--color-surface-muted, #f8fafc) 68%, var(--color-surface, #fff));
+        }
+
+        .filter-insight[data-tone="blue"] {
+            border-color: color-mix(in srgb, var(--ticket-blue) 22%, var(--color-border, #bfdbfe));
+            background: linear-gradient(145deg, var(--ticket-blue-soft), color-mix(in srgb, var(--color-surface, #fff) 94%, transparent));
+        }
+
+        .filter-insight[data-tone="green"] {
+            border-color: color-mix(in srgb, var(--ticket-green) 22%, var(--color-border, #bbf7d0));
+            background: linear-gradient(145deg, var(--ticket-green-soft), color-mix(in srgb, var(--color-surface, #fff) 94%, transparent));
+        }
+
+        .filter-insight[data-tone="amber"] {
+            border-color: color-mix(in srgb, var(--ticket-amber) 22%, var(--color-border, #fed7aa));
+            background: linear-gradient(145deg, var(--ticket-amber-soft), color-mix(in srgb, var(--color-surface, #fff) 94%, transparent));
+        }
+
+        .filter-insight[data-tone="red"] {
+            border-color: color-mix(in srgb, var(--ticket-red) 22%, var(--color-border, #fecaca));
+            background: linear-gradient(145deg, var(--ticket-red-soft), color-mix(in srgb, var(--color-surface, #fff) 94%, transparent));
+        }
+
+        .filter-insight-icon {
+            display: grid;
+            place-items: center;
+            width: 2.05rem;
+            height: 2.05rem;
+            border-radius: 0.76rem;
+            background: color-mix(in srgb, currentColor 12%, var(--color-surface, #fff));
+            color: var(--color-primary, #0f766e);
+        }
+
+        .filter-insight[data-tone="blue"] .filter-insight-icon {
+            color: var(--ticket-blue);
+        }
+
+        .filter-insight[data-tone="green"] .filter-insight-icon {
+            color: var(--ticket-green);
+        }
+
+        .filter-insight[data-tone="amber"] .filter-insight-icon {
+            color: var(--ticket-amber);
+        }
+
+        .filter-insight[data-tone="red"] .filter-insight-icon {
+            color: var(--ticket-red);
+        }
+
+        .filter-insight-icon svg {
+            width: 1.08rem;
+            height: 1.08rem;
+        }
+
+        .filter-insight-label {
+            display: block;
+            color: var(--color-muted, #64748b);
+            font-size: 0.68rem;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            line-height: 1.2;
+            text-transform: uppercase;
+        }
+
+        .filter-insight-value {
+            display: block;
+            margin-top: 0.16rem;
+            overflow: hidden;
+            color: var(--color-text, #13202b);
+            font-size: 0.95rem;
+            font-weight: 820;
+            line-height: 1.2;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .active-filter-strip {
+            display: flex;
+            align-items: center;
+            gap: 0.52rem;
+            flex-wrap: wrap;
+            margin-top: 0.72rem;
+            padding-top: 0.72rem;
+            border-top: 1px solid color-mix(in srgb, var(--color-border, #e2e8f0) 70%, transparent);
+        }
+
+        .active-filter-label {
+            color: var(--color-muted, #64748b);
+            font-size: 0.74rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .active-filter-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.34rem;
+            min-height: 1.9rem;
+            padding: 0.3rem 0.48rem 0.3rem 0.62rem;
+            border: 1px solid color-mix(in srgb, var(--color-primary, #0f766e) 18%, var(--color-border, #e2e8f0));
+            border-radius: 999px;
+            background: color-mix(in srgb, var(--color-primary-soft, #dff5f2) 72%, var(--color-surface, #fff));
+            color: var(--color-primary, #0f766e);
+            font-size: 0.78rem;
+            font-weight: 720;
+            line-height: 1.2;
+            text-decoration: none;
+        }
+
+        .active-filter-chip:hover {
+            border-color: color-mix(in srgb, var(--color-primary, #0f766e) 36%, var(--color-border, #e2e8f0));
+            color: var(--color-primary-hover, #0b625b);
+        }
+
+        .active-filter-chip-remove {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.1rem;
+            height: 1.1rem;
+            border-radius: 999px;
+            background: color-mix(in srgb, currentColor 12%, transparent);
+            font-size: 0.92rem;
+            font-weight: 900;
+            line-height: 1;
         }
 
         .ticket-create-action {
@@ -571,7 +723,7 @@
         .ticket-list-summary {
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: flex-end;
             gap: 0.8rem;
             flex-wrap: wrap;
             padding: 0 0.15rem;
@@ -1143,6 +1295,10 @@
             .filter-grid {
                 grid-template-columns: repeat(3, minmax(0, 1fr));
             }
+
+            .filter-insights {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
         }
 
         @media (max-width: 768px) {
@@ -1168,6 +1324,15 @@
             .filter-card {
                 padding: 0.65rem;
                 border-radius: 0.9rem;
+            }
+
+            .filter-insights {
+                grid-template-columns: 1fr;
+                gap: 0.45rem;
+            }
+
+            .filter-insight {
+                min-height: auto;
             }
 
             .filter-disclosure-summary {
@@ -1651,6 +1816,65 @@
             'priority' => __('tickets.index.table.priority'),
             default => __('tickets.index.table.updated_at'),
         };
+        $activeFilterChips = [];
+        $addFilterChip = static function (string $key, string $label, string $value) use (&$activeFilterChips, $clearFilterQuery): void {
+            if ($value === '') {
+                return;
+            }
+
+            $activeFilterChips[] = [
+                'key' => $key,
+                'label' => $label,
+                'value' => $value,
+                'clear' => $clearFilterQuery($key),
+            ];
+        };
+        $statusFilterLabel = $filters['status'] !== ''
+            ? (ctype_digit($filters['status'])
+                ? $statuses->firstWhere('id', (int) $filters['status'])?->translatedName()
+                : $statuses->firstWhere('slug', $filters['status'])?->translatedName())
+            : null;
+        $priorityFilterLabel = $filters['priority'] !== ''
+            ? $priorities->firstWhere('id', (int) $filters['priority'])?->translatedName()
+            : null;
+        $categoryFilterLabel = $filters['category'] !== ''
+            ? $categories->firstWhere('id', (int) $filters['category'])?->translatedName()
+            : null;
+        $relationFilterLabels = [
+            'requester' => __('tickets.index.filters.relation_requester'),
+            'assigned' => __('tickets.index.filters.relation_assigned'),
+            'watched' => __('tickets.index.filters.relation_watched'),
+            'unassigned' => __('tickets.index.filters.relation_unassigned'),
+        ];
+        $scopeFilterLabels = [
+            'open' => __('tickets.index.filters.scope_open'),
+            'finished' => __('tickets.index.filters.scope_finished'),
+        ];
+        $archiveFilterLabels = [
+            'archived' => __('tickets.index.filters.archive_archived'),
+        ];
+        $dueFilterLabels = [
+            'overdue_or_soon' => __('tickets.index.filters.due_overdue_or_soon'),
+            'missing_expected_resolution' => __('tickets.index.filters.due_missing_expected_resolution'),
+        ];
+
+        $addFilterChip('search', __('tickets.index.filters.search'), $filters['search']);
+        $addFilterChip('status', __('tickets.index.filters.status'), $statusFilterLabel ?? '');
+        $addFilterChip('priority', __('tickets.index.filters.priority'), $priorityFilterLabel ?? '');
+        $addFilterChip('category', __('tickets.index.filters.category'), $categoryFilterLabel ?? '');
+        $addFilterChip('relation', __('tickets.index.filters.relation'), $relationFilterLabels[$filters['relation']] ?? '');
+        $addFilterChip('scope', __('tickets.index.filters.scope'), $scopeFilterLabels[$filters['scope']] ?? '');
+        $addFilterChip('archive', __('tickets.index.filters.archive'), $archiveFilterLabels[$filters['archive']] ?? '');
+        $addFilterChip('watched', __('tickets.index.filters.watching'), $filters['watched'] === '1' ? __('tickets.index.filters.watched_only') : '');
+        $addFilterChip('due', __('tickets.index.filters.due'), $dueFilterLabels[$filters['due']] ?? '');
+
+        $activeFilterCount = count($activeFilterChips);
+        $currentPageOverdueCount = $tickets->getCollection()
+            ->filter(fn ($ticket) => $ticket->expected_resolution_at
+                && $ticket->expected_resolution_at->isPast()
+                && ! in_array($ticket->status?->slug, ['resolved', 'closed', 'cancelled'], true)
+                && ! (bool) ($ticket->status?->is_closed ?? false))
+            ->count();
     @endphp
 
     <div class="page-head">
@@ -1740,8 +1964,70 @@
                 </div>
 
                 @if ($hasActiveFilters)
-                    <a class="filter-reset-link" href="{{ route('tickets.index', ['reset' => 1]) }}">{{ __('tickets.index.filters.clear_all') }}</a>
+                    <a class="filter-reset-link" href="{{ route('tickets.index', ['reset' => 1]) }}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M4 7h10a6 6 0 1 1-4.2 10.2"></path>
+                            <path d="M4 7l4-4"></path>
+                            <path d="M4 7l4 4"></path>
+                        </svg>
+                        <span>{{ __('tickets.index.filters.clear_all') }}</span>
+                    </a>
                 @endif
+            </div>
+
+            <div class="filter-insights" aria-label="{{ __('tickets.index.filter_stats.label') }}">
+                <div class="filter-insight" data-tone="blue">
+                    <span class="filter-insight-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M5 6h14"></path>
+                            <path d="M5 12h14"></path>
+                            <path d="M5 18h9"></path>
+                        </svg>
+                    </span>
+                    <span>
+                        <span class="filter-insight-label">{{ __('tickets.index.filter_stats.showing') }}</span>
+                        <span class="filter-insight-value">{{ $tickets->total() }}</span>
+                    </span>
+                </div>
+                <div class="filter-insight" data-tone="{{ $activeFilterCount > 0 ? 'green' : 'blue' }}">
+                    <span class="filter-insight-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 6h16"></path>
+                            <path d="M7 12h10"></path>
+                            <path d="M10 18h4"></path>
+                        </svg>
+                    </span>
+                    <span>
+                        <span class="filter-insight-label">{{ __('tickets.index.filter_stats.active_filters') }}</span>
+                        <span class="filter-insight-value">{{ $activeFilterCount }}</span>
+                    </span>
+                </div>
+                <div class="filter-insight" data-tone="amber">
+                    <span class="filter-insight-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M7 8h10"></path>
+                            <path d="M7 12h7"></path>
+                            <path d="M7 16h4"></path>
+                            <path d="m16 15 2 2 3-4"></path>
+                        </svg>
+                    </span>
+                    <span>
+                        <span class="filter-insight-label">{{ __('tickets.index.filter_stats.sorting') }}</span>
+                        <span class="filter-insight-value">{{ $sortLabel }}</span>
+                    </span>
+                </div>
+                <div class="filter-insight" data-tone="{{ $currentPageOverdueCount > 0 ? 'red' : 'green' }}">
+                    <span class="filter-insight-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="8"></circle>
+                            <path d="M12 7.5V12l3 2"></path>
+                        </svg>
+                    </span>
+                    <span>
+                        <span class="filter-insight-label">{{ __('tickets.index.filter_stats.overdue') }}</span>
+                        <span class="filter-insight-value">{{ $currentPageOverdueCount }}</span>
+                    </span>
+                </div>
             </div>
 
             <details class="filter-disclosure" open data-filter-disclosure>
@@ -1928,6 +2214,23 @@
                         </div>
                     @endif
                 </div>
+
+                @if ($activeFilterCount > 0)
+                    <div class="active-filter-strip" aria-label="{{ __('tickets.index.active_filters.label') }}">
+                        <span class="active-filter-label">{{ __('tickets.index.active_filters.label') }}</span>
+                        @foreach ($activeFilterChips as $chip)
+                            <a
+                                class="active-filter-chip"
+                                href="{{ route('tickets.index', $chip['clear']) }}"
+                                aria-label="{{ __('tickets.index.active_filters.remove', ['filter' => $chip['label']]) }}"
+                                title="{{ __('tickets.index.active_filters.remove', ['filter' => $chip['label']]) }}"
+                            >
+                                <span>{{ $chip['label'] }}: {{ $chip['value'] }}</span>
+                                <span class="active-filter-chip-remove" aria-hidden="true">&times;</span>
+                            </a>
+                        @endforeach
+                    </div>
+                @endif
                 </form>
             </details>
         </section>
@@ -2000,12 +2303,6 @@
         @else
             <section class="ticket-list-panel" aria-label="{{ __('tickets.index.heading') }}">
                 <div class="ticket-list-summary">
-                    <div>
-                        {{ __('tickets.index.summary.showing', ['count' => $tickets->total()]) }}
-                        <span aria-hidden="true">·</span>
-                        {{ __('tickets.index.summary.sorted_by', ['column' => $sortLabel]) }}
-                    </div>
-
                     <nav class="ticket-sort-bar" aria-label="{{ __('tickets.index.summary.sorting') }}">
                         <span class="ticket-sort-label">{{ __('tickets.index.summary.sorting') }}</span>
                         @foreach ([

@@ -922,7 +922,7 @@ class TicketController extends Controller
     {
         if ($request->boolean('reset')) {
             $filters = $this->removeUnauthorizedArchiveFilter($this->defaultTicketFilters(), $actor);
-            $request->session()->put(self::INDEX_FILTERS_SESSION_KEY, $filters);
+            $this->storeTicketIndexFilters($request, $actor, $filters);
 
             return $filters;
         }
@@ -940,14 +940,51 @@ class TicketController extends Controller
         if ($hasFilterQuery) {
             $filters = $this->normalizeTicketFilters($request->only($filterKeys));
             $filters = $this->removeUnauthorizedArchiveFilter($filters, $actor);
-            $request->session()->put(self::INDEX_FILTERS_SESSION_KEY, $filters);
+            $this->storeTicketIndexFilters($request, $actor, $filters);
 
             return $filters;
         }
 
-        return $this->removeUnauthorizedArchiveFilter($this->normalizeTicketFilters(
-            (array) $request->session()->get(self::INDEX_FILTERS_SESSION_KEY, $this->defaultTicketFilters()),
+        if ($request->session()->has(self::INDEX_FILTERS_SESSION_KEY)) {
+            return $this->removeUnauthorizedArchiveFilter($this->normalizeTicketFilters(
+                (array) $request->session()->get(self::INDEX_FILTERS_SESSION_KEY, $this->defaultTicketFilters()),
+            ), $actor);
+        }
+
+        $filters = $this->removeUnauthorizedArchiveFilter($this->normalizeTicketFilters(
+            $this->storedTicketIndexFilters($actor),
         ), $actor);
+
+        $this->storeTicketIndexFilters($request, $actor, $filters);
+
+        return $filters;
+    }
+
+    private function storeTicketIndexFilters(Request $request, ?User $actor, array $filters): void
+    {
+        $request->session()->put(self::INDEX_FILTERS_SESSION_KEY, $filters);
+
+        if (! $actor instanceof User || ! Schema::hasColumn('users', 'ticket_index_preferences')) {
+            return;
+        }
+
+        $actor->forceFill([
+            'ticket_index_preferences' => $filters,
+        ])->saveQuietly();
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function storedTicketIndexFilters(?User $actor): array
+    {
+        if (! $actor instanceof User || ! Schema::hasColumn('users', 'ticket_index_preferences')) {
+            return $this->defaultTicketFilters();
+        }
+
+        $preferences = $actor->ticket_index_preferences;
+
+        return is_array($preferences) ? $preferences : $this->defaultTicketFilters();
     }
 
     private function defaultTicketFilters(): array
