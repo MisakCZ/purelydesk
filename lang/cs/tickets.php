@@ -22,6 +22,7 @@ return [
         'subheading' => 'Přehled aktuálních helpdesk požadavků v systému.',
         'actions' => [
             'create' => 'Nový ticket',
+            'create_tooltip' => 'Před zadáním obecného ticketu se prosím podívejte, zda už není zadaný jiným uživatelem.',
         ],
         'announcements' => [
             'label' => 'Provozní oznámení',

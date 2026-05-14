@@ -171,9 +171,9 @@
             gap: 0.62rem;
             min-height: 2.85rem;
             padding: 0.54rem 0.78rem 0.54rem 0.62rem;
-            border: 1px solid color-mix(in srgb, var(--dashboard-green) 26%, var(--color-border, #bbf7d0));
+            border: 1px solid color-mix(in srgb, var(--dashboard-green, #15803d) 26%, var(--color-border, #bbf7d0));
             border-radius: 999px;
-            background: linear-gradient(145deg, var(--dashboard-green-soft), color-mix(in srgb, var(--color-surface, #fff) 94%, transparent));
+            background: linear-gradient(145deg, var(--dashboard-green-soft, #e8f8ee), color-mix(in srgb, var(--color-surface, #fff) 94%, transparent));
             color: var(--color-primary, #0f766e);
             box-shadow: 0 14px 32px rgba(15, 23, 42, 0.055);
             font-size: 0.9rem;
@@ -185,8 +185,8 @@
 
         .dashboard-create-action:hover,
         .dashboard-create-action:focus-visible {
-            border-color: color-mix(in srgb, var(--dashboard-green) 42%, var(--color-border, #bbf7d0));
-            color: var(--dashboard-green);
+            border-color: color-mix(in srgb, var(--dashboard-green, #15803d) 42%, var(--color-border, #bbf7d0));
+            color: var(--dashboard-green, #15803d);
             box-shadow: 0 18px 38px rgba(15, 23, 42, 0.09);
             transform: translateY(-1px);
         }
@@ -197,8 +197,8 @@
             width: 2rem;
             height: 2rem;
             border-radius: 999px;
-            background: color-mix(in srgb, var(--dashboard-green) 18%, var(--color-surface, #fff));
-            color: var(--dashboard-green);
+            background: color-mix(in srgb, var(--dashboard-green, #15803d) 18%, var(--color-surface, #fff));
+            color: var(--dashboard-green, #15803d);
             flex: 0 0 auto;
         }
 
@@ -213,9 +213,9 @@
             bottom: calc(100% + 0.65rem);
             width: min(20rem, calc(100vw - 2rem));
             padding: 0.72rem 0.82rem;
-            border: 1px solid color-mix(in srgb, var(--dashboard-amber) 24%, var(--color-border, #fde68a));
+            border: 1px solid color-mix(in srgb, var(--dashboard-amber, #c2410c) 24%, var(--color-border, #fde68a));
             border-radius: 0.85rem;
-            background: color-mix(in srgb, var(--dashboard-amber-soft) 62%, var(--color-surface, #fff));
+            background: color-mix(in srgb, var(--dashboard-amber-soft, #fff4db) 62%, var(--color-surface, #fff));
             color: var(--color-text, #13202b);
             box-shadow: 0 18px 38px rgba(15, 23, 42, 0.12);
             font-size: 0.78rem;
@@ -235,8 +235,8 @@
             bottom: -0.38rem;
             width: 0.7rem;
             height: 0.7rem;
-            border-right: 1px solid color-mix(in srgb, var(--dashboard-amber) 24%, var(--color-border, #fde68a));
-            border-bottom: 1px solid color-mix(in srgb, var(--dashboard-amber) 24%, var(--color-border, #fde68a));
+            border-right: 1px solid color-mix(in srgb, var(--dashboard-amber, #c2410c) 24%, var(--color-border, #fde68a));
+            border-bottom: 1px solid color-mix(in srgb, var(--dashboard-amber, #c2410c) 24%, var(--color-border, #fde68a));
             background: inherit;
             transform: rotate(45deg);
         }
@@ -757,6 +757,27 @@
                 <h2>{{ __('dashboard.heading') }}</h2>
                 <p>{{ __('dashboard.subheading') }}</p>
             </div>
+
+            @can('create', \App\Models\Ticket::class)
+                <a
+                    class="dashboard-create-action"
+                    href="{{ route('tickets.create') }}"
+                    aria-describedby="dashboard-create-ticket-tip"
+                >
+                    <span class="dashboard-create-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M7 4h7l3 3v13H7z"></path>
+                            <path d="M14 4v4h4"></path>
+                            <path d="M12 10.5v5"></path>
+                            <path d="M9.5 13h5"></path>
+                        </svg>
+                    </span>
+                    <span>{{ __('dashboard.actions.new_ticket') }}</span>
+                    <span id="dashboard-create-ticket-tip" class="dashboard-create-tooltip" role="tooltip">
+                        {{ __('dashboard.actions.new_ticket_tooltip') }}
+                    </span>
+                </a>
+            @endcan
         </div>
     </div>
 
@@ -812,29 +833,6 @@
                     </div>
                 </section>
             @endif
-
-            @can('create', \App\Models\Ticket::class)
-                <div class="dashboard-create-row">
-                    <a
-                        class="dashboard-create-action"
-                        href="{{ route('tickets.create') }}"
-                        aria-describedby="dashboard-create-ticket-tip"
-                    >
-                        <span class="dashboard-create-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M7 4h7l3 3v13H7z"></path>
-                                <path d="M14 4v4h4"></path>
-                                <path d="M12 10.5v5"></path>
-                                <path d="M9.5 13h5"></path>
-                            </svg>
-                        </span>
-                        <span>{{ __('dashboard.actions.new_ticket') }}</span>
-                        <span id="dashboard-create-ticket-tip" class="dashboard-create-tooltip" role="tooltip">
-                            {{ __('dashboard.actions.new_ticket_tooltip') }}
-                        </span>
-                    </a>
-                </div>
-            @endcan
 
             @if ($dashboard['isSolverDashboard'])
                 <div class="dashboard-metrics" aria-label="{{ __('dashboard.summary.label') }}">

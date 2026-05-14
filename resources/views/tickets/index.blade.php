@@ -101,6 +101,89 @@
             white-space: nowrap;
         }
 
+        .ticket-create-action {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.62rem;
+            min-height: 2.85rem;
+            padding: 0.54rem 0.78rem 0.54rem 0.62rem;
+            border: 1px solid color-mix(in srgb, var(--ticket-green, #15803d) 26%, var(--color-border, #bbf7d0));
+            border-radius: 999px;
+            background: linear-gradient(145deg, var(--ticket-green-soft, #e8f8ee), color-mix(in srgb, var(--color-surface, #fff) 94%, transparent));
+            color: var(--color-primary, #0f766e);
+            box-shadow: 0 14px 32px rgba(15, 23, 42, 0.055);
+            font-size: 0.9rem;
+            font-weight: 800;
+            line-height: 1.2;
+            text-decoration: none;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+        }
+
+        .ticket-create-action:hover,
+        .ticket-create-action:focus-visible {
+            border-color: color-mix(in srgb, var(--ticket-green, #15803d) 42%, var(--color-border, #bbf7d0));
+            color: var(--ticket-green, #15803d);
+            box-shadow: 0 18px 38px rgba(15, 23, 42, 0.09);
+            transform: translateY(-1px);
+        }
+
+        .ticket-create-icon {
+            display: grid;
+            place-items: center;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 999px;
+            background: color-mix(in srgb, var(--ticket-green, #15803d) 18%, var(--color-surface, #fff));
+            color: var(--ticket-green, #15803d);
+            flex: 0 0 auto;
+        }
+
+        .ticket-create-icon svg {
+            width: 1.08rem;
+            height: 1.08rem;
+        }
+
+        .ticket-create-tooltip {
+            position: absolute;
+            right: 0;
+            bottom: calc(100% + 0.65rem);
+            width: min(20rem, calc(100vw - 2rem));
+            padding: 0.72rem 0.82rem;
+            border: 1px solid color-mix(in srgb, var(--ticket-amber, #c2410c) 24%, var(--color-border, #fde68a));
+            border-radius: 0.85rem;
+            background: color-mix(in srgb, var(--ticket-amber-soft, #fff4db) 62%, var(--color-surface, #fff));
+            color: var(--color-text, #13202b);
+            box-shadow: 0 18px 38px rgba(15, 23, 42, 0.12);
+            font-size: 0.78rem;
+            font-weight: 650;
+            line-height: 1.45;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(0.35rem);
+            transition: opacity 0.15s ease, transform 0.15s ease;
+            z-index: 10;
+        }
+
+        .ticket-create-tooltip::after {
+            content: "";
+            position: absolute;
+            right: 1.25rem;
+            bottom: -0.38rem;
+            width: 0.7rem;
+            height: 0.7rem;
+            border-right: 1px solid color-mix(in srgb, var(--ticket-amber, #c2410c) 24%, var(--color-border, #fde68a));
+            border-bottom: 1px solid color-mix(in srgb, var(--ticket-amber, #c2410c) 24%, var(--color-border, #fde68a));
+            background: inherit;
+            transform: rotate(45deg);
+        }
+
+        .ticket-create-action:hover .ticket-create-tooltip,
+        .ticket-create-action:focus-visible .ticket-create-tooltip {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
         .announcement-stack {
             display: grid;
             gap: 0.65rem;
@@ -1063,6 +1146,25 @@
         }
 
         @media (max-width: 768px) {
+            .ticket-create-action {
+                justify-content: center;
+                width: 100%;
+            }
+
+            .ticket-create-tooltip {
+                right: 50%;
+                transform: translate(50%, 0.35rem);
+            }
+
+            .ticket-create-tooltip::after {
+                right: calc(50% - 0.35rem);
+            }
+
+            .ticket-create-action:hover .ticket-create-tooltip,
+            .ticket-create-action:focus-visible .ticket-create-tooltip {
+                transform: translate(50%, 0);
+            }
+
             .filter-card {
                 padding: 0.65rem;
                 border-radius: 0.9rem;
@@ -1559,7 +1661,24 @@
             </div>
 
             @if ($canCreateTickets)
-                <a class="button button-primary" href="{{ route('tickets.create') }}">{{ __('tickets.index.actions.create') }}</a>
+                <a
+                    class="ticket-create-action"
+                    href="{{ route('tickets.create') }}"
+                    aria-describedby="ticket-index-create-ticket-tip"
+                >
+                    <span class="ticket-create-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M7 4h7l3 3v13H7z"></path>
+                            <path d="M14 4v4h4"></path>
+                            <path d="M12 10.5v5"></path>
+                            <path d="M9.5 13h5"></path>
+                        </svg>
+                    </span>
+                    <span>{{ __('tickets.index.actions.create') }}</span>
+                    <span id="ticket-index-create-ticket-tip" class="ticket-create-tooltip" role="tooltip">
+                        {{ __('tickets.index.actions.create_tooltip') }}
+                    </span>
+                </a>
             @endif
         </div>
     </div>

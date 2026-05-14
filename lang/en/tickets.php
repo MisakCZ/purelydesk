@@ -22,6 +22,7 @@ return [
         'subheading' => 'Overview of current helpdesk requests in the system.',
         'actions' => [
             'create' => 'New ticket',
+            'create_tooltip' => 'Before creating a general ticket, please check whether it has already been submitted by another user.',
         ],
         'announcements' => [
             'label' => 'Service announcements',
