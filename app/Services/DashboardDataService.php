@@ -37,6 +37,7 @@ class DashboardDataService
                     'my_assigned_tickets' => $this->myAssignedTickets($user),
                     'waiting_for_user' => $this->waitingForUser($user),
                     'resolved_waiting_confirmation' => $this->resolvedWaitingConfirmation($user),
+                    'current_tickets' => $this->currentSolverTickets($user),
                     'without_expected_resolution' => Ticket::supportsExpectedResolution()
                         ? $this->withoutExpectedResolution($user)
                         : collect(),
@@ -50,6 +51,12 @@ class DashboardDataService
                     'new_unassigned_tickets' => $this->newUnassignedTicketsQuery($user)->count(),
                     'my_assigned_tickets' => $this->myAssignedTicketsQuery($user)->count(),
                     'waiting_for_user' => $this->waitingForUserQuery($user)->count(),
+                    'due_today' => Ticket::supportsExpectedResolution()
+                        ? $this->dueTodayQuery($user)->count()
+                        : 0,
+                    'due_soon' => Ticket::supportsExpectedResolution()
+                        ? $this->dueSoonQuery($user)->count()
+                        : 0,
                     'without_expected_resolution' => Ticket::supportsExpectedResolution()
                         ? $this->withoutExpectedResolutionQuery($user)->count()
                         : 0,
@@ -58,6 +65,10 @@ class DashboardDataService
                         : 0,
                 ]
                 : [],
+            'solverSlaDeadlines' => $user->isSolver()
+                ? $this->slaDeadlines($user, 'solver')
+                : [],
+            'requesterSlaDeadlines' => $this->slaDeadlines($user, 'requester'),
             'showExpectedResolutionSection' => $user->isSolver() && Ticket::supportsExpectedResolution(),
             'adminLinks' => $user->isAdmin()
                 ? $this->adminLinks()
@@ -214,6 +225,36 @@ class DashboardDataService
     /**
      * @return Collection<int, Ticket>
      */
+    private function currentSolverTickets(User $user): Collection
+    {
+        return $this->baseTicketQuery($user)
+            ->tap(fn (Builder $query) => $this->whereNotFinal($query))
+            ->where(function (Builder $query) use ($user): void {
+                $query
+                    ->where('assignee_id', $user->id)
+                    ->orWhere(function (Builder $query): void {
+                        $query
+                            ->whereNull('assignee_id')
+                            ->tap(fn (Builder $query) => $this->whereStatusIdentifiers($query, ['new']));
+                    })
+                    ->orWhere(fn (Builder $query) => $this->whereStatusIdentifiers($query, ['waiting_user']));
+
+                if (Ticket::supportsExpectedResolution()) {
+                    $query->orWhere(function (Builder $query): void {
+                        $query
+                            ->whereNotNull('expected_resolution_at')
+                            ->where('expected_resolution_at', '<=', Carbon::now()->addDay());
+                    });
+                }
+            })
+            ->orderByDesc('updated_at')
+            ->limit(self::LIMIT)
+            ->get();
+    }
+
+    /**
+     * @return Collection<int, Ticket>
+     */
     private function dueSoonOrOverdue(User $user): Collection
     {
         return $this->dueSoonOrOverdueQuery($user)
@@ -251,6 +292,7 @@ class DashboardDataService
     private function waitingForUserQuery(User $user): Builder
     {
         return $this->baseTicketQuery($user)
+            ->tap(fn (Builder $query) => $this->whereNotFinal($query))
             ->tap(fn (Builder $query) => $this->whereStatusIdentifiers($query, ['waiting_user']));
     }
 
@@ -260,6 +302,112 @@ class DashboardDataService
             ->whereNotNull('expected_resolution_at')
             ->where('expected_resolution_at', '<=', Carbon::now()->addDays(3))
             ->tap(fn (Builder $query) => $this->whereNotFinal($query));
+    }
+
+    private function dueTodayQuery(User $user): Builder
+    {
+        return $this->solverExpectedResolutionOpenQuery($user)
+            ->whereBetween('expected_resolution_at', [
+                Carbon::now()->startOfDay(),
+                Carbon::now()->endOfDay(),
+            ]);
+    }
+
+    private function dueSoonQuery(User $user): Builder
+    {
+        $hours = max(1, (int) config('helpdesk.notifications.mail.expected_resolution_due_soon_hours', 24));
+
+        return $this->solverExpectedResolutionOpenQuery($user)
+            ->where('expected_resolution_at', '>', Carbon::now())
+            ->where('expected_resolution_at', '<=', Carbon::now()->addHours($hours));
+    }
+
+    private function overdueQuery(User $user, string $context): Builder
+    {
+        return $this->expectedResolutionOpenQuery($user, $context)
+            ->where('expected_resolution_at', '<=', Carbon::now());
+    }
+
+    private function dueTodaySlaQuery(User $user, string $context): Builder
+    {
+        return $this->expectedResolutionOpenQuery($user, $context)
+            ->whereBetween('expected_resolution_at', [
+                Carbon::now()->startOfDay(),
+                Carbon::now()->endOfDay(),
+            ]);
+    }
+
+    private function dueSoonSlaQuery(User $user, string $context): Builder
+    {
+        $hours = max(1, (int) config('helpdesk.notifications.mail.expected_resolution_due_soon_hours', 24));
+
+        return $this->expectedResolutionOpenQuery($user, $context)
+            ->where('expected_resolution_at', '>', Carbon::now())
+            ->where('expected_resolution_at', '<=', Carbon::now()->addHours($hours));
+    }
+
+    private function solverExpectedResolutionOpenQuery(User $user): Builder
+    {
+        return $this->expectedResolutionOpenQuery($user, 'solver');
+    }
+
+    private function expectedResolutionOpenQuery(User $user, string $context): Builder
+    {
+        return $this->slaBaseTicketQuery($user, $context)
+            ->whereNotNull('expected_resolution_at')
+            ->tap(fn (Builder $query) => $this->whereNotFinal($query))
+            ->tap(fn (Builder $query) => $this->whereStatusNotIn($query, ['resolved']));
+    }
+
+    /**
+     * @return array<string, array{count: int, ticket: Ticket|null}>
+     */
+    private function slaDeadlines(User $user, string $context): array
+    {
+        $emptyDeadline = ['count' => 0, 'ticket' => null];
+
+        return [
+            'overdue' => Ticket::supportsExpectedResolution()
+                ? $this->deadlineSummary($this->overdueQuery($user, $context))
+                : $emptyDeadline,
+            'due_soon' => Ticket::supportsExpectedResolution()
+                ? $this->deadlineSummary($this->dueSoonSlaQuery($user, $context))
+                : $emptyDeadline,
+            'due_today' => Ticket::supportsExpectedResolution()
+                ? $this->deadlineSummary($this->dueTodaySlaQuery($user, $context))
+                : $emptyDeadline,
+            'resolved' => $this->deadlineSummary($this->resolvedSlaQuery($user, $context), 'updated_at', 'desc'),
+        ];
+    }
+
+    /**
+     * @return array{count: int, ticket: Ticket|null}
+     */
+    private function deadlineSummary(Builder $query, string $orderColumn = 'expected_resolution_at', string $direction = 'asc'): array
+    {
+        $countQuery = clone $query;
+
+        return [
+            'count' => $countQuery->count(),
+            'ticket' => $query->orderBy($orderColumn, $direction)->first(),
+        ];
+    }
+
+    private function resolvedSlaQuery(User $user, string $context): Builder
+    {
+        return $this->slaBaseTicketQuery($user, $context)
+            ->tap(fn (Builder $query) => $this->whereStatusIdentifiers($query, ['resolved']));
+    }
+
+    private function slaBaseTicketQuery(User $user, string $context): Builder
+    {
+        $query = $this->baseTicketQuery($user);
+
+        if ($context === 'solver') {
+            return $query->where('assignee_id', $user->id);
+        }
+
+        return $query->where('requester_id', $user->id);
     }
 
     private function withoutExpectedResolutionQuery(User $user): Builder
@@ -295,6 +443,11 @@ class DashboardDataService
     private function whereStatusIdentifiers(Builder $query, array $identifiers): void
     {
         $query->whereHas('status', fn (Builder $query) => $this->whereStatusSlugIn($query, $identifiers));
+    }
+
+    private function whereStatusNotIn(Builder $query, array $identifiers): void
+    {
+        $query->whereDoesntHave('status', fn (Builder $query) => $this->whereStatusSlugIn($query, $identifiers));
     }
 
     private function whereStatusSlugIn(Builder $query, array $identifiers): void

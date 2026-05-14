@@ -97,23 +97,15 @@ class DashboardTest extends TestCase
             ->assertSee(e(route('tickets.index', ['scope' => 'open', 'relation' => 'requester'])), false);
     }
 
-    public function test_dashboard_header_links_open_filtered_and_full_ticket_lists(): void
+    public function test_dashboard_does_not_show_quick_actions(): void
     {
         $user = $this->createUserWithRoles([$this->userRole]);
 
         $this->actingAs($user)
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSee(e(route('tickets.index', ['scope' => 'open'])), false)
-            ->assertSee(e(route('tickets.index', ['reset' => 1])), false);
-
-        $this->actingAs($user)
-            ->get(route('tickets.index', ['scope' => 'open']))
-            ->assertOk();
-
-        $this->actingAs($user)
-            ->get(route('tickets.index', ['reset' => 1]))
-            ->assertOk();
+            ->assertDontSeeText(__('dashboard.actions.new_ticket'))
+            ->assertDontSeeText(__('dashboard.actions.all_tickets'));
     }
 
     public function test_user_does_not_see_other_private_or_internal_ticket(): void
@@ -156,10 +148,100 @@ class DashboardTest extends TestCase
         $this->actingAs($solver)
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSeeText(__('dashboard.sections.new_unassigned_tickets.heading'))
+            ->assertSeeText(__('dashboard.summary.new_unassigned_tickets'))
+            ->assertSeeText(__('dashboard.current.heading'))
             ->assertSee(e(route('tickets.index', ['status' => 'new', 'relation' => 'unassigned'])), false)
             ->assertSeeText($publicTicket->subject)
             ->assertSeeText($internalTicket->subject);
+    }
+
+    public function test_solver_dashboard_renders_summary_boxes_current_list_and_sla_panel(): void
+    {
+        $solver = $this->createUserWithRoles([$this->solverRole]);
+        $requester = $this->createUserWithRoles([$this->userRole]);
+
+        $this->createTicket([
+            'requester' => $requester,
+            'assignee' => $solver,
+            'subject' => 'Current assigned dashboard ticket',
+            'expected_resolution_at' => now()->addHours(4),
+        ]);
+
+        $this->actingAs($solver)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSeeTextInOrder([
+                __('dashboard.summary.new_unassigned_tickets'),
+                __('dashboard.summary.my_assigned_tickets'),
+                __('dashboard.summary.due_today'),
+                __('dashboard.summary.due_soon'),
+                __('dashboard.summary.waiting_for_user'),
+            ])
+            ->assertSeeText(__('dashboard.current.heading'))
+            ->assertSeeText(__('dashboard.current.columns.requester'))
+            ->assertSeeText(__('dashboard.current.columns.deadline'))
+            ->assertSeeText('Current assigned dashboard ticket')
+            ->assertSeeText(__('dashboard.sla.heading'))
+            ->assertSeeText(__('dashboard.sla.overdue.label'))
+            ->assertSeeText(__('dashboard.sla.due_soon.label'))
+            ->assertSeeText(__('dashboard.sla.due_today.label'))
+            ->assertSeeText(__('dashboard.sla.resolved.label'))
+            ->assertDontSeeText('Tomorrow');
+    }
+
+    public function test_solver_sla_resolved_count_uses_assigned_resolved_tickets(): void
+    {
+        $solver = $this->createUserWithRoles([$this->solverRole]);
+        $requester = $this->createUserWithRoles([$this->userRole]);
+        $assignedResolved = $this->createTicket([
+            'ticket_number' => 'T-SOLVER-RESOLVED',
+            'requester' => $requester,
+            'assignee' => $solver,
+            'status' => $this->resolvedStatus,
+            'subject' => 'Assigned resolved dashboard ticket',
+        ]);
+        $unassignedResolved = $this->createTicket([
+            'ticket_number' => 'T-SOLVER-OTHER',
+            'requester' => $requester,
+            'status' => $this->resolvedStatus,
+            'subject' => 'Visible but not assigned resolved ticket',
+        ]);
+
+        $this->actingAs($solver)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('data-sla-key="resolved" data-sla-count="1"', false)
+            ->assertSeeText($assignedResolved->ticket_number)
+            ->assertDontSeeText($unassignedResolved->ticket_number);
+    }
+
+    public function test_requester_dashboard_renders_sla_panel_for_own_tickets_only(): void
+    {
+        $requester = $this->createUserWithRoles([$this->userRole]);
+        $otherRequester = $this->createUserWithRoles([$this->userRole]);
+        $ownResolved = $this->createTicket([
+            'ticket_number' => 'T-REQUESTER-RESOLVED',
+            'requester' => $requester,
+            'status' => $this->resolvedStatus,
+            'subject' => 'Own resolved requester dashboard ticket',
+        ]);
+        $otherResolved = $this->createTicket([
+            'ticket_number' => 'T-REQUESTER-OTHER',
+            'requester' => $otherRequester,
+            'status' => $this->resolvedStatus,
+            'subject' => 'Other resolved requester dashboard ticket',
+        ]);
+
+        $this->actingAs($requester)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSeeText(__('dashboard.sla.heading'))
+            ->assertSeeText(__('dashboard.sla.resolved.label'))
+            ->assertSeeText(__('dashboard.sla.resolved.note_requester'))
+            ->assertSee('data-sla-key="resolved" data-sla-count="1"', false)
+            ->assertSeeText($ownResolved->ticket_number)
+            ->assertDontSeeText($otherResolved->ticket_number)
+            ->assertDontSeeText('Tomorrow');
     }
 
     public function test_user_confirmation_link_uses_requester_relation_and_resolved_status(): void
@@ -202,7 +284,7 @@ class DashboardTest extends TestCase
             ->get(route('dashboard'))
             ->assertOk()
             ->assertSeeText(__('dashboard.admin.heading'))
-            ->assertDontSeeText(__('dashboard.sections.new_unassigned_tickets.heading'));
+            ->assertDontSeeText(__('dashboard.current.heading'));
     }
 
     public function test_admin_with_solver_role_gets_solver_dashboard(): void
@@ -213,7 +295,8 @@ class DashboardTest extends TestCase
             ->get(route('dashboard'))
             ->assertOk()
             ->assertSeeText(__('dashboard.admin.heading'))
-            ->assertSeeText(__('dashboard.sections.new_unassigned_tickets.heading'))
+            ->assertSeeText(__('dashboard.current.heading'))
+            ->assertSeeText(__('dashboard.summary.new_unassigned_tickets'))
             ->assertSee(e(route('tickets.index', ['scope' => 'open', 'relation' => 'assigned'])), false);
     }
 
@@ -228,7 +311,7 @@ class DashboardTest extends TestCase
         $this->actingAs($solver)
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSeeText(__('dashboard.sections.without_expected_resolution.heading'))
+            ->assertSeeText(__('dashboard.diagnostics.heading'))
             ->assertSeeText($ticket->subject)
             ->assertSee(e(route('tickets.index', [
                 'scope' => 'open',
@@ -356,7 +439,7 @@ class DashboardTest extends TestCase
             ->assertSee(e(route('announcements.active')), false);
     }
 
-    public function test_dashboard_shows_visible_open_pinned_tickets(): void
+    public function test_pinned_tickets_are_not_shown_as_separate_dashboard_section(): void
     {
         $user = $this->createUserWithRoles([$this->userRole]);
         $pinnedTicket = $this->createTicket([
@@ -376,7 +459,7 @@ class DashboardTest extends TestCase
         $this->actingAs($user)
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSeeText(__('dashboard.pinned.heading'))
+            ->assertDontSeeText(__('dashboard.pinned.heading'))
             ->assertSeeText($pinnedTicket->subject)
             ->assertDontSeeText($closedPinnedTicket->subject);
     }
@@ -408,7 +491,7 @@ class DashboardTest extends TestCase
         $assignee = $overrides['assignee'] ?? null;
 
         return Ticket::query()->create([
-            'ticket_number' => 'T-TEST-'.Str::upper(Str::random(8)),
+            'ticket_number' => $overrides['ticket_number'] ?? 'T-TEST-'.Str::upper(Str::random(8)),
             'subject' => $overrides['subject'] ?? 'Ticket '.Str::random(8),
             'description' => $overrides['description'] ?? 'Test description',
             'visibility' => $overrides['visibility'] ?? Ticket::VISIBILITY_PUBLIC,
