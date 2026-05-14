@@ -12,6 +12,7 @@ return [
         'view_all' => 'View all',
         'new_ticket_hint' => 'Before creating a new request, check whether it is already being handled:',
         'check_open_tickets' => 'open tickets',
+        'new_ticket_tooltip' => 'Before creating a general ticket, please check whether it has already been submitted by another user.',
     ],
     'announcements' => [
         'label' => 'Active service announcements',

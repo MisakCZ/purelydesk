@@ -12,6 +12,7 @@ return [
         'view_all' => 'Zobrazit vše',
         'new_ticket_hint' => 'Před založením nového požadavku zkontrolujte, jestli se už neřeší:',
         'check_open_tickets' => 'otevřené tickety',
+        'new_ticket_tooltip' => 'Před zadáním obecného ticketu se prosím podívejte, zda už není zadaný jiným uživatelem.',
     ],
     'announcements' => [
         'label' => 'Aktivní provozní oznámení',

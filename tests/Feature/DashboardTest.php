@@ -97,14 +97,15 @@ class DashboardTest extends TestCase
             ->assertSee(e(route('tickets.index', ['scope' => 'open', 'relation' => 'requester'])), false);
     }
 
-    public function test_dashboard_does_not_show_quick_actions(): void
+    public function test_dashboard_shows_lightweight_new_ticket_action_without_quick_actions_block(): void
     {
         $user = $this->createUserWithRoles([$this->userRole]);
 
         $this->actingAs($user)
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertDontSeeText(__('dashboard.actions.new_ticket'))
+            ->assertSeeText(__('dashboard.actions.new_ticket'))
+            ->assertSeeText(__('dashboard.actions.new_ticket_tooltip'))
             ->assertDontSeeText(__('dashboard.actions.all_tickets'));
     }
 
