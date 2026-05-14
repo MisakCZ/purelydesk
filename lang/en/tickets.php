@@ -62,6 +62,7 @@ return [
             'clear_watching' => 'Clear watched tickets filter',
             'clear_scope' => 'Clear ticket range filter',
             'clear_archive' => 'Clear archive filter',
+            'clear_all' => 'Clear filters',
         ],
         'pinned' => [
             'label' => 'Pinned tickets',
@@ -80,13 +81,33 @@ return [
         'sort' => [
             'toggle' => 'Sort by :column',
         ],
+        'summary' => [
+            'showing' => 'Showing :count tickets',
+            'sorted_by' => 'Sorted by: :column',
+            'sorting' => 'Sorting',
+        ],
         'meta' => [
+            'requester_label' => 'Requester',
             'requester' => 'Requester: :name',
+            'assignee_label' => 'Assignee',
             'assignee' => 'Assignee: :name',
             'assignee_unassigned' => 'Unassigned',
             'comments' => '{0} No comments|{1} 1 comment|[2,*] :count comments',
+            'updated_label' => 'Updated',
             'updated' => 'Updated :date',
+            'deadline_label' => 'Deadline',
             'pinned' => 'Pinned',
+        ],
+        'sla' => [
+            'ok' => 'SLA OK · :date',
+            'today' => 'Today by :time',
+            'soon' => 'Due soon · in :duration',
+            'overdue' => 'Overdue · :duration',
+            'missing' => 'No deadline',
+            'resolved' => 'Resolved',
+            'closed' => 'Closed',
+            'hours' => '{1} :count h|[2,*] :count h',
+            'days' => '{1} :count day|[2,*] :count days',
         ],
         'empty' => [
             'filtered_heading' => 'No tickets match the active filters',

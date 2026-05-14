@@ -4,46 +4,136 @@
 
 @push('styles')
     <style>
+        .ticket-index-shell {
+            display: grid;
+            gap: 1.05rem;
+            --ticket-card-bg: linear-gradient(145deg, color-mix(in srgb, var(--color-surface, #fff) 98%, transparent), color-mix(in srgb, var(--color-surface-muted, #f8fafc) 88%, transparent));
+            --ticket-card-shadow: 0 18px 42px rgba(15, 23, 42, 0.07);
+            --ticket-blue: #2563eb;
+            --ticket-blue-soft: color-mix(in srgb, #2563eb 14%, var(--color-surface, #fff));
+            --ticket-green: #15803d;
+            --ticket-green-soft: color-mix(in srgb, #15803d 14%, var(--color-surface, #fff));
+            --ticket-amber: #c2410c;
+            --ticket-amber-soft: color-mix(in srgb, #c2410c 15%, var(--color-surface, #fff));
+            --ticket-red: #dc2626;
+            --ticket-red-soft: color-mix(in srgb, #dc2626 13%, var(--color-surface, #fff));
+            --ticket-violet: #7c3aed;
+            --ticket-violet-soft: color-mix(in srgb, #7c3aed 14%, var(--color-surface, #fff));
+        }
+
+        :root[data-theme="dark"] .ticket-index-shell {
+            --ticket-card-bg: linear-gradient(145deg, color-mix(in srgb, var(--color-surface, #172033) 94%, #ffffff 4%), color-mix(in srgb, var(--color-surface-muted, #111827) 92%, #ffffff 2%));
+            --ticket-card-shadow: 0 20px 42px rgba(0, 0, 0, 0.28);
+            --ticket-blue: #93c5fd;
+            --ticket-blue-soft: color-mix(in srgb, #2563eb 26%, var(--color-surface, #172033));
+            --ticket-green: #86efac;
+            --ticket-green-soft: color-mix(in srgb, #16a34a 26%, var(--color-surface, #172033));
+            --ticket-amber: #fdba74;
+            --ticket-amber-soft: color-mix(in srgb, #f97316 24%, var(--color-surface, #172033));
+            --ticket-red: #fca5a5;
+            --ticket-red-soft: color-mix(in srgb, #dc2626 26%, var(--color-surface, #172033));
+            --ticket-violet: #c4b5fd;
+            --ticket-violet-soft: color-mix(in srgb, #7c3aed 28%, var(--color-surface, #172033));
+        }
+
         .filter-card {
-            margin-bottom: 1rem;
-            padding: 0.85rem 0.9rem;
-            border: 1px solid #dbe3eb;
-            border-radius: 1rem;
-            background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+            padding: 1rem;
+            border: 1px solid rgba(203, 213, 225, 0.85);
+            border-radius: 1.1rem;
+            background: var(--ticket-card-bg);
+            box-shadow: var(--ticket-card-shadow);
+        }
+
+        .filter-card-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .filter-card-title {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            margin: 0;
+            color: var(--color-text, #13202b);
+            font-size: 0.96rem;
+            font-weight: 780;
+        }
+
+        .filter-title-icon,
+        .ticket-card-icon,
+        .ticket-meta-icon,
+        .badge-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+            color: currentColor;
+        }
+
+        .filter-title-icon {
+            width: 1.72rem;
+            height: 1.72rem;
+            border-radius: 0.7rem;
+            background: var(--ticket-blue-soft);
+            color: var(--ticket-blue);
+        }
+
+        .filter-title-icon svg {
+            width: 1rem;
+            height: 1rem;
+        }
+
+        .filter-card-subtitle {
+            margin: 0.25rem 0 0;
+            color: var(--color-muted, #64748b);
+            font-size: 0.82rem;
+            line-height: 1.5;
+        }
+
+        .filter-reset-link {
+            color: var(--color-primary, #0f766e);
+            font-size: 0.84rem;
+            font-weight: 760;
+            text-decoration: none;
+            white-space: nowrap;
         }
 
         .announcement-stack {
             display: grid;
-            gap: 0.85rem;
-            margin-bottom: 1rem;
+            gap: 0.65rem;
         }
 
         .announcement-card {
-            padding: 1rem 1.1rem;
-            border: 1px solid #d9e0e7;
-            border-left-width: 0.45rem;
-            border-radius: 1rem;
-            background: #fff;
+            display: grid;
+            gap: 0.42rem;
+            padding: 0.85rem 0.95rem;
+            border: 1px solid var(--color-border, #e5ebf1);
+            border-radius: 1.05rem;
+            background: var(--color-surface, #fff);
+            box-shadow: 0 14px 32px rgba(15, 23, 42, 0.045);
         }
 
         .announcement-card[data-type="info"] {
-            border-left-color: #2563eb;
-            background: #f8fbff;
+            border-color: #bfdbfe;
+            background: linear-gradient(135deg, rgba(239, 246, 255, 0.96), rgba(255, 255, 255, 0.9));
         }
 
         .announcement-card[data-type="warning"] {
-            border-left-color: #d97706;
-            background: #fffaf0;
+            border-color: #fde68a;
+            background: linear-gradient(135deg, rgba(255, 251, 235, 0.98), rgba(255, 255, 255, 0.9));
         }
 
         .announcement-card[data-type="outage"] {
-            border-left-color: #dc2626;
-            background: #fff6f6;
+            border-color: #fecaca;
+            background: linear-gradient(135deg, rgba(254, 242, 242, 0.98), rgba(255, 255, 255, 0.9));
         }
 
         .announcement-card[data-type="maintenance"] {
-            border-left-color: #7c3aed;
-            background: #f9f7ff;
+            border-color: #c7d2fe;
+            background: linear-gradient(135deg, rgba(238, 242, 255, 0.98), rgba(255, 255, 255, 0.9));
         }
 
         .announcement-head {
@@ -51,19 +141,21 @@
             align-items: flex-start;
             justify-content: space-between;
             gap: 1rem;
-            margin-bottom: 0.65rem;
         }
 
         .announcement-title {
             margin: 0;
-            font-size: 1.02rem;
-            color: #13202b;
+            color: var(--color-text, #13202b);
+            font-size: 0.9rem;
+            font-weight: 780;
+            line-height: 1.35;
         }
 
         .announcement-body {
             margin: 0;
-            color: #334155;
-            line-height: 1.6;
+            color: var(--color-muted, #475569);
+            font-size: 0.79rem;
+            line-height: 1.5;
             white-space: pre-line;
         }
 
@@ -73,9 +165,10 @@
         }
 
         .announcement-meta {
-            margin-top: 0.75rem;
-            color: #5b6b79;
-            font-size: 0.9rem;
+            margin-top: 0.1rem;
+            color: var(--color-muted, #475569);
+            font-size: 0.79rem;
+            line-height: 1.5;
         }
 
         .pinned-section {
@@ -177,17 +270,17 @@
         .filter-grid {
             display: grid;
             grid-template-columns: minmax(11rem, 1.25fr) repeat(auto-fit, minmax(7.6rem, 0.82fr));
-            gap: 0.55rem;
+            gap: 0.62rem;
             align-items: end;
         }
 
         .filter-field {
             display: grid;
             gap: 0.35rem;
-            padding: 0.55rem 0.65rem 0.65rem;
-            border: 1px solid #edf2f7;
+            padding: 0.55rem 0.62rem 0.62rem;
+            border: 1px solid color-mix(in srgb, var(--color-border, #e5ebf1) 88%, transparent);
             border-radius: 0.9rem;
-            background: #f8fafc;
+            background: color-mix(in srgb, var(--color-surface-muted, #f8fafc) 76%, var(--color-surface, #fff));
             min-width: 0;
         }
 
@@ -204,7 +297,7 @@
             font-weight: 700;
             letter-spacing: 0.04em;
             text-transform: uppercase;
-            color: #64748b;
+            color: var(--color-muted, #64748b);
             min-width: 0;
         }
 
@@ -263,10 +356,10 @@
             width: 100%;
             min-height: 2.45rem;
             padding: 0.52rem 0.75rem;
-            border: 1px solid #d7e0ea;
+            border: 1px solid var(--color-border, #d7e0ea);
             border-radius: 0.78rem;
-            background: #fff;
-            color: #0f172a;
+            background: var(--color-field-bg, #fff);
+            color: var(--color-text, #0f172a);
             font: inherit;
             font-size: 0.92rem;
             font-weight: 500;
@@ -289,44 +382,13 @@
         .filter-input:focus,
         .filter-select:focus {
             outline: 2px solid rgba(15, 118, 110, 0.16);
-            border-color: #0f766e;
-            background: #fff;
+            border-color: var(--color-primary, #0f766e);
+            background: var(--color-field-bg, #fff);
         }
 
         .filter-input::placeholder {
             color: #94a3b8;
             font-weight: 400;
-        }
-
-        .table-wrap {
-            overflow: visible;
-        }
-
-        .ticket-mobile-list {
-            display: none;
-        }
-
-        .ticket-table {
-            width: 100%;
-            border-collapse: collapse;
-            table-layout: fixed;
-        }
-
-        .ticket-table th,
-        .ticket-table td {
-            padding: 0.8rem 0.85rem;
-            text-align: left;
-            border-bottom: 1px solid #e5ebf1;
-            vertical-align: top;
-        }
-
-        .ticket-table th {
-            color: #5b6b79;
-            font-size: 0.76rem;
-            font-weight: 700;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-            background: #f8fafc;
         }
 
         .sort-link {
@@ -357,34 +419,8 @@
             color: currentColor;
         }
 
-        .ticket-table tbody tr:hover {
-            background: #f8fbff;
-        }
-
         .ticket-row-updated {
             background: #f0fdf4 !important;
-        }
-
-        .ticket-col-number {
-            width: 6.6rem;
-        }
-
-        .ticket-col-status {
-            width: 17.7rem;
-        }
-
-        .ticket-col-priority {
-            width: 8.85rem;
-        }
-
-        .ticket-col-updated {
-            width: 8.65rem;
-            white-space: nowrap;
-        }
-
-        .ticket-table th.ticket-col-updated,
-        .ticket-table td.ticket-col-updated {
-            padding-right: 1.25rem;
         }
 
         .ticket-number {
@@ -442,6 +478,283 @@
         .subject-meta-separator {
             color: #94a3b8;
             line-height: 1.4;
+        }
+
+        .ticket-list-panel {
+            display: grid;
+            gap: 0.85rem;
+        }
+
+        .ticket-list-summary {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+            padding: 0 0.15rem;
+            color: var(--color-muted, #64748b);
+            font-size: 0.86rem;
+            font-weight: 620;
+        }
+
+        .ticket-sort-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+        }
+
+        .ticket-sort-label {
+            color: var(--color-muted, #64748b);
+            font-size: 0.78rem;
+            font-weight: 760;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .ticket-sort-pill {
+            min-height: 2.1rem;
+            padding: 0.43rem 0.68rem;
+            border: 1px solid rgba(203, 213, 225, 0.9);
+            border-radius: 999px;
+            background: var(--color-surface, #fff);
+            color: var(--color-muted, #475569);
+            font-size: 0.82rem;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .ticket-sort-pill.active,
+        .ticket-sort-pill:hover {
+            border-color: color-mix(in srgb, var(--color-primary, #0f766e) 35%, var(--color-border, #d9e0e7));
+            background: var(--color-primary-soft, #dff5f2);
+            color: var(--color-primary, #0f766e);
+        }
+
+        .ticket-card-list {
+            display: grid;
+            gap: 0.78rem;
+        }
+
+        .ticket-list-card {
+            display: grid;
+            gap: 0.68rem;
+            padding: 1rem 1.08rem;
+            border: 1px solid rgba(203, 213, 225, 0.85);
+            border-radius: 1.05rem;
+            background: var(--ticket-card-bg);
+            box-shadow: var(--ticket-card-shadow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ticket-list-card::before {
+            content: "";
+            position: absolute;
+            inset: 0 auto 0 0;
+            width: 0.22rem;
+            background: linear-gradient(180deg, var(--ticket-blue), var(--ticket-green));
+            opacity: 0.68;
+        }
+
+        .ticket-list-card:hover {
+            border-color: color-mix(in srgb, var(--color-primary, #0f766e) 28%, var(--color-border, #d9e0e7));
+            box-shadow: 0 18px 42px rgba(15, 23, 42, 0.075);
+        }
+
+        .ticket-card-top {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 0.7rem;
+            align-items: start;
+        }
+
+        .ticket-card-title {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.55rem;
+            min-width: 0;
+        }
+
+        .ticket-card-main {
+            display: flex;
+            align-items: baseline;
+            gap: 0.55rem;
+            min-width: 0;
+        }
+
+        .ticket-card-icon {
+            width: 2.05rem;
+            height: 2.05rem;
+            border-radius: 0.82rem;
+            background: var(--ticket-blue-soft);
+            color: var(--ticket-blue);
+            margin-top: 0.02rem;
+        }
+
+        .ticket-card-icon svg {
+            width: 1.08rem;
+            height: 1.08rem;
+        }
+
+        .ticket-card-title .ticket-number {
+            flex: 0 0 auto;
+            font-weight: 780;
+            color: var(--color-primary, #0f766e);
+        }
+
+        .ticket-card-subject {
+            color: var(--color-text, #13202b);
+            font-size: 1rem;
+            font-weight: 800;
+            line-height: 1.35;
+            text-decoration: none;
+            white-space: normal;
+            overflow-wrap: break-word;
+            word-break: normal;
+        }
+
+        .ticket-card-subject:hover {
+            color: var(--color-primary, #0f766e);
+            text-decoration: underline;
+        }
+
+        .ticket-card-date {
+            display: grid;
+            gap: 0.1rem;
+            justify-items: end;
+            color: var(--color-muted, #64748b);
+            font-size: 0.76rem;
+            font-weight: 680;
+            line-height: 1.35;
+            white-space: nowrap;
+        }
+
+        .ticket-card-date-label {
+            color: var(--color-muted, #64748b);
+            font-size: 0.68rem;
+            font-weight: 790;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .ticket-card-middle,
+        .ticket-card-bottom {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+        }
+
+        .ticket-card-middle {
+            padding-top: 0.02rem;
+        }
+
+        .ticket-card-bottom {
+            padding-top: 0.55rem;
+            border-top: 1px solid color-mix(in srgb, var(--color-border, #e2e8f0) 72%, transparent);
+        }
+
+        .ticket-card-meta,
+        .ticket-card-deadline {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.28rem 0.55rem;
+            min-width: 0;
+            color: var(--color-muted, #64748b);
+            font-size: 0.82rem;
+            font-weight: 620;
+            line-height: 1.45;
+        }
+
+        .ticket-card-meta-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            min-width: 0;
+        }
+
+        .ticket-meta-icon {
+            width: 1rem;
+            height: 1rem;
+            color: color-mix(in srgb, var(--color-muted, #64748b) 84%, var(--color-primary, #0f766e));
+        }
+
+        .ticket-meta-icon svg {
+            width: 0.95rem;
+            height: 0.95rem;
+        }
+
+        .ticket-card-meta-label {
+            color: var(--color-muted, #64748b);
+            font-weight: 760;
+        }
+
+        .ticket-card-meta-item:not(:last-child)::after {
+            content: "·";
+            margin-left: 0.55rem;
+            color: color-mix(in srgb, var(--color-muted, #64748b) 58%, transparent);
+        }
+
+        .ticket-card-badges {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+        }
+
+        .ticket-deadline-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.32rem 0.62rem;
+            border-radius: 999px;
+            background: var(--ticket-blue-soft);
+            color: var(--ticket-blue);
+            font-size: 0.78rem;
+            font-weight: 720;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .ticket-deadline-badge .badge-icon,
+        .badge .badge-icon {
+            width: 0.92rem;
+            height: 0.92rem;
+        }
+
+        .ticket-deadline-badge svg,
+        .badge .badge-icon svg {
+            width: 0.9rem;
+            height: 0.9rem;
+        }
+
+        .ticket-deadline-badge[data-state="overdue"] {
+            background: var(--ticket-red-soft);
+            color: var(--ticket-red);
+        }
+
+        .ticket-deadline-badge[data-state="soon"] {
+            background: var(--ticket-amber-soft);
+            color: var(--ticket-amber);
+        }
+
+        .ticket-deadline-badge[data-state="ok"] {
+            background: var(--ticket-green-soft);
+            color: var(--ticket-green);
+        }
+
+        .ticket-deadline-badge[data-state="missing"] {
+            background: color-mix(in srgb, var(--color-muted, #64748b) 13%, var(--color-surface, #fff));
+            color: var(--color-muted, #64748b);
+        }
+
+        .ticket-deadline-badge[data-state="done"] {
+            background: var(--ticket-green-soft);
+            color: var(--ticket-green);
         }
 
         .badge {
@@ -747,28 +1060,6 @@
             .filter-grid {
                 grid-template-columns: repeat(3, minmax(0, 1fr));
             }
-
-            .ticket-col-status {
-                width: 17.1rem;
-            }
-
-            .ticket-col-priority {
-                width: 8.55rem;
-            }
-
-            .ticket-col-updated {
-                width: 8.35rem;
-            }
-        }
-
-        @media (max-width: 860px) {
-            .table-wrap {
-                overflow-x: auto;
-            }
-
-            .ticket-table {
-                min-width: 760px;
-            }
         }
 
         @media (max-width: 768px) {
@@ -825,65 +1116,36 @@
                 font-size: 0.9rem;
             }
 
-            .table-wrap {
-                display: none;
+            .filter-card-head,
+            .ticket-list-summary,
+            .ticket-card-top,
+            .ticket-card-bottom {
+                align-items: stretch;
+                flex-direction: column;
             }
 
-            .ticket-mobile-list {
-                display: grid;
-                gap: 0.65rem;
+            .ticket-card-top {
+                grid-template-columns: 1fr;
             }
 
-            .ticket-mobile-card {
-                display: grid;
-                gap: 0.55rem;
-                padding: 0.82rem 0.88rem;
-                border: 1px solid #e5ebf1;
-                border-radius: 0.95rem;
-                background: var(--panel);
-                color: inherit;
-                text-decoration: none;
-                box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+            .ticket-card-date {
+                justify-items: start;
+                white-space: normal;
             }
 
-            .ticket-mobile-card:hover {
-                border-color: #b8d7d2;
-                background: #f8fbff;
+            .ticket-card-title {
+                align-items: flex-start;
+                gap: 0.48rem;
             }
 
-            .ticket-mobile-top {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 0.75rem;
+            .ticket-card-main {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 0.16rem;
             }
 
-            .ticket-mobile-subject {
-                color: var(--text);
-                font-size: 1rem;
-                font-weight: 750;
-                line-height: 1.35;
-                overflow-wrap: anywhere;
-            }
-
-            .ticket-mobile-badges {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 0.4rem;
-            }
-
-            .ticket-mobile-meta {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 0.2rem 0.45rem;
-                color: var(--muted);
-                font-size: 0.82rem;
-                line-height: 1.4;
-            }
-
-            .ticket-mobile-card .badge {
-                padding: 0.3rem 0.58rem;
-                font-size: 0.79rem;
+            .ticket-card-badges {
+                justify-content: flex-start;
             }
 
             .pinned-section-head {
@@ -1280,6 +1542,13 @@
 
             return ($filters['direction'] ?? 'desc') === 'asc' ? '↑' : '↓';
         };
+        $sortLabel = match ($filters['sort'] ?? 'updated_at') {
+            'number' => __('tickets.index.table.ticket_number'),
+            'subject' => __('tickets.index.table.subject'),
+            'status' => __('tickets.index.table.status'),
+            'priority' => __('tickets.index.table.priority'),
+            default => __('tickets.index.table.updated_at'),
+        };
     @endphp
 
     <div class="page-head">
@@ -1295,7 +1564,7 @@
         </div>
     </div>
 
-    <div class="page-body">
+    <div class="page-body ticket-index-shell">
         @if (session('status'))
             <div class="alert" role="status">{{ session('status') }}</div>
         @endif
@@ -1336,6 +1605,26 @@
         @endif
 
         <section class="filter-card" aria-label="{{ __('tickets.index.filters.section') }}">
+            <div class="filter-card-head">
+                <div>
+                    <h3 class="filter-card-title">
+                        <span class="filter-title-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 6h16"></path>
+                                <path d="M7 12h10"></path>
+                                <path d="M10 18h4"></path>
+                            </svg>
+                        </span>
+                        <span>{{ __('tickets.index.filters.section') }}</span>
+                    </h3>
+                    <p class="filter-card-subtitle">{{ __('tickets.index.summary.showing', ['count' => $tickets->total()]) }}</p>
+                </div>
+
+                @if ($hasActiveFilters)
+                    <a class="filter-reset-link" href="{{ route('tickets.index', ['reset' => 1]) }}">{{ __('tickets.index.filters.clear_all') }}</a>
+                @endif
+            </div>
+
             <details class="filter-disclosure" open data-filter-disclosure>
                 <summary class="filter-disclosure-summary">{{ __('tickets.index.filters.toggle') }}</summary>
                 <form class="filter-form" method="get" action="{{ route('tickets.index') }}" data-ticket-filters>
@@ -1590,223 +1879,161 @@
                 @endif
             </section>
         @else
-            <div class="table-wrap">
-                <table class="ticket-table">
-                    <thead>
-                        <tr>
-                            <th class="ticket-col-number" scope="col">
-                                <a class="sort-link{{ $filters['sort'] === 'number' ? ' active' : '' }}" href="{{ route('tickets.index', $sortQuery('number')) }}" aria-label="{{ __('tickets.index.sort.toggle', ['column' => __('tickets.index.table.ticket_number')]) }}">
-                                    <span>{{ __('tickets.index.table.ticket_number') }}</span>
-                                    <span class="sort-indicator" aria-hidden="true">{{ $sortIndicator('number') }}</span>
-                                </a>
-                            </th>
-                            <th scope="col">
-                                <a class="sort-link{{ $filters['sort'] === 'subject' ? ' active' : '' }}" href="{{ route('tickets.index', $sortQuery('subject')) }}" aria-label="{{ __('tickets.index.sort.toggle', ['column' => __('tickets.index.table.subject')]) }}">
-                                    <span>{{ __('tickets.index.table.subject') }}</span>
-                                    <span class="sort-indicator" aria-hidden="true">{{ $sortIndicator('subject') }}</span>
-                                </a>
-                            </th>
-                            <th class="ticket-col-status" scope="col">
-                                <a class="sort-link{{ $filters['sort'] === 'status' ? ' active' : '' }}" href="{{ route('tickets.index', $sortQuery('status')) }}" aria-label="{{ __('tickets.index.sort.toggle', ['column' => __('tickets.index.table.status')]) }}">
-                                    <span>{{ __('tickets.index.table.status') }}</span>
-                                    <span class="sort-indicator" aria-hidden="true">{{ $sortIndicator('status') }}</span>
-                                </a>
-                            </th>
-                            <th class="ticket-col-priority" scope="col">
-                                <a class="sort-link{{ $filters['sort'] === 'priority' ? ' active' : '' }}" href="{{ route('tickets.index', $sortQuery('priority')) }}" aria-label="{{ __('tickets.index.sort.toggle', ['column' => __('tickets.index.table.priority')]) }}">
-                                    <span>{{ __('tickets.index.table.priority') }}</span>
-                                    <span class="sort-indicator" aria-hidden="true">{{ $sortIndicator('priority') }}</span>
-                                </a>
-                            </th>
-                            <th class="ticket-col-updated" scope="col">
-                                <a class="sort-link{{ $filters['sort'] === 'updated_at' ? ' active' : '' }}" href="{{ route('tickets.index', $sortQuery('updated_at')) }}" aria-label="{{ __('tickets.index.sort.toggle', ['column' => __('tickets.index.table.updated_at')]) }}">
-                                    <span>{{ __('tickets.index.table.updated_at') }}</span>
-                                    <span class="sort-indicator" aria-hidden="true">{{ $sortIndicator('updated_at') }}</span>
-                                </a>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($tickets as $ticket)
-                            <tr data-ticket-row="{{ $ticket->id }}">
-                                <td class="ticket-number ticket-col-number">
-                                    <a class="ticket-link" href="{{ route('tickets.show', $ticket) }}">
+            <section class="ticket-list-panel" aria-label="{{ __('tickets.index.heading') }}">
+                <div class="ticket-list-summary">
+                    <div>
+                        {{ __('tickets.index.summary.showing', ['count' => $tickets->total()]) }}
+                        <span aria-hidden="true">·</span>
+                        {{ __('tickets.index.summary.sorted_by', ['column' => $sortLabel]) }}
+                    </div>
+
+                    <nav class="ticket-sort-bar" aria-label="{{ __('tickets.index.summary.sorting') }}">
+                        <span class="ticket-sort-label">{{ __('tickets.index.summary.sorting') }}</span>
+                        @foreach ([
+                            'number' => __('tickets.index.table.ticket_number'),
+                            'subject' => __('tickets.index.table.subject'),
+                            'status' => __('tickets.index.table.status'),
+                            'priority' => __('tickets.index.table.priority'),
+                            'updated_at' => __('tickets.index.table.updated_at'),
+                        ] as $sortColumn => $sortColumnLabel)
+                            <a class="ticket-sort-pill{{ $filters['sort'] === $sortColumn ? ' active' : '' }}" href="{{ route('tickets.index', $sortQuery($sortColumn)) }}" aria-label="{{ __('tickets.index.sort.toggle', ['column' => $sortColumnLabel]) }}">
+                                <span>{{ $sortColumnLabel }}</span>
+                                <span class="sort-indicator" aria-hidden="true">{{ $sortIndicator($sortColumn) }}</span>
+                            </a>
+                        @endforeach
+                    </nav>
+                </div>
+
+                <div class="ticket-card-list">
+                @foreach ($tickets as $ticket)
+                    @php
+                        $statusSlug = $ticket->status?->slug;
+                        $isResolved = $statusSlug === 'resolved';
+                        $isClosed = in_array($statusSlug, ['closed', 'cancelled'], true) || (bool) ($ticket->status?->is_closed ?? false);
+                        $deadline = $ticket->expected_resolution_at;
+                        $deadlineState = 'missing';
+                        $deadlineLabel = __('tickets.index.sla.missing');
+
+                        if ($isClosed) {
+                            $deadlineState = 'done';
+                            $deadlineLabel = __('tickets.index.sla.closed');
+                        } elseif ($isResolved) {
+                            $deadlineState = 'done';
+                            $deadlineLabel = __('tickets.index.sla.resolved');
+                        } elseif ($deadline) {
+                            $now = now();
+                            $minutes = (int) ceil(abs($deadline->diffInMinutes($now, true)));
+                            $hours = max(1, (int) ceil($minutes / 60));
+                            $days = max(1, (int) ceil($hours / 24));
+                            $duration = $hours < 48
+                                ? trans_choice('tickets.index.sla.hours', $hours, ['count' => $hours])
+                                : trans_choice('tickets.index.sla.days', $days, ['count' => $days]);
+
+                            if ($deadline->isPast()) {
+                                $deadlineState = 'overdue';
+                                $deadlineLabel = __('tickets.index.sla.overdue', ['duration' => $duration]);
+                            } elseif ($deadline->isToday()) {
+                                $deadlineState = 'soon';
+                                $deadlineLabel = __('tickets.index.sla.today', [
+                                    'time' => $deadline->locale($locale)->translatedFormat('H:i'),
+                                ]);
+                            } elseif ($deadline->lte($now->copy()->addDay())) {
+                                $deadlineState = 'soon';
+                                $deadlineLabel = __('tickets.index.sla.soon', ['duration' => $duration]);
+                            } else {
+                                $deadlineState = 'ok';
+                                $deadlineLabel = __('tickets.index.sla.ok', [
+                                    'date' => $deadline->locale($locale)->translatedFormat($listUpdatedAtFormat),
+                                ]);
+                            }
+                        }
+                    @endphp
+                    <article class="ticket-list-card" data-ticket-row="{{ $ticket->id }}">
+                        <div class="ticket-card-top">
+                            <div class="ticket-card-title">
+                                <span class="ticket-card-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M7 4h7l3 3v13H7z"></path>
+                                        <path d="M14 4v4h4"></path>
+                                        <path d="M9.5 12h5"></path>
+                                        <path d="M9.5 16h3.5"></path>
+                                    </svg>
+                                </span>
+                                <span class="ticket-card-main">
+                                    <a class="ticket-number ticket-link" href="{{ route('tickets.show', $ticket) }}">
                                         {{ $ticket->ticket_number ?? __('tickets.common.not_available') }}
                                     </a>
-                                </td>
-                                <td class="subject">
-                                    <a class="ticket-link subject-title" href="{{ route('tickets.show', $ticket) }}">
-                                        {{ $ticket->subject }}
-                                    </a>
+                                    <a class="ticket-card-subject" href="{{ route('tickets.show', $ticket) }}">{{ $ticket->subject }}</a>
+                                </span>
+                            </div>
 
-                                    <div class="subject-meta">
-                                        <span class="subject-meta-item">
-                                            {{ __('tickets.index.meta.requester', ['name' => $ticket->requester?->displayName() ?? __('tickets.common.not_available')]) }}
-                                        </span>
-                                        <span class="subject-meta-separator" aria-hidden="true">&middot;</span>
-                                        <span class="subject-meta-item">
-                                            {{ $ticket->assignee
-                                                ? __('tickets.index.meta.assignee', ['name' => $ticket->assignee->displayName()])
-                                                : __('tickets.index.meta.assignee_unassigned') }}
-                                        </span>
-                                        <span class="subject-meta-separator" aria-hidden="true">&middot;</span>
-                                        <span class="subject-meta-item">
-                                            {{ trans_choice('tickets.index.meta.comments', $ticket->public_comments_count, ['count' => $ticket->public_comments_count]) }}
-                                        </span>
-                                    </div>
-                                </td>
-                                <td class="ticket-col-status">
-                                    @if ($ticket->can_inline_status_update)
-                                        <details class="list-inline-menu" data-ticket-inline-menu>
-                                            <summary
-                                                class="badge badge-button list-inline-trigger {{ $ticket->status?->badgeToneClass() ?? 'badge-tone-slate' }}"
-                                                data-ticket-id="{{ $ticket->id }}"
-                                                data-ticket-field="status"
-                                                aria-expanded="false"
-                                            >
-                                                <span class="badge-dot"></span>
-                                                <span class="badge-label" data-ticket-field-value>{{ $ticket->status?->translatedName() ?? __('tickets.common.not_available') }}</span>
-                                                <span class="badge-caret" aria-hidden="true">▾</span>
-                                                <span class="sr-only" data-ticket-current-value="{{ $ticket->ticket_status_id }}"></span>
-                                            </summary>
-
-                                            <div class="list-inline-dropdown">
-                                                <form
-                                                    class="list-inline-option-form"
-                                                    method="post"
-                                                    action="{{ route('tickets.status.update', $ticket) }}"
-                                                    data-ticket-inline-option-form
-                                                    data-ticket-id="{{ $ticket->id }}"
-                                                    data-ticket-field="status"
-                                                >
-                                                    @csrf
-                                                    @method('patch')
-                                                    <input type="hidden" name="_locale" value="{{ $locale }}">
-
-                                                    <div class="list-inline-options">
-                                                        @foreach ($statuses as $status)
-                                                            @php($isCurrentStatus = (string) $ticket->ticket_status_id === (string) $status->id)
-                                                            <button
-                                                                class="list-inline-option{{ $isCurrentStatus ? ' active' : '' }}"
-                                                                type="submit"
-                                                                name="status_id"
-                                                                value="{{ $status->id }}"
-                                                                data-ticket-option-value="{{ $status->id }}"
-                                                                @disabled($isCurrentStatus)
-                                                            >
-                                                                <span>{{ $status->translatedName() }}</span>
-                                                                <span class="list-inline-option-check" data-ticket-option-check @if (! $isCurrentStatus) hidden @endif>✓</span>
-                                                            </button>
-                                                        @endforeach
-                                                    </div>
-                                                </form>
-                                            </div>
-                                        </details>
-                                    @else
-                                        <span class="badge {{ $ticket->status?->badgeToneClass() ?? 'badge-tone-slate' }}" data-ticket-id="{{ $ticket->id }}" data-ticket-field="status">
-                                            <span class="badge-dot"></span>
-                                            <span class="badge-label" data-ticket-field-value>{{ $ticket->status?->translatedName() ?? __('tickets.common.not_available') }}</span>
-                                        </span>
-                                    @endif
-                                </td>
-                                <td class="ticket-col-priority">
-                                    @if ($ticket->can_inline_priority_update)
-                                        <details class="list-inline-menu" data-ticket-inline-menu>
-                                            <summary
-                                                class="badge badge-button list-inline-trigger {{ $ticket->priority?->badgeToneClass() ?? 'badge-tone-slate' }}"
-                                                data-ticket-id="{{ $ticket->id }}"
-                                                data-ticket-field="priority"
-                                                aria-expanded="false"
-                                            >
-                                                <span class="badge-dot"></span>
-                                                <span class="badge-label" data-ticket-field-value>{{ $ticket->priority?->translatedName() ?? __('tickets.common.not_available') }}</span>
-                                                <span class="badge-caret" aria-hidden="true">▾</span>
-                                                <span class="sr-only" data-ticket-current-value="{{ $ticket->ticket_priority_id }}"></span>
-                                            </summary>
-
-                                            <div class="list-inline-dropdown">
-                                                <form
-                                                    class="list-inline-option-form"
-                                                    method="post"
-                                                    action="{{ route('tickets.priority.update', $ticket) }}"
-                                                    data-ticket-inline-option-form
-                                                    data-ticket-id="{{ $ticket->id }}"
-                                                    data-ticket-field="priority"
-                                                >
-                                                    @csrf
-                                                    @method('patch')
-                                                    <input type="hidden" name="_locale" value="{{ $locale }}">
-
-                                                    <div class="list-inline-options">
-                                                        @foreach ($priorities as $priority)
-                                                            @php($isCurrentPriority = (string) $ticket->ticket_priority_id === (string) $priority->id)
-                                                            <button
-                                                                class="list-inline-option{{ $isCurrentPriority ? ' active' : '' }}"
-                                                                type="submit"
-                                                                name="priority_id"
-                                                                value="{{ $priority->id }}"
-                                                                data-ticket-option-value="{{ $priority->id }}"
-                                                                @disabled($isCurrentPriority)
-                                                            >
-                                                                <span>{{ $priority->translatedName() }}</span>
-                                                                <span class="list-inline-option-check" data-ticket-option-check @if (! $isCurrentPriority) hidden @endif>✓</span>
-                                                            </button>
-                                                        @endforeach
-                                                    </div>
-                                                </form>
-                                            </div>
-                                        </details>
-                                    @else
-                                        <span class="badge {{ $ticket->priority?->badgeToneClass() ?? 'badge-tone-slate' }}" data-ticket-id="{{ $ticket->id }}" data-ticket-field="priority">
-                                            <span class="badge-dot"></span>
-                                            <span class="badge-label" data-ticket-field-value>{{ $ticket->priority?->translatedName() ?? __('tickets.common.not_available') }}</span>
-                                        </span>
-                                    @endif
-                                </td>
-                                <td class="ticket-col-updated muted">
-                                    <span class="ticket-updated-value" data-ticket-id="{{ $ticket->id }}" data-ticket-updated-at>{{ $ticket->updated_at?->locale($locale)->translatedFormat($listUpdatedAtFormat) ?? __('tickets.common.not_available') }}</span>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="ticket-mobile-list" aria-label="{{ __('tickets.index.heading') }}">
-                @foreach ($tickets as $ticket)
-                    <a class="ticket-mobile-card" href="{{ route('tickets.show', $ticket) }}" data-ticket-row="{{ $ticket->id }}">
-                        <div class="ticket-mobile-top">
-                            <span class="ticket-number">{{ $ticket->ticket_number ?? __('tickets.common.not_available') }}</span>
-                            <span class="ticket-updated-value" data-ticket-id="{{ $ticket->id }}" data-ticket-updated-at>{{ $ticket->updated_at?->locale($locale)->translatedFormat($listUpdatedAtFormat) ?? __('tickets.common.not_available') }}</span>
+                            <div class="ticket-card-date">
+                                <span class="ticket-card-date-label">{{ __('tickets.index.meta.updated_label') }}</span>
+                                <span data-ticket-id="{{ $ticket->id }}" data-ticket-updated-at>{{ $ticket->updated_at?->locale($locale)->translatedFormat($listUpdatedAtFormat) ?? __('tickets.common.not_available') }}</span>
+                            </div>
                         </div>
 
-                        <span class="ticket-mobile-subject">{{ $ticket->subject }}</span>
-
-                        <div class="ticket-mobile-badges">
-                            <span class="badge {{ $ticket->status?->badgeToneClass() ?? 'badge-tone-slate' }}" data-ticket-id="{{ $ticket->id }}" data-ticket-field="status">
-                                <span class="badge-dot"></span>
-                                <span class="badge-label" data-ticket-field-value>{{ $ticket->status?->translatedName() ?? __('tickets.common.not_available') }}</span>
-                            </span>
-                            <span class="badge {{ $ticket->priority?->badgeToneClass() ?? 'badge-tone-slate' }}" data-ticket-id="{{ $ticket->id }}" data-ticket-field="priority">
-                                <span class="badge-dot"></span>
-                                <span class="badge-label" data-ticket-field-value>{{ $ticket->priority?->translatedName() ?? __('tickets.common.not_available') }}</span>
-                            </span>
+                        <div class="ticket-card-middle">
+                            <div class="ticket-card-meta">
+                                <span class="ticket-card-meta-item">
+                                    <span class="ticket-meta-icon" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                            <circle cx="12" cy="8" r="3.2"></circle>
+                                            <path d="M5.5 20a6.5 6.5 0 0 1 13 0"></path>
+                                        </svg>
+                                    </span>
+                                    <span class="ticket-card-meta-label">{{ __('tickets.index.meta.requester_label') }}:</span>
+                                    {{ $ticket->requester?->displayName() ?? __('tickets.common.not_available') }}
+                                </span>
+                                <span class="ticket-card-meta-item">
+                                    <span class="ticket-meta-icon" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                            <circle cx="9" cy="8" r="3"></circle>
+                                            <path d="M3.8 19a5.2 5.2 0 0 1 10.4 0"></path>
+                                            <path d="m15.5 13.8 2.1 2.1 3.5-4.1"></path>
+                                        </svg>
+                                    </span>
+                                    <span class="ticket-card-meta-label">{{ __('tickets.index.meta.assignee_label') }}:</span>
+                                    {{ $ticket->assignee?->displayName() ?? __('tickets.common.unassigned') }}
+                                </span>
+                                <span class="ticket-card-meta-item">
+                                    <span class="ticket-meta-icon" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M5 6.5h14v8.5H8.5L5 18.5z"></path>
+                                        </svg>
+                                    </span>
+                                    {{ trans_choice('tickets.index.meta.comments', $ticket->public_comments_count, ['count' => $ticket->public_comments_count]) }}
+                                </span>
+                            </div>
                         </div>
 
-                        <div class="ticket-mobile-meta">
-                            <span>{{ __('tickets.index.meta.requester', ['name' => $ticket->requester?->displayName() ?? __('tickets.common.not_available')]) }}</span>
-                            <span aria-hidden="true">&middot;</span>
-                            <span>
-                                {{ $ticket->assignee
-                                    ? __('tickets.index.meta.assignee', ['name' => $ticket->assignee->displayName()])
-                                    : __('tickets.index.meta.assignee_unassigned') }}
-                            </span>
-                            <span aria-hidden="true">&middot;</span>
-                            <span>{{ trans_choice('tickets.index.meta.comments', $ticket->public_comments_count, ['count' => $ticket->public_comments_count]) }}</span>
+                        <div class="ticket-card-bottom">
+                            <div class="ticket-card-badges">
+                                <span class="badge {{ $ticket->status?->badgeToneClass() ?? 'badge-tone-slate' }}" data-ticket-id="{{ $ticket->id }}" data-ticket-field="status">
+                                    <span class="badge-dot"></span>
+                                    <span class="badge-label" data-ticket-field-value>{{ $ticket->status?->translatedName() ?? __('tickets.common.not_available') }}</span>
+                                </span>
+                                <span class="badge {{ $ticket->priority?->badgeToneClass() ?? 'badge-tone-slate' }}" data-ticket-id="{{ $ticket->id }}" data-ticket-field="priority">
+                                    <span class="badge-dot"></span>
+                                    <span class="badge-label" data-ticket-field-value>{{ $ticket->priority?->translatedName() ?? __('tickets.common.not_available') }}</span>
+                                </span>
+                                <div class="ticket-card-deadline">
+                                    <span class="ticket-deadline-badge" data-state="{{ $deadlineState }}" title="{{ __('tickets.index.meta.deadline_label') }}">
+                                        <span class="badge-icon" aria-hidden="true">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                                <circle cx="12" cy="12" r="8"></circle>
+                                                <path d="M12 7.5V12l3 2"></path>
+                                            </svg>
+                                        </span>
+                                        <span>{{ $deadlineLabel }}</span>
+                                    </span>
+                                </div>
+                            </div>
                         </div>
-                    </a>
+                    </article>
                 @endforeach
-            </div>
+                </div>
+            </section>
 
             @if ($tickets->hasPages())
                 <div class="pagination-wrap">

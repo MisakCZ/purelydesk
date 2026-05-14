@@ -62,6 +62,7 @@ return [
             'clear_watching' => 'Zrušit filtr sledovaných ticketů',
             'clear_scope' => 'Zrušit filtr rozsahu ticketů',
             'clear_archive' => 'Zrušit filtr archivu',
+            'clear_all' => 'Vymazat filtry',
         ],
         'pinned' => [
             'label' => 'Připnuté tickety',
@@ -80,13 +81,33 @@ return [
         'sort' => [
             'toggle' => 'Seřadit podle sloupce :column',
         ],
+        'summary' => [
+            'showing' => 'Zobrazeno :count ticketů',
+            'sorted_by' => 'Řazeno podle: :column',
+            'sorting' => 'Řazení',
+        ],
         'meta' => [
+            'requester_label' => 'Zadavatel',
             'requester' => 'Zadavatel: :name',
+            'assignee_label' => 'Řešitel',
             'assignee' => 'Řešitel: :name',
             'assignee_unassigned' => 'Bez přiřazení',
             'comments' => '{0} Bez komentářů|{1} 1 komentář|[2,4] :count komentáře|[5,*] :count komentářů',
+            'updated_label' => 'Aktualizováno',
             'updated' => 'Aktualizováno :date',
+            'deadline_label' => 'Termín',
             'pinned' => 'Připnuto',
+        ],
+        'sla' => [
+            'ok' => 'SLA OK · :date',
+            'today' => 'Dnes do :time',
+            'soon' => 'Blíží se · do :duration',
+            'overdue' => 'Po termínu · :duration',
+            'missing' => 'Bez termínu',
+            'resolved' => 'Vyřešeno',
+            'closed' => 'Uzavřeno',
+            'hours' => '{1} :count h|[2,*] :count h',
+            'days' => '{1} :count den|[2,4] :count dny|[5,*] :count dnů',
         ],
         'empty' => [
             'filtered_heading' => 'Žádné tickety neodpovídají zadaným filtrům',

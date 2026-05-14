@@ -230,7 +230,7 @@ class TicketVisibilityTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_solver_sees_inline_list_edit_controls(): void
+    public function test_solver_sees_passive_badges_in_ticket_list(): void
     {
         $requester = $this->createUserWithRole($this->userRole);
         $solver = $this->createUserWithRole($this->solverRole);
@@ -245,9 +245,9 @@ class TicketVisibilityTest extends TestCase
         $this->get(route('tickets.index'))
             ->assertOk()
             ->assertSeeText($ticket->subject)
-            ->assertSee('<details class="list-inline-menu" data-ticket-inline-menu>', false)
             ->assertSee('data-ticket-field="status"', false)
-            ->assertSee('data-ticket-field="priority"', false);
+            ->assertSee('data-ticket-field="priority"', false)
+            ->assertDontSee('<details class="list-inline-menu" data-ticket-inline-menu>', false);
     }
 
     public function test_regular_user_sees_passive_badges_in_ticket_list(): void
