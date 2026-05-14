@@ -1919,7 +1919,10 @@
                             $deadlineLabel = __('tickets.index.sla.closed');
                         } elseif ($isResolved) {
                             $deadlineState = 'done';
-                            $deadlineLabel = __('tickets.index.sla.resolved');
+                            $resolvedAt = $ticket->resolved_at ?? $ticket->updated_at;
+                            $deadlineLabel = __('tickets.index.sla.resolved', [
+                                'date' => $resolvedAt?->locale($locale)->translatedFormat($listUpdatedAtFormat) ?? __('tickets.common.not_available'),
+                            ]);
                         } elseif ($deadline) {
                             $now = now();
                             $minutes = (int) ceil(abs($deadline->diffInMinutes($now, true)));
