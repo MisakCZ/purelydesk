@@ -104,7 +104,7 @@ return [
             'soon' => 'Due soon · in :duration',
             'overdue' => 'Overdue · :duration',
             'missing' => 'No deadline',
-            'resolved' => 'Resolved',
+            'resolved' => 'SLA OK · :date',
             'closed' => 'Closed',
             'hours' => '{1} :count h|[2,*] :count h',
             'days' => '{1} :count day|[2,*] :count days',

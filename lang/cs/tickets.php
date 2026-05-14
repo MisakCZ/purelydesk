@@ -104,7 +104,7 @@ return [
             'soon' => 'Blíží se · do :duration',
             'overdue' => 'Po termínu · :duration',
             'missing' => 'Bez termínu',
-            'resolved' => 'Vyřešeno',
+            'resolved' => 'SLA OK · :date',
             'closed' => 'Uzavřeno',
             'hours' => '{1} :count h|[2,*] :count h',
             'days' => '{1} :count den|[2,4] :count dny|[5,*] :count dnů',
