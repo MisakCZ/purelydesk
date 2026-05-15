@@ -253,6 +253,16 @@
             line-height: 1;
         }
 
+        .page-card:has(.ticket-create-action) {
+            overflow: visible;
+        }
+
+        .page-head,
+        .page-head-bar {
+            position: relative;
+            z-index: 120;
+        }
+
         .ticket-create-action {
             position: relative;
             display: inline-flex;
@@ -270,6 +280,7 @@
             line-height: 1.2;
             text-decoration: none;
             transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+            z-index: 130;
         }
 
         .ticket-create-action:hover,
@@ -314,7 +325,7 @@
             pointer-events: none;
             transform: translateY(0.35rem);
             transition: opacity 0.15s ease, transform 0.15s ease;
-            z-index: 10;
+            z-index: 320;
         }
 
         .ticket-create-tooltip::after {
