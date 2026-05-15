@@ -93,6 +93,65 @@
             flex-wrap: wrap;
         }
 
+        .ticket-detail-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.62rem;
+            min-height: 2.85rem;
+            padding: 0.54rem 0.78rem 0.54rem 0.62rem;
+            border: 1px solid color-mix(in srgb, var(--ticket-green, #15803d) 26%, var(--color-border, #bbf7d0));
+            border-radius: 999px;
+            background: linear-gradient(145deg, var(--ticket-green-soft, #e8f8ee), color-mix(in srgb, var(--color-surface, #fff) 94%, transparent));
+            color: var(--color-primary, #0f766e);
+            font-size: 0.9rem;
+            font-weight: 800;
+            line-height: 1.2;
+            text-decoration: none;
+            box-shadow: 0 14px 32px rgba(15, 23, 42, 0.055);
+            transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+        }
+
+        .ticket-detail-action:hover,
+        .ticket-detail-action:focus-visible {
+            border-color: color-mix(in srgb, var(--ticket-green, #15803d) 42%, var(--color-border, #bbf7d0));
+            background: linear-gradient(145deg, var(--ticket-green-soft, #e8f8ee), color-mix(in srgb, var(--color-surface, #fff) 94%, transparent));
+            color: var(--ticket-green, #15803d);
+            transform: translateY(-1px);
+            box-shadow: 0 18px 38px rgba(15, 23, 42, 0.09);
+        }
+
+        .ticket-detail-action-icon {
+            display: grid;
+            place-items: center;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 999px;
+            background: color-mix(in srgb, var(--ticket-green, #15803d) 18%, var(--color-surface, #fff));
+            color: var(--ticket-green, #15803d);
+            flex: 0 0 auto;
+        }
+
+        .ticket-detail-action-icon svg {
+            width: 1.08rem;
+            height: 1.08rem;
+        }
+
+        .ticket-detail-action.button-compact {
+            min-height: 2.55rem;
+            padding: 0.42rem 0.72rem 0.42rem 0.52rem;
+            border-radius: 999px;
+        }
+
+        .ticket-detail-action.button-compact .ticket-detail-action-icon {
+            width: 1.7rem;
+            height: 1.7rem;
+        }
+
+        .ticket-detail-action.button-compact .ticket-detail-action-icon svg {
+            width: 0.94rem;
+            height: 0.94rem;
+        }
+
         .button-danger {
             background: #fff1f1;
             color: #991b1b;
@@ -101,6 +160,14 @@
 
         .button-danger:hover {
             background: #fee2e2;
+        }
+
+        .button-danger.ticket-detail-action,
+        .button-danger.ticket-detail-action:hover,
+        .button-danger.ticket-detail-action:focus-visible {
+            border-color: color-mix(in srgb, var(--ticket-green, #15803d) 42%, var(--color-border, #bbf7d0));
+            background: linear-gradient(145deg, var(--ticket-green-soft, #e8f8ee), color-mix(in srgb, var(--color-surface, #fff) 94%, transparent));
+            color: var(--ticket-green, #15803d);
         }
 
         .archive-alert {
@@ -436,21 +503,9 @@
         }
 
         .original-indicator {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.45rem;
-            min-height: 2.1rem;
-            padding: 0.4rem 0.75rem;
-            border: 1px solid #ead9b5;
-            border-radius: 999px;
-            background: #fff8e6;
-            color: #8a5a00;
+            gap: 0.55rem;
             font-size: 0.82rem;
-            font-weight: 700;
-        }
-
-        .original-indicator:hover {
-            background: #fff1c9;
+            font-weight: 800;
         }
 
         .original-indicator svg {
@@ -731,15 +786,18 @@
             min-width: 2.35rem;
             min-height: 2.35rem;
             padding: 0;
-            border: 1px solid #d9e0e7;
+            border: 1px solid color-mix(in srgb, var(--ticket-green, #15803d) 26%, var(--color-border, #bbf7d0));
             border-radius: 999px;
-            background: #f8fafc;
-            color: #5b6b79;
+            background: linear-gradient(145deg, var(--ticket-green-soft, #e8f8ee), color-mix(in srgb, var(--color-surface, #fff) 94%, transparent));
+            color: var(--ticket-green, #15803d);
+            box-shadow: 0 14px 32px rgba(15, 23, 42, 0.055);
         }
 
         .icon-button:hover {
-            background: #eef2f6;
-            color: #0f766e;
+            border-color: color-mix(in srgb, var(--ticket-green, #15803d) 42%, var(--color-border, #bbf7d0));
+            background: linear-gradient(145deg, var(--ticket-green-soft, #e8f8ee), color-mix(in srgb, var(--color-surface, #fff) 94%, transparent));
+            color: var(--ticket-green, #15803d);
+            box-shadow: 0 18px 38px rgba(15, 23, 42, 0.09);
         }
 
         .icon-button svg {
@@ -918,19 +976,15 @@
         }
 
         .comment-link {
-            padding: 0;
-            border: 0;
-            background: transparent;
-            color: #0f766e;
-            font: inherit;
+            border: 1px solid color-mix(in srgb, var(--ticket-green, #15803d) 26%, var(--color-border, #bbf7d0));
+            background: linear-gradient(145deg, var(--ticket-green-soft, #e8f8ee), color-mix(in srgb, var(--color-surface, #fff) 94%, transparent));
+            color: var(--color-primary, #0f766e);
             font-size: 0.92rem;
-            font-weight: 600;
-            cursor: pointer;
         }
 
         .comment-link:hover {
-            color: #0b5e57;
-            text-decoration: underline;
+            color: var(--ticket-green, #15803d);
+            text-decoration: none;
         }
 
         .comment-children {
@@ -1111,23 +1165,59 @@
 
             <div class="page-head-actions">
                 @if ($canEditTicket)
-                    <a class="button button-secondary" href="{{ route('tickets.edit', $ticket) }}">{{ __('tickets.show.actions.edit') }}</a>
+                    <a class="button button-secondary ticket-detail-action" href="{{ route('tickets.edit', $ticket) }}">
+                        <span class="ticket-detail-action-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 20h9"></path>
+                                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"></path>
+                            </svg>
+                        </span>
+                        <span>{{ __('tickets.show.actions.edit') }}</span>
+                    </a>
                 @endif
                 @if ($canArchiveTicket)
                     <form method="post" action="{{ route('tickets.archive', $ticket) }}">
                         @csrf
                         @method('patch')
-                        <button class="button button-danger" type="submit">{{ __('tickets.show.actions.archive') }}</button>
+                        <button class="button button-danger ticket-detail-action" type="submit">
+                            <span class="ticket-detail-action-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M4 7h16"></path>
+                                    <path d="M6 7l1 13h10l1-13"></path>
+                                    <path d="M9 7V4h6v3"></path>
+                                    <path d="M10 11v5"></path>
+                                    <path d="M14 11v5"></path>
+                                </svg>
+                            </span>
+                            <span>{{ __('tickets.show.actions.archive') }}</span>
+                        </button>
                     </form>
                 @endif
                 @if ($canRestoreTicket)
                     <form method="post" action="{{ route('tickets.restore', $ticket) }}">
                         @csrf
                         @method('patch')
-                        <button class="button button-secondary" type="submit">{{ __('tickets.show.actions.restore') }}</button>
+                        <button class="button button-secondary ticket-detail-action" type="submit">
+                            <span class="ticket-detail-action-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M4 12a8 8 0 1 0 2.35-5.65"></path>
+                                    <path d="M4 5v7h7"></path>
+                                </svg>
+                            </span>
+                            <span>{{ __('tickets.show.actions.restore') }}</span>
+                        </button>
                     </form>
                 @endif
-                <a class="button button-secondary" href="{{ route('tickets.index') }}">{{ __('tickets.show.actions.back') }}</a>
+                <a class="button button-secondary ticket-detail-action" href="{{ route('tickets.index') }}">
+                    <span class="ticket-detail-action-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M15 6l-6 6 6 6"></path>
+                            <path d="M20 12H9"></path>
+                            <path d="M9 5H5v14h4"></path>
+                        </svg>
+                    </span>
+                    <span>{{ __('tickets.show.actions.back') }}</span>
+                </a>
             </div>
         </div>
     </div>
@@ -1160,8 +1250,14 @@
                             <p>{{ __('tickets.show.original_version.subheading') }}</p>
                         </div>
 
-                        <button class="button button-secondary button-compact" type="button" data-editor-cancel="original-version-box">
-                            {{ __('tickets.show.original_version.close') }}
+                        <button class="button button-secondary button-compact ticket-detail-action" type="button" data-editor-cancel="original-version-box">
+                            <span class="ticket-detail-action-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M6 6l12 12"></path>
+                                    <path d="M18 6L6 18"></path>
+                                </svg>
+                            </span>
+                            <span>{{ __('tickets.show.original_version.close') }}</span>
                         </button>
                     </div>
 
@@ -1594,19 +1690,21 @@
 
                             @if ($hasOriginalVersionChanges && $originalSnapshot)
                                 <button
-                                    class="button original-indicator"
+                                    class="button original-indicator ticket-detail-action button-compact"
                                     type="button"
                                     data-editor-toggle="original-version-box"
                                     aria-controls="original-version-box"
                                     aria-expanded="false"
                                     title="{{ __('tickets.show.content.original_toggle_title') }}"
                                 >
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                        <path d="M3 3v5h5"/>
-                                        <path d="M3.05 13a9 9 0 1 0 2.13-5.7L3 8"/>
-                                        <path d="M12 7v5l3 2"/>
-                                    </svg>
-                                    {{ __('tickets.show.original_version.edited') }}
+                                    <span class="ticket-detail-action-icon" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M3 3v5h5"/>
+                                            <path d="M3.05 13a9 9 0 1 0 2.13-5.7L3 8"/>
+                                            <path d="M12 7v5l3 2"/>
+                                        </svg>
+                                    </span>
+                                    <span>{{ __('tickets.show.original_version.edited') }}</span>
                                 </button>
                             @endif
                         </div>
@@ -1667,8 +1765,14 @@
                                             <form method="post" action="{{ route('tickets.confirm-resolution', $ticket) }}">
                                                 @csrf
                                                 @method('patch')
-                                                <button class="button button-primary button-compact" type="submit">
-                                                    {{ __('tickets.show.metadata.confirm_resolved') }}
+                                                <button class="button button-primary button-compact ticket-detail-action" type="submit">
+                                                    <span class="ticket-detail-action-icon" aria-hidden="true">
+                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                                            <path d="M5 12.5l4.2 4.2L19 6.8"></path>
+                                                            <path d="M19 13v5a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h7"></path>
+                                                        </svg>
+                                                    </span>
+                                                    <span>{{ __('tickets.show.metadata.confirm_resolved') }}</span>
                                                 </button>
                                             </form>
                                         @endif
@@ -1677,8 +1781,16 @@
                                             <form method="post" action="{{ route('tickets.report-problem-persists', $ticket) }}">
                                                 @csrf
                                                 @method('patch')
-                                                <button class="button button-secondary button-compact" type="submit">
-                                                    {{ __('tickets.show.metadata.problem_persists') }}
+                                                <button class="button button-secondary button-compact ticket-detail-action" type="submit">
+                                                    <span class="ticket-detail-action-icon" aria-hidden="true">
+                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                                            <path d="M4 4v6h6"></path>
+                                                            <path d="M20 20v-6h-6"></path>
+                                                            <path d="M5.5 15a7 7 0 0 0 11.7 2.7L20 15"></path>
+                                                            <path d="M18.5 9A7 7 0 0 0 6.8 6.3L4 9"></path>
+                                                        </svg>
+                                                    </span>
+                                                    <span>{{ __('tickets.show.metadata.problem_persists') }}</span>
                                                 </button>
                                             </form>
                                         @endif
@@ -1810,13 +1922,19 @@
                                 @if ($commentThreadingEnabled && $canCommentPublic)
                                     <div class="comment-actions">
                                         <button
-                                            class="comment-link"
+                                            class="comment-link ticket-detail-action button-compact"
                                             type="button"
                                             data-editor-toggle="reply-editor-{{ $comment->id }}"
                                             aria-controls="reply-editor-{{ $comment->id }}"
                                             aria-expanded="false"
                                         >
-                                            {{ __('tickets.show.comments.reply') }}
+                                            <span class="ticket-detail-action-icon" aria-hidden="true">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M9 10l-5 5 5 5"></path>
+                                                    <path d="M4 15h10a6 6 0 0 0 6-6V5"></path>
+                                                </svg>
+                                            </span>
+                                            <span>{{ __('tickets.show.comments.reply') }}</span>
                                         </button>
                                     </div>
 
@@ -1864,8 +1982,24 @@
                                         </div>
 
                                         <div class="comment-form-actions">
-                                            <button class="button button-primary" type="submit">{{ __('tickets.show.comments.reply_submit') }}</button>
-                                            <button class="button button-secondary" type="button" data-editor-cancel="reply-editor-{{ $comment->id }}">{{ __('tickets.common.close') }}</button>
+                                            <button class="button button-primary ticket-detail-action" type="submit">
+                                                <span class="ticket-detail-action-icon" aria-hidden="true">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M5 12.5l4.2 4.2L19 6.8"></path>
+                                                        <path d="M19 13v5a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h7"></path>
+                                                    </svg>
+                                                </span>
+                                                <span>{{ __('tickets.show.comments.reply_submit') }}</span>
+                                            </button>
+                                            <button class="button button-secondary ticket-detail-action" type="button" data-editor-cancel="reply-editor-{{ $comment->id }}">
+                                                <span class="ticket-detail-action-icon" aria-hidden="true">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M6 6l12 12"></path>
+                                                        <path d="M18 6L6 18"></path>
+                                                    </svg>
+                                                </span>
+                                                <span>{{ __('tickets.common.close') }}</span>
+                                            </button>
                                         </div>
                                     </form>
                                 @endif
@@ -1935,8 +2069,24 @@
                         </div>
 
                         <div class="comment-form-actions">
-                            <button class="button button-primary" type="submit">{{ __('tickets.show.comments.form_submit') }}</button>
-                            <button class="button button-secondary" type="button" data-editor-cancel="comment-editor">{{ __('tickets.common.close') }}</button>
+                            <button class="button button-primary ticket-detail-action" type="submit">
+                                <span class="ticket-detail-action-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M5 12.5l4.2 4.2L19 6.8"></path>
+                                        <path d="M19 13v5a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h7"></path>
+                                    </svg>
+                                </span>
+                                <span>{{ __('tickets.show.comments.form_submit') }}</span>
+                            </button>
+                            <button class="button button-secondary ticket-detail-action" type="button" data-editor-cancel="comment-editor">
+                                <span class="ticket-detail-action-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M6 6l12 12"></path>
+                                        <path d="M18 6L6 18"></path>
+                                    </svg>
+                                </span>
+                                <span>{{ __('tickets.common.close') }}</span>
+                            </button>
                         </div>
                     </form>
                 @endif
@@ -2024,8 +2174,24 @@
                             </div>
 
                             <div class="comment-form-actions">
-                                <button class="button button-primary" type="submit">{{ __('tickets.show.internal_notes.form_submit') }}</button>
-                                <button class="button button-secondary" type="button" data-editor-cancel="internal-note-editor">{{ __('tickets.common.close') }}</button>
+                                <button class="button button-primary ticket-detail-action" type="submit">
+                                    <span class="ticket-detail-action-icon" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M5 12.5l4.2 4.2L19 6.8"></path>
+                                            <path d="M19 13v5a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h7"></path>
+                                        </svg>
+                                    </span>
+                                    <span>{{ __('tickets.show.internal_notes.form_submit') }}</span>
+                                </button>
+                                <button class="button button-secondary ticket-detail-action" type="button" data-editor-cancel="internal-note-editor">
+                                    <span class="ticket-detail-action-icon" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M6 6l12 12"></path>
+                                            <path d="M18 6L6 18"></path>
+                                        </svg>
+                                    </span>
+                                    <span>{{ __('tickets.common.close') }}</span>
+                                </button>
                             </div>
                         </form>
                     @endif
@@ -2040,13 +2206,20 @@
                     </div>
 
                     <button
-                        class="button button-secondary button-compact"
+                        class="button button-secondary button-compact ticket-detail-action"
                         type="button"
                         data-editor-toggle="history-panel"
                         aria-controls="history-panel"
                         aria-expanded="false"
                     >
-                        {{ __('tickets.show.history.toggle') }}
+                        <span class="ticket-detail-action-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 8v5l3 2"></path>
+                                <path d="M4 12a8 8 0 1 0 2.35-5.65"></path>
+                                <path d="M4 5v7h7"></path>
+                            </svg>
+                        </span>
+                        <span>{{ __('tickets.show.history.toggle') }}</span>
                     </button>
                 </div>
 

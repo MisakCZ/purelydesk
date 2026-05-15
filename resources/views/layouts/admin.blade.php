@@ -132,6 +132,10 @@
                 box-sizing: border-box;
             }
 
+            html {
+                scrollbar-gutter: stable;
+            }
+
             .sr-only {
                 position: absolute;
                 width: 1px;
@@ -181,6 +185,7 @@
                 box-shadow:
                     0 18px 42px rgba(15, 23, 42, 0.07),
                     inset 0 1px 0 color-mix(in srgb, #fff 72%, transparent);
+                position: relative;
             }
 
             .brand {
@@ -705,7 +710,7 @@
 
             .locale-switcher[open],
             .theme-switcher[open] {
-                z-index: 20;
+                z-index: 620;
             }
 
             .locale-toggle,
@@ -771,6 +776,7 @@
                 background: var(--color-menu-bg);
                 box-shadow: 0 16px 32px rgba(15, 23, 42, 0.12);
                 font-size: 0.86rem;
+                z-index: 640;
             }
 
             .locale-form {
@@ -979,6 +985,68 @@
 
             .button-secondary:hover {
                 background: var(--color-hover);
+            }
+
+            .app-action {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.62rem;
+                min-height: 2.85rem;
+                padding: 0.54rem 0.78rem 0.54rem 0.62rem;
+                border: 1px solid color-mix(in srgb, var(--color-success, #15803d) 26%, var(--color-border, #bbf7d0));
+                border-radius: 999px;
+                background: linear-gradient(145deg, color-mix(in srgb, var(--color-success, #15803d) 12%, var(--color-surface, #fff)), color-mix(in srgb, var(--color-surface, #fff) 94%, transparent));
+                color: var(--color-primary, #0f766e);
+                font-size: 0.9rem;
+                font-weight: 800;
+                line-height: 1.2;
+                text-decoration: none;
+                box-shadow: 0 14px 32px rgba(15, 23, 42, 0.055);
+                transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+            }
+
+            .app-action:hover,
+            .app-action:focus-visible {
+                border-color: color-mix(in srgb, var(--color-success, #15803d) 42%, var(--color-border, #bbf7d0));
+                background: linear-gradient(145deg, color-mix(in srgb, var(--color-success, #15803d) 12%, var(--color-surface, #fff)), color-mix(in srgb, var(--color-surface, #fff) 94%, transparent));
+                color: var(--color-success, #15803d);
+                transform: translateY(-1px);
+                box-shadow: 0 18px 38px rgba(15, 23, 42, 0.09);
+            }
+
+            .app-action-icon {
+                display: grid;
+                place-items: center;
+                width: 2rem;
+                height: 2rem;
+                border-radius: 999px;
+                background: color-mix(in srgb, var(--color-success, #15803d) 18%, var(--color-surface, #fff));
+                color: var(--color-success, #15803d);
+                flex: 0 0 auto;
+            }
+
+            .app-action-icon svg {
+                width: 1.08rem;
+                height: 1.08rem;
+            }
+
+            .app-action.button-compact,
+            .app-action.button-small {
+                min-height: 2.55rem;
+                padding: 0.42rem 0.72rem 0.42rem 0.52rem;
+                border-radius: 999px;
+            }
+
+            .app-action.button-compact .app-action-icon,
+            .app-action.button-small .app-action-icon {
+                width: 1.7rem;
+                height: 1.7rem;
+            }
+
+            .app-action.button-compact .app-action-icon svg,
+            .app-action.button-small .app-action-icon svg {
+                width: 0.94rem;
+                height: 0.94rem;
             }
 
             .panel {

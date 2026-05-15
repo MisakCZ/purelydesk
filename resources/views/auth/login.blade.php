@@ -106,7 +106,16 @@
                     </div>
 
                     <div class="form-actions">
-                        <button class="button button-primary" type="submit">{{ __('auth.login.submit') }}</button>
+                        <button class="button button-primary app-action" type="submit">
+                            <span class="app-action-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                                    <path d="M10 17l5-5-5-5"></path>
+                                    <path d="M15 12H3"></path>
+                                </svg>
+                            </span>
+                            <span>{{ __('auth.login.submit') }}</span>
+                        </button>
                     </div>
                 </form>
             </div>

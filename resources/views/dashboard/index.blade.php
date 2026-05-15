@@ -951,7 +951,17 @@
                         </div>
                     </div>
                     <div class="dashboard-admin-links">
-                        <a class="button button-secondary button-compact" href="{{ route('tickets.index', ['scope' => 'open', 'relation' => 'requester']) }}">{{ __('dashboard.personal.open_link') }}</a>
+                        <a class="dashboard-create-action dashboard-requested-action" href="{{ route('tickets.index', ['scope' => 'open', 'relation' => 'requester']) }}">
+                            <span class="dashboard-create-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M7 5h10a2 2 0 0 1 2 2v12H5V7a2 2 0 0 1 2-2z"></path>
+                                    <path d="M9 9h6"></path>
+                                    <path d="M9 13h4"></path>
+                                    <path d="M8 19v-2a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v2"></path>
+                                </svg>
+                            </span>
+                            <span>{{ __('dashboard.personal.open_link') }}</span>
+                        </a>
                     </div>
                 </section>
             @elseif (! $dashboard['isAdminDashboard'])
@@ -991,7 +1001,16 @@
                     </div>
                     <div class="dashboard-admin-links">
                         @foreach ($dashboard['adminLinks'] as $link)
-                            <a class="button button-secondary button-compact" href="{{ $link['url'] }}">{{ $link['label'] }}</a>
+                            <a class="button button-secondary button-compact app-action" href="{{ $link['url'] }}">
+                                <span class="app-action-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M9 5h10v10"></path>
+                                        <path d="M19 5L8 16"></path>
+                                        <path d="M5 9v10h10"></path>
+                                    </svg>
+                                </span>
+                                <span>{{ $link['label'] }}</span>
+                            </a>
                         @endforeach
                     </div>
                 </section>

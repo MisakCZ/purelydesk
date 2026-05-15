@@ -204,7 +204,16 @@
                 <p>{{ __('announcements.index.subheading') }}</p>
             </div>
 
-            <a class="button button-secondary" href="{{ route('tickets.index') }}">{{ __('announcements.index.actions.back_to_tickets') }}</a>
+            <a class="button button-secondary app-action" href="{{ route('tickets.index') }}">
+                <span class="app-action-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M15 6l-6 6 6 6"></path>
+                        <path d="M20 12H9"></path>
+                        <path d="M9 5H5v14h4"></path>
+                    </svg>
+                </span>
+                <span>{{ __('announcements.index.actions.back_to_tickets') }}</span>
+            </a>
         </div>
     </div>
 
@@ -259,13 +268,32 @@
                                 </div>
 
                                 <div class="announcement-actions">
-                                    <a class="button button-secondary button-small" href="{{ route('announcements.edit', $announcement) }}">{{ __('announcements.index.actions.edit') }}</a>
+                                    <a class="button button-secondary button-small app-action" href="{{ route('announcements.edit', $announcement) }}">
+                                        <span class="app-action-icon" aria-hidden="true">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M12 20h9"></path>
+                                                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"></path>
+                                            </svg>
+                                        </span>
+                                        <span>{{ __('announcements.index.actions.edit') }}</span>
+                                    </a>
 
                                     <form method="post" action="{{ route('announcements.destroy', $announcement) }}">
                                         @csrf
                                         @method('delete')
 
-                                        <button class="button button-danger button-small" type="submit">{{ __('announcements.index.actions.delete') }}</button>
+                                        <button class="button button-danger button-small app-action" type="submit">
+                                            <span class="app-action-icon" aria-hidden="true">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M4 7h16"></path>
+                                                    <path d="M6 7l1 13h10l1-13"></path>
+                                                    <path d="M9 7V4h6v3"></path>
+                                                    <path d="M10 11v5"></path>
+                                                    <path d="M14 11v5"></path>
+                                                </svg>
+                                            </span>
+                                            <span>{{ __('announcements.index.actions.delete') }}</span>
+                                        </button>
                                     </form>
                                 </div>
                             </article>
@@ -284,7 +312,15 @@
                     @csrf
                     @include('announcements._form', ['announcement' => null, 'announcementTypes' => $announcementTypes])
 
-                    <button class="button button-primary" type="submit">{{ __('announcements.index.actions.save') }}</button>
+                    <button class="button button-primary app-action" type="submit">
+                        <span class="app-action-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M5 12.5l4.2 4.2L19 6.8"></path>
+                                <path d="M19 13v5a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h7"></path>
+                            </svg>
+                        </span>
+                        <span>{{ __('announcements.index.actions.save') }}</span>
+                    </button>
                 </form>
             </section>
         </div>

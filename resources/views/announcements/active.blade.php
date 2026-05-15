@@ -90,7 +90,16 @@
                 <p>{{ __('announcements.active.subheading') }}</p>
             </div>
 
-            <a class="button button-secondary" href="{{ route('dashboard') }}">{{ __('announcements.active.actions.back_to_dashboard') }}</a>
+            <a class="button button-secondary app-action" href="{{ route('dashboard') }}">
+                <span class="app-action-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M15 6l-6 6 6 6"></path>
+                        <path d="M20 12H9"></path>
+                        <path d="M9 5H5v14h4"></path>
+                    </svg>
+                </span>
+                <span>{{ __('announcements.active.actions.back_to_dashboard') }}</span>
+            </a>
         </div>
     </div>
 
