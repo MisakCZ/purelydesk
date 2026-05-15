@@ -18,14 +18,15 @@
             'resolved' => ['tone' => 'green', 'icon' => 'calendar'],
         ] as $slaKey => $sla)
             @php
-                $slaItem = $items[$slaKey] ?? ['count' => 0, 'ticket' => null];
+                $slaItem = $items[$slaKey] ?? ['count' => 0, 'ticket' => null, 'url' => $href];
                 $slaTicket = $slaItem['ticket'];
+                $slaUrl = $slaItem['url'] ?? $href;
                 $noteKey = $slaKey === 'resolved'
                     ? 'dashboard.sla.resolved.note_'.$context
                     : 'dashboard.sla.'.$slaKey.'.note';
             @endphp
 
-            <article class="dashboard-sla-card dashboard-tone-{{ $sla['tone'] }}" data-sla-key="{{ $slaKey }}" data-sla-count="{{ $slaItem['count'] }}">
+            <a class="dashboard-sla-card dashboard-tone-{{ $sla['tone'] }}" href="{{ $slaUrl }}" data-sla-key="{{ $slaKey }}" data-sla-count="{{ $slaItem['count'] }}">
                 <span class="dashboard-sla-icon" aria-hidden="true">
                     @include('dashboard.partials.icon', ['name' => $sla['icon']])
                 </span>
@@ -47,7 +48,7 @@
                         @endif
                     </p>
                 </div>
-            </article>
+            </a>
         @endforeach
     </div>
 </aside>

@@ -27,6 +27,10 @@ class TicketNotificationService
             return;
         }
 
+        if ($actor instanceof User) {
+            $context['actor_name'] ??= $actor->notificationName();
+        }
+
         $notification = new TicketEventNotification($ticket, $event, $context);
 
         $recipients->each(fn (User $recipient) => $recipient->notify($notification));

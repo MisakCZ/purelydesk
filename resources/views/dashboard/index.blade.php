@@ -527,6 +527,15 @@
             padding: 0.92rem;
             border: 1px solid rgba(203, 213, 225, 0.8);
             border-radius: 0.95rem;
+            color: inherit;
+            text-decoration: none;
+            transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .dashboard-sla-card:hover,
+        .dashboard-sla-card:focus-visible {
+            transform: translateY(-1px);
+            box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
         }
 
         .dashboard-sla-card.dashboard-tone-red {
@@ -850,8 +859,8 @@
                     @foreach ([
                         'new_unassigned_tickets' => ['tone' => 'blue', 'icon' => 'inbox', 'href' => route('tickets.index', ['status' => 'new', 'relation' => 'unassigned'])],
                         'my_assigned_tickets' => ['tone' => 'green', 'icon' => 'user', 'href' => route('tickets.index', ['scope' => 'open', 'relation' => 'assigned'])],
-                        'due_today' => ['tone' => 'red', 'icon' => 'calendar', 'href' => route('tickets.index', ['scope' => 'open', 'due' => 'overdue_or_soon'])],
-                        'due_soon' => ['tone' => 'amber', 'icon' => 'clock', 'href' => route('tickets.index', ['scope' => 'open', 'due' => 'overdue_or_soon'])],
+                        'due_today' => ['tone' => 'red', 'icon' => 'calendar', 'href' => route('tickets.index', ['scope' => 'open', 'relation' => 'assigned', 'due' => 'due_today'])],
+                        'due_soon' => ['tone' => 'amber', 'icon' => 'clock', 'href' => route('tickets.index', ['scope' => 'open', 'relation' => 'assigned', 'due' => 'due_soon'])],
                         'waiting_for_user' => ['tone' => 'violet', 'icon' => 'users', 'href' => route('tickets.index', ['status' => 'waiting_user'])],
                     ] as $summaryKey => $summary)
                         <a class="dashboard-metric-card dashboard-tone-{{ $summary['tone'] }}" href="{{ $summary['href'] }}">

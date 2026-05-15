@@ -1866,6 +1866,9 @@
         ];
         $dueFilterLabels = [
             'overdue_or_soon' => __('tickets.index.filters.due_overdue_or_soon'),
+            'overdue' => __('tickets.index.filters.due_overdue'),
+            'due_soon' => __('tickets.index.filters.due_soon'),
+            'due_today' => __('tickets.index.filters.due_today'),
             'missing_expected_resolution' => __('tickets.index.filters.due_missing_expected_resolution'),
         ];
 

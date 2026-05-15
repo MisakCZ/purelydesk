@@ -43,6 +43,14 @@ class User extends Authenticatable
             ?: (string) $this->email;
     }
 
+    public function notificationName(): string
+    {
+        return $this->display_name
+            ?: $this->name
+            ?: $this->username
+            ?: (string) $this->email;
+    }
+
     public function loginName(): string
     {
         return $this->username

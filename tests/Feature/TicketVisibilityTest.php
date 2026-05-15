@@ -80,7 +80,10 @@ class TicketVisibilityTest extends TestCase
 
     public function test_public_ticket_is_visible_to_authenticated_user_in_list_and_detail(): void
     {
-        $requester = $this->createUserWithRole($this->userRole);
+        $requester = $this->createUserWithRole($this->userRole, [
+            'name' => 'jnovak',
+            'display_name' => 'Jan Novák',
+        ]);
         $viewer = $this->createUserWithRole($this->userRole);
         $ticket = $this->createTicket([
             'requester' => $requester,
@@ -796,7 +799,11 @@ class TicketVisibilityTest extends TestCase
     {
         config()->set('helpdesk.notifications.mail.enabled', true);
         Notification::fake();
-        $requester = $this->createUserWithRole($this->userRole);
+        $requester = $this->createUserWithRole($this->userRole, [
+            'name' => 'jnovak',
+            'display_name' => 'Jan Novák',
+            'preferred_locale' => 'en',
+        ]);
         $solver = $this->createUserWithRole($this->solverRole);
         $admin = $this->createUserWithRole($this->adminRole);
 
@@ -817,7 +824,8 @@ class TicketVisibilityTest extends TestCase
 
                 return $notification->event === 'created'
                     && $notification->ticket->subject === 'Notification ticket'
-                    && $mailMessage->subject === '[Helpdesk #'.$notification->ticket->ticket_number.'] new ticket'
+                    && $mailMessage->subject === '[Helpdesk #'.$notification->ticket->ticket_number.'] Jan Novák created a ticket.'
+                    && in_array(__('notifications.ticket.lines.originator', ['name' => 'Jan Novák'], 'en'), $mailMessage->introLines, true)
                     && in_array('Ticket description:', $mailMessage->introLines, true)
                     && in_array('New ticket notification body.', $mailMessage->introLines, true);
             },
@@ -989,7 +997,11 @@ class TicketVisibilityTest extends TestCase
         $requester = $this->createUserWithRole($this->userRole);
         $assignee = $this->createUserWithRole($this->solverRole);
         $watcher = $this->createUserWithRole($this->userRole);
-        $commenter = $this->createUserWithRole($this->userRole);
+        $commenter = $this->createUserWithRole($this->userRole, [
+            'name' => 'psvoboda',
+            'display_name' => 'Petr Svoboda',
+            'preferred_locale' => 'en',
+        ]);
         $ticket = $this->createTicket([
             'requester' => $requester,
             'assignee' => $assignee,
@@ -1011,11 +1023,13 @@ class TicketVisibilityTest extends TestCase
             Notification::assertSentTo(
                 $recipient,
                 TicketEventNotification::class,
-                function (TicketEventNotification $notification) use ($recipient, $ticket): bool {
+                function (TicketEventNotification $notification) use ($recipient, $ticket, $commenter): bool {
                     $mailMessage = $notification->toMail($recipient);
 
                     return $notification->event === 'public_comment'
                         && (int) $notification->ticket->id === (int) $ticket->id
+                        && $mailMessage->subject === '[Helpdesk #'.$ticket->ticket_number.'] Petr Svoboda added a comment.'
+                        && in_array(__('notifications.ticket.lines.originator', ['name' => 'Petr Svoboda'], 'en'), $mailMessage->introLines, true)
                         && in_array('Ticket description:', $mailMessage->introLines, true)
                         && in_array($ticket->description, $mailMessage->introLines, true)
                         && in_array('Comment content:', $mailMessage->introLines, true)
@@ -1555,6 +1569,79 @@ class TicketVisibilityTest extends TestCase
         $this->get(route('tickets.index'))
             ->assertOk()
             ->assertSeeInOrder([$secondTicket->subject, $firstTicket->subject]);
+    }
+
+    public function test_ticket_index_update_sort_direction_persists_without_other_filters(): void
+    {
+        $admin = $this->createUserWithRole($this->adminRole);
+        $olderTicket = $this->createTicket([
+            'requester' => $admin,
+            'subject' => 'Older update sort ticket',
+        ]);
+        $newerTicket = $this->createTicket([
+            'requester' => $admin,
+            'subject' => 'Newer update sort ticket',
+        ]);
+
+        $olderTicket->forceFill(['updated_at' => now()->subDay()])->save();
+        $newerTicket->forceFill(['updated_at' => now()])->save();
+
+        $this->actingAs($admin);
+
+        $this->get(route('tickets.index', [
+            'sort' => 'updated_at',
+            'direction' => 'asc',
+        ]))
+            ->assertOk()
+            ->assertSeeInOrder([$olderTicket->subject, $newerTicket->subject]);
+
+        $admin->refresh();
+
+        $this->assertSame('updated_at', $admin->ticket_index_preferences['sort']);
+        $this->assertSame('asc', $admin->ticket_index_preferences['direction']);
+
+        $this->app['session.store']->flush();
+        $this->actingAs($admin);
+
+        $this->get(route('tickets.index'))
+            ->assertOk()
+            ->assertSeeInOrder([$olderTicket->subject, $newerTicket->subject]);
+    }
+
+    public function test_ticket_index_filter_links_preserve_existing_sorting_when_sort_is_not_in_query(): void
+    {
+        $admin = $this->createUserWithRole($this->adminRole);
+        $olderTicket = $this->createTicket([
+            'requester' => $admin,
+            'subject' => 'Older SLA link sort ticket',
+        ]);
+        $newerTicket = $this->createTicket([
+            'requester' => $admin,
+            'subject' => 'Newer SLA link sort ticket',
+        ]);
+
+        $olderTicket->forceFill(['updated_at' => now()->subDay()])->save();
+        $newerTicket->forceFill(['updated_at' => now()])->save();
+
+        $this->actingAs($admin);
+
+        $this->get(route('tickets.index', [
+            'sort' => 'updated_at',
+            'direction' => 'asc',
+        ]))->assertOk();
+
+        $this->get(route('tickets.index', [
+            'scope' => 'open',
+            'relation' => 'requester',
+        ]))
+            ->assertOk()
+            ->assertSeeInOrder([$olderTicket->subject, $newerTicket->subject]);
+
+        $admin->refresh();
+
+        $this->assertSame('updated_at', $admin->ticket_index_preferences['sort']);
+        $this->assertSame('asc', $admin->ticket_index_preferences['direction']);
+        $this->assertSame('requester', $admin->ticket_index_preferences['relation']);
     }
 
     public function test_ticket_index_scope_filter_limits_open_and_finished_tickets(): void
@@ -2724,6 +2811,57 @@ class TicketVisibilityTest extends TestCase
         );
         Notification::assertNotSentTo($assignee, TicketEventNotification::class);
         Notification::assertNotSentTo($watcher, TicketEventNotification::class);
+    }
+
+    public function test_ticket_edit_sends_update_notification_with_actor_full_name(): void
+    {
+        config()->set('helpdesk.notifications.mail.enabled', true);
+        Notification::fake();
+
+        $requester = $this->createUserWithRole($this->userRole, ['preferred_locale' => 'en']);
+        $solver = $this->createUserWithRole($this->solverRole, [
+            'name' => 'psvoboda',
+            'display_name' => 'Petr Svoboda',
+            'preferred_locale' => 'en',
+        ]);
+        $watcher = $this->createUserWithRole($this->userRole, ['preferred_locale' => 'en']);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'assignee' => $solver,
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+        ]);
+        $ticket->watcherEntries()->create([
+            'user_id' => $watcher->id,
+            'is_manual' => true,
+            'is_auto_participant' => false,
+        ]);
+
+        $this->actingAs($solver)
+            ->patch(route('tickets.update', $ticket), [
+                'subject' => 'Edited ticket subject',
+                'description' => $ticket->description,
+                'priority_id' => $this->defaultPriority->id,
+                'category_id' => $this->defaultCategory->id,
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        foreach ([$requester, $watcher] as $recipient) {
+            Notification::assertSentTo(
+                $recipient,
+                TicketEventNotification::class,
+                function (TicketEventNotification $notification) use ($recipient, $ticket): bool {
+                    $mailMessage = $notification->toMail($recipient);
+
+                    return $notification->event === 'ticket_updated'
+                        && (int) $notification->ticket->id === (int) $ticket->id
+                        && $mailMessage->subject === '[Helpdesk #'.$ticket->ticket_number.'] Petr Svoboda updated the ticket.'
+                        && in_array(__('notifications.ticket.lines.originator', ['name' => 'Petr Svoboda'], 'en'), $mailMessage->introLines, true)
+                        && in_array(__('notifications.ticket.descriptions.ticket_updated', [], 'en'), $mailMessage->introLines, true);
+                },
+            );
+        }
+
+        Notification::assertNotSentTo($solver, TicketEventNotification::class);
     }
 
     public function test_expected_resolution_change_does_not_notify_actor_when_actor_is_requester(): void

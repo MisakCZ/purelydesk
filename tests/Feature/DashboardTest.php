@@ -10,6 +10,7 @@ use App\Models\TicketPriority;
 use App\Models\TicketStatus;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -187,7 +188,50 @@ class DashboardTest extends TestCase
             ->assertSeeText(__('dashboard.sla.due_soon.label'))
             ->assertSeeText(__('dashboard.sla.due_today.label'))
             ->assertSeeText(__('dashboard.sla.resolved.label'))
+            ->assertSee(e(route('tickets.index', ['scope' => 'open', 'relation' => 'assigned', 'due' => 'due_today'])), false)
+            ->assertSee(e(route('tickets.index', ['scope' => 'open', 'relation' => 'assigned', 'due' => 'due_soon'])), false)
+            ->assertSee(e(route('tickets.index', ['scope' => 'open', 'relation' => 'assigned', 'due' => 'overdue'])), false)
+            ->assertSee(e(route('tickets.index', ['relation' => 'assigned', 'status' => 'resolved'])), false)
             ->assertDontSeeText('Tomorrow');
+    }
+
+    public function test_solver_current_tickets_show_latest_five_visible_open_tickets(): void
+    {
+        $solver = $this->createUserWithRoles([$this->solverRole]);
+        $requester = $this->createUserWithRoles([$this->userRole]);
+
+        foreach (range(1, 6) as $index) {
+            $ticket = $this->createTicket([
+                'requester' => $requester,
+                'assignee' => $index % 2 === 0 ? $solver : null,
+                'subject' => 'Current dashboard ticket '.$index,
+            ]);
+
+            $ticket->forceFill([
+                'updated_at' => Carbon::parse('2026-05-15 08:00:00')->addMinutes($index),
+            ])->saveQuietly();
+        }
+
+        $closedTicket = $this->createTicket([
+            'requester' => $requester,
+            'assignee' => $solver,
+            'status' => $this->closedStatus,
+            'subject' => 'Closed dashboard ticket should not show',
+        ]);
+        $closedTicket->forceFill(['updated_at' => Carbon::parse('2026-05-15 09:00:00')])->saveQuietly();
+
+        $this->actingAs($solver)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSeeTextInOrder([
+                'Current dashboard ticket 6',
+                'Current dashboard ticket 5',
+                'Current dashboard ticket 4',
+                'Current dashboard ticket 3',
+                'Current dashboard ticket 2',
+            ])
+            ->assertDontSeeText('Current dashboard ticket 1')
+            ->assertDontSeeText('Closed dashboard ticket should not show');
     }
 
     public function test_solver_sla_resolved_count_uses_assigned_resolved_tickets(): void
@@ -240,6 +284,10 @@ class DashboardTest extends TestCase
             ->assertSeeText(__('dashboard.sla.resolved.label'))
             ->assertSeeText(__('dashboard.sla.resolved.note_requester'))
             ->assertSee('data-sla-key="resolved" data-sla-count="1"', false)
+            ->assertSee(e(route('tickets.index', ['scope' => 'open', 'relation' => 'requester', 'due' => 'due_today'])), false)
+            ->assertSee(e(route('tickets.index', ['scope' => 'open', 'relation' => 'requester', 'due' => 'due_soon'])), false)
+            ->assertSee(e(route('tickets.index', ['scope' => 'open', 'relation' => 'requester', 'due' => 'overdue'])), false)
+            ->assertSee(e(route('tickets.index', ['relation' => 'requester', 'status' => 'resolved'])), false)
             ->assertSeeText($ownResolved->ticket_number)
             ->assertDontSeeText($otherResolved->ticket_number)
             ->assertDontSeeText('Tomorrow');
@@ -259,6 +307,42 @@ class DashboardTest extends TestCase
             ->get(route('dashboard'))
             ->assertOk()
             ->assertSee(e(route('tickets.index', ['status' => 'resolved', 'relation' => 'requester'])), false);
+    }
+
+    public function test_ticket_index_due_today_and_due_soon_filters_are_distinct(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-05-15 12:00:00'));
+
+        try {
+            $solver = $this->createUserWithRoles([$this->solverRole]);
+            $requester = $this->createUserWithRoles([$this->userRole]);
+            $dueEarlierToday = $this->createTicket([
+                'requester' => $requester,
+                'assignee' => $solver,
+                'subject' => 'Deadline earlier today',
+                'expected_resolution_at' => Carbon::parse('2026-05-15 09:00:00'),
+            ]);
+            $dueTomorrow = $this->createTicket([
+                'requester' => $requester,
+                'assignee' => $solver,
+                'subject' => 'Deadline tomorrow morning',
+                'expected_resolution_at' => Carbon::parse('2026-05-16 09:00:00'),
+            ]);
+
+            $this->actingAs($solver)
+                ->get(route('tickets.index', ['scope' => 'open', 'relation' => 'assigned', 'due' => 'due_today']))
+                ->assertOk()
+                ->assertSeeText($dueEarlierToday->subject)
+                ->assertDontSeeText($dueTomorrow->subject);
+
+            $this->actingAs($solver)
+                ->get(route('tickets.index', ['scope' => 'open', 'relation' => 'assigned', 'due' => 'due_soon']))
+                ->assertOk()
+                ->assertSeeText($dueTomorrow->subject)
+                ->assertDontSeeText($dueEarlierToday->subject);
+        } finally {
+            Carbon::setTestNow();
+        }
     }
 
     public function test_solver_does_not_see_private_ticket_when_not_assignee(): void
@@ -491,7 +575,7 @@ class DashboardTest extends TestCase
         $requester = $overrides['requester'] ?? $this->createUserWithRoles([$this->userRole]);
         $assignee = $overrides['assignee'] ?? null;
 
-        return Ticket::query()->create([
+        $attributes = [
             'ticket_number' => $overrides['ticket_number'] ?? 'T-TEST-'.Str::upper(Str::random(8)),
             'subject' => $overrides['subject'] ?? 'Ticket '.Str::random(8),
             'description' => $overrides['description'] ?? 'Test description',
@@ -506,7 +590,17 @@ class DashboardTest extends TestCase
             'pinned_at' => $overrides['pinned_at'] ?? null,
             'expected_resolution_at' => $overrides['expected_resolution_at'] ?? null,
             'expected_resolution_source' => $overrides['expected_resolution_source'] ?? null,
-        ]);
+        ];
+
+        if (array_key_exists('created_at', $overrides)) {
+            $attributes['created_at'] = $overrides['created_at'];
+        }
+
+        if (array_key_exists('updated_at', $overrides)) {
+            $attributes['updated_at'] = $overrides['updated_at'];
+        }
+
+        return Ticket::query()->create($attributes);
     }
 
     private function createAnnouncement(array $overrides = []): Announcement

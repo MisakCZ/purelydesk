@@ -39,10 +39,11 @@ class TicketEventNotification extends Notification
         $message = (new MailMessage)
             ->subject(__('notifications.ticket.subject', [
                 'number' => $number,
-                'event' => mb_strtolower($eventLabel),
+                'event' => $this->subjectEvent($locale),
             ], $locale))
             ->greeting(__('notifications.ticket.greeting', [], $locale))
             ->line($this->replyInstruction($locale))
+            ->line(__('notifications.ticket.lines.originator', ['name' => $this->originatorName($locale)], $locale))
             ->line(__('notifications.ticket.lines.event', ['event' => $eventLabel], $locale))
             ->line(__('notifications.ticket.lines.number', ['number' => $number], $locale))
             ->line(__('notifications.ticket.lines.subject', ['subject' => $this->ticket->subject], $locale))
@@ -88,6 +89,33 @@ class TicketEventNotification extends Notification
     private function inboundMailEnabled(): bool
     {
         return (bool) config('helpdesk.inbound.mail_enabled');
+    }
+
+    private function originatorName(string $locale): string
+    {
+        $actorName = $this->context['actor_name'] ?? null;
+
+        if (is_string($actorName) && $actorName !== '') {
+            return $actorName;
+        }
+
+        if ($this->event === 'created' && $this->ticket->requester instanceof User) {
+            return $this->ticket->requester->notificationName();
+        }
+
+        return __('notifications.ticket.system_actor', [], $locale);
+    }
+
+    private function subjectEvent(string $locale): string
+    {
+        $key = "notifications.ticket.subject_events.{$this->event}";
+        $translated = __($key, ['name' => $this->originatorName($locale)], $locale);
+
+        if ($translated !== $key) {
+            return $translated;
+        }
+
+        return __("notifications.ticket.events.{$this->event}", [], $locale);
     }
 
     private function description(string $locale): string

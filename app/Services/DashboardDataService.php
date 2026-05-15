@@ -229,24 +229,7 @@ class DashboardDataService
     {
         return $this->baseTicketQuery($user)
             ->tap(fn (Builder $query) => $this->whereNotFinal($query))
-            ->where(function (Builder $query) use ($user): void {
-                $query
-                    ->where('assignee_id', $user->id)
-                    ->orWhere(function (Builder $query): void {
-                        $query
-                            ->whereNull('assignee_id')
-                            ->tap(fn (Builder $query) => $this->whereStatusIdentifiers($query, ['new']));
-                    })
-                    ->orWhere(fn (Builder $query) => $this->whereStatusIdentifiers($query, ['waiting_user']));
-
-                if (Ticket::supportsExpectedResolution()) {
-                    $query->orWhere(function (Builder $query): void {
-                        $query
-                            ->whereNotNull('expected_resolution_at')
-                            ->where('expected_resolution_at', '<=', Carbon::now()->addDay());
-                    });
-                }
-            })
+            ->tap(fn (Builder $query) => $this->whereStatusNotIn($query, ['resolved']))
             ->orderByDesc('updated_at')
             ->limit(self::LIMIT)
             ->get();
@@ -365,18 +348,34 @@ class DashboardDataService
     private function slaDeadlines(User $user, string $context): array
     {
         $emptyDeadline = ['count' => 0, 'ticket' => null];
+        $links = $this->slaDeadlineLinks($context);
 
         return [
             'overdue' => Ticket::supportsExpectedResolution()
-                ? $this->deadlineSummary($this->overdueQuery($user, $context))
-                : $emptyDeadline,
+                ? $this->deadlineSummary($this->overdueQuery($user, $context)) + ['url' => $links['overdue']]
+                : $emptyDeadline + ['url' => $links['overdue']],
             'due_soon' => Ticket::supportsExpectedResolution()
-                ? $this->deadlineSummary($this->dueSoonSlaQuery($user, $context))
-                : $emptyDeadline,
+                ? $this->deadlineSummary($this->dueSoonSlaQuery($user, $context)) + ['url' => $links['due_soon']]
+                : $emptyDeadline + ['url' => $links['due_soon']],
             'due_today' => Ticket::supportsExpectedResolution()
-                ? $this->deadlineSummary($this->dueTodaySlaQuery($user, $context))
-                : $emptyDeadline,
-            'resolved' => $this->deadlineSummary($this->resolvedSlaQuery($user, $context), 'updated_at', 'desc'),
+                ? $this->deadlineSummary($this->dueTodaySlaQuery($user, $context)) + ['url' => $links['due_today']]
+                : $emptyDeadline + ['url' => $links['due_today']],
+            'resolved' => $this->deadlineSummary($this->resolvedSlaQuery($user, $context), 'updated_at', 'desc') + ['url' => $links['resolved']],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function slaDeadlineLinks(string $context): array
+    {
+        $relation = $context === 'solver' ? 'assigned' : 'requester';
+
+        return [
+            'overdue' => route('tickets.index', ['scope' => 'open', 'relation' => $relation, 'due' => 'overdue']),
+            'due_soon' => route('tickets.index', ['scope' => 'open', 'relation' => $relation, 'due' => 'due_soon']),
+            'due_today' => route('tickets.index', ['scope' => 'open', 'relation' => $relation, 'due' => 'due_today']),
+            'resolved' => route('tickets.index', ['relation' => $relation, 'status' => 'resolved']),
         ];
     }
 

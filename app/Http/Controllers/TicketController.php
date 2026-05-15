@@ -633,8 +633,14 @@ class TicketController extends Controller
     private function ticketNotificationSnapshot(Ticket $ticket): array
     {
         return [
+            'subject' => $ticket->subject,
+            'description' => $ticket->description,
+            'visibility' => $ticket->visibility,
+            'requester_id' => $ticket->requester_id !== null ? (int) $ticket->requester_id : null,
             'assignee_id' => $ticket->assignee_id !== null ? (int) $ticket->assignee_id : null,
             'ticket_status_id' => $ticket->ticket_status_id !== null ? (int) $ticket->ticket_status_id : null,
+            'ticket_priority_id' => $ticket->ticket_priority_id !== null ? (int) $ticket->ticket_priority_id : null,
+            'ticket_category_id' => $ticket->ticket_category_id !== null ? (int) $ticket->ticket_category_id : null,
             'expected_resolution_at' => $ticket->expected_resolution_at?->toIso8601String(),
             'expected_resolution_source' => Ticket::supportsExpectedResolutionSource()
                 ? $ticket->expected_resolution_source
@@ -675,6 +681,13 @@ class TicketController extends Controller
             $event = 'expected_resolution_changed';
         }
 
+        if ($event === null
+            && $action === 'ticket_update'
+            && $this->ticketUpdateNotificationFieldsChanged($ticket, $before)
+        ) {
+            $event = 'ticket_updated';
+        }
+
         if ($event === null) {
             return;
         }
@@ -684,6 +697,29 @@ class TicketController extends Controller
             'close_reason' => $this->closeReasonForNotification($ticket, $action, $actor),
             'old_expected_resolution_at' => $before['expected_resolution_at'] ?? null,
         ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $before
+     */
+    private function ticketUpdateNotificationFieldsChanged(Ticket $ticket, array $before): bool
+    {
+        $after = $this->ticketNotificationSnapshot($ticket);
+
+        foreach ([
+            'subject',
+            'description',
+            'visibility',
+            'requester_id',
+            'ticket_priority_id',
+            'ticket_category_id',
+        ] as $field) {
+            if (($before[$field] ?? null) !== ($after[$field] ?? null)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function closeReasonForNotification(Ticket $ticket, string $action, ?User $actor): ?string
@@ -830,6 +866,48 @@ class TicketController extends Controller
                     ->whereNotNull('expected_resolution_at')
                     ->where('expected_resolution_at', '<=', Carbon::now()->addDays(3));
             })
+            ->when($filters['due'] === 'overdue', function (Builder $query): void {
+                if (! Ticket::supportsExpectedResolution()) {
+                    $query->whereRaw('1 = 0');
+
+                    return;
+                }
+
+                $query
+                    ->whereNotNull('expected_resolution_at')
+                    ->where('expected_resolution_at', '<=', Carbon::now())
+                    ->whereDoesntHave('status', fn (Builder $query) => $this->whereStatusIdentifiers($query, ['resolved']));
+            })
+            ->when($filters['due'] === 'due_soon', function (Builder $query): void {
+                if (! Ticket::supportsExpectedResolution()) {
+                    $query->whereRaw('1 = 0');
+
+                    return;
+                }
+
+                $hours = max(1, (int) config('helpdesk.notifications.mail.expected_resolution_due_soon_hours', 24));
+
+                $query
+                    ->whereNotNull('expected_resolution_at')
+                    ->where('expected_resolution_at', '>', Carbon::now())
+                    ->where('expected_resolution_at', '<=', Carbon::now()->addHours($hours))
+                    ->whereDoesntHave('status', fn (Builder $query) => $this->whereStatusIdentifiers($query, ['resolved']));
+            })
+            ->when($filters['due'] === 'due_today', function (Builder $query): void {
+                if (! Ticket::supportsExpectedResolution()) {
+                    $query->whereRaw('1 = 0');
+
+                    return;
+                }
+
+                $query
+                    ->whereNotNull('expected_resolution_at')
+                    ->whereBetween('expected_resolution_at', [
+                        Carbon::now()->startOfDay(),
+                        Carbon::now()->endOfDay(),
+                    ])
+                    ->whereDoesntHave('status', fn (Builder $query) => $this->whereStatusIdentifiers($query, ['resolved']));
+            })
             ->when($filters['due'] === 'missing_expected_resolution', function (Builder $query): void {
                 if (! Ticket::supportsExpectedResolution()) {
                     $query->whereRaw('1 = 0');
@@ -938,7 +1016,16 @@ class TicketController extends Controller
         }
 
         if ($hasFilterQuery) {
-            $filters = $this->normalizeTicketFilters($request->only($filterKeys));
+            $rawFilters = $request->only($filterKeys);
+            $currentFilters = $this->currentTicketIndexFilters($request, $actor);
+
+            foreach (['sort', 'direction'] as $preservedKey) {
+                if (! $request->query->has($preservedKey)) {
+                    $rawFilters[$preservedKey] = $currentFilters[$preservedKey] ?? $this->defaultTicketFilters()[$preservedKey];
+                }
+            }
+
+            $filters = $this->normalizeTicketFilters($rawFilters);
             $filters = $this->removeUnauthorizedArchiveFilter($filters, $actor);
             $this->storeTicketIndexFilters($request, $actor, $filters);
 
@@ -958,6 +1045,17 @@ class TicketController extends Controller
         $this->storeTicketIndexFilters($request, $actor, $filters);
 
         return $filters;
+    }
+
+    private function currentTicketIndexFilters(Request $request, ?User $actor): array
+    {
+        if ($request->session()->has(self::INDEX_FILTERS_SESSION_KEY)) {
+            return $this->normalizeTicketFilters(
+                (array) $request->session()->get(self::INDEX_FILTERS_SESSION_KEY, $this->defaultTicketFilters()),
+            );
+        }
+
+        return $this->normalizeTicketFilters($this->storedTicketIndexFilters($actor));
     }
 
     private function storeTicketIndexFilters(Request $request, ?User $actor, array $filters): void
@@ -1020,7 +1118,7 @@ class TicketController extends Controller
             'category' => (string) ($filters['category'] ?? ''),
             'relation' => in_array($relation, ['requester', 'assigned', 'watched', 'unassigned'], true) ? $relation : '',
             'scope' => in_array($scope, ['open', 'finished'], true) ? $scope : '',
-            'due' => in_array($due, ['overdue_or_soon', 'missing_expected_resolution'], true) ? $due : '',
+            'due' => in_array($due, ['overdue_or_soon', 'overdue', 'due_soon', 'due_today', 'missing_expected_resolution'], true) ? $due : '',
             'watched' => (string) ($filters['watched'] ?? '') === '1' ? '1' : '',
             'archive' => $archive === 'archived' ? 'archived' : '',
             'sort' => in_array($sort, self::INDEX_SORT_COLUMNS, true) ? $sort : self::DEFAULT_INDEX_SORT,
