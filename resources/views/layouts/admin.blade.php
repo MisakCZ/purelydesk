@@ -169,19 +169,26 @@
             }
 
             .topbar {
-                display: flex;
+                display: grid;
+                grid-template-columns: minmax(12.5rem, 0.68fr) auto max-content;
                 align-items: center;
-                justify-content: space-between;
-                gap: 1rem;
-                margin-bottom: 1.5rem;
+                column-gap: 0.82rem;
+                margin-bottom: 1.7rem;
+                padding: 0.88rem 0.95rem;
+                border: 1px solid color-mix(in srgb, var(--line) 42%, transparent);
+                border-radius: 1.85rem;
+                background: color-mix(in srgb, var(--panel) 94%, rgba(255, 255, 255, 0.84));
+                box-shadow:
+                    0 18px 42px rgba(15, 23, 42, 0.07),
+                    inset 0 1px 0 color-mix(in srgb, #fff 72%, transparent);
             }
 
             .brand {
                 display: flex;
                 align-items: center;
-                gap: 0.9rem;
+                gap: 0.72rem;
                 min-width: 0;
-                max-width: min(100%, 32rem);
+                max-width: min(100%, 22rem);
                 color: inherit;
                 text-decoration: none;
             }
@@ -189,28 +196,29 @@
             .brand--wide {
                 align-items: center;
                 display: flex;
-                gap: 0.25rem;
+                gap: 0.36rem;
                 min-width: 0;
-                max-width: min(100%, 32rem);
+                max-width: min(100%, 24rem);
             }
 
             .brand-media {
                 display: inline-flex;
                 align-items: center;
                 min-width: 0;
+                flex: 0 0 auto;
             }
 
             .brand-mark {
-                width: 2.75rem;
-                height: 2.75rem;
-                border-radius: 0.9rem;
+                width: 2.72rem;
+                height: 2.72rem;
+                border-radius: 0.92rem;
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
                 font-weight: 700;
                 background: linear-gradient(135deg, var(--color-brand-gradient-start), var(--color-brand-gradient-end));
                 color: #fff;
-                box-shadow: var(--shadow);
+                box-shadow: 0 12px 26px color-mix(in srgb, var(--accent) 18%, transparent);
             }
 
             .brand-logo {
@@ -222,25 +230,40 @@
             }
 
             .brand-logo-mark {
-                max-width: 2.75rem;
-                max-height: 2.75rem;
+                max-width: 2.72rem;
+                max-height: 2.72rem;
             }
 
             .brand-logo-wide {
-                min-width: min(100%, 12.5rem);
-                max-width: 17.5rem;
-                max-height: 2.75rem;
+                min-width: min(100%, 11rem);
+                max-width: 15.5rem;
+                max-height: 2.72rem;
+            }
+
+            .brand-copy {
+                flex: 0 0 auto;
+                min-width: max-content;
+                padding-left: 0.72rem;
+                border-left: 1px solid color-mix(in srgb, var(--line) 52%, transparent);
             }
 
             .brand-copy h1 {
                 margin: 0;
-                font-size: 1.1rem;
+                overflow: visible;
+                font-size: 1.08rem;
+                font-weight: 760;
+                line-height: 1.1;
+                text-overflow: clip;
+                white-space: nowrap;
             }
 
             .brand-copy p {
                 margin: 0.2rem 0 0;
                 color: var(--muted);
-                font-size: 0.95rem;
+                font-size: 0.82rem;
+                font-weight: 600;
+                line-height: 1.25;
+                white-space: nowrap;
             }
 
             .brand--wide .brand-copy p {
@@ -251,15 +274,33 @@
 
             .brand--wide .brand-copy {
                 min-width: 0;
-                padding-left: 0.65rem;
-                border-left: 1px solid var(--line);
             }
 
             .nav {
                 display: flex;
-                gap: 0.75rem;
-                flex-wrap: wrap;
+                justify-content: center;
+                gap: 0.16rem;
+                flex-wrap: nowrap;
                 align-items: center;
+                min-width: max-content;
+                justify-self: end;
+                padding: 0;
+                border: 1px solid color-mix(in srgb, var(--line) 36%, transparent);
+                border-radius: 999px;
+                background: color-mix(in srgb, var(--panel) 82%, var(--panel-muted));
+                box-shadow:
+                    0 8px 20px rgba(15, 23, 42, 0.045),
+                    inset 0 1px 0 color-mix(in srgb, #fff 72%, transparent);
+            }
+
+            .nav-actions {
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+                gap: 0.26rem;
+                min-width: max-content;
+                padding-left: 0.82rem;
+                border-left: 1px solid color-mix(in srgb, var(--line) 48%, transparent);
             }
 
             .mobile-nav {
@@ -374,19 +415,61 @@
             .nav-link {
                 display: inline-flex;
                 align-items: center;
-                min-height: 2.5rem;
-                padding: 0.55rem 0.9rem;
+                gap: 0.34rem;
+                min-height: 2.48rem;
+                padding: 0.56rem 0.76rem;
                 border-radius: 999px;
                 text-decoration: none;
                 color: var(--muted);
-                background: color-mix(in srgb, var(--panel) 82%, transparent);
-                border: 1px solid transparent;
+                background: transparent;
+                border: 0;
+                font-size: 0.89rem;
+                font-weight: 700;
+                white-space: nowrap;
+                transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
             }
 
             .nav-link.active {
                 color: var(--accent);
-                background: var(--accent-soft);
-                border-color: rgba(15, 118, 110, 0.12);
+                background: linear-gradient(135deg, color-mix(in srgb, var(--accent-soft) 92%, var(--panel)), color-mix(in srgb, var(--accent-soft) 64%, var(--panel)));
+                box-shadow:
+                    inset 0 1px 0 color-mix(in srgb, #fff 72%, transparent),
+                    0 8px 18px color-mix(in srgb, var(--accent) 7%, transparent);
+            }
+
+            .nav-link:hover {
+                color: var(--text);
+                background: color-mix(in srgb, var(--panel-muted) 72%, transparent);
+            }
+
+            .nav-link-icon,
+            .control-icon,
+            .logout-icon,
+            .user-avatar {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                flex: 0 0 auto;
+            }
+
+            .nav-link-icon svg,
+            .control-icon svg,
+            .logout-icon svg {
+                width: 0.94rem;
+                height: 0.94rem;
+            }
+
+            .nav-link-icon,
+            .control-icon,
+            .logout-icon {
+                opacity: 0.58;
+            }
+
+            .nav-link.active .nav-link-icon,
+            .locale-toggle:hover .control-icon,
+            .theme-toggle:hover .control-icon,
+            .logout-button:hover .logout-icon {
+                opacity: 0.86;
             }
 
             .attachment-queue {
@@ -597,10 +680,27 @@
 
             .locale-switcher,
             .theme-switcher {
-                margin-left: 0.55rem;
-                padding-left: 0.75rem;
-                border-left: 1px solid var(--line);
                 position: relative;
+            }
+
+            .locale-switcher,
+            .theme-switcher,
+            .session-user,
+            .logout-form {
+                position: relative;
+            }
+
+            .theme-switcher::before,
+            .session-user::before,
+            .logout-form::before {
+                content: "";
+                position: absolute;
+                top: 50%;
+                left: -0.15rem;
+                width: 1px;
+                height: 1.45rem;
+                background: color-mix(in srgb, var(--line) 42%, transparent);
+                transform: translateY(-50%);
             }
 
             .locale-switcher[open],
@@ -612,12 +712,13 @@
             .theme-toggle {
                 display: inline-flex;
                 align-items: center;
-                gap: 0.35rem;
-                min-height: 2.2rem;
-                padding: 0;
-                border: 0;
+                gap: 0.32rem;
+                min-height: 2.32rem;
+                padding: 0.38rem 0.58rem;
+                border: 1px solid transparent;
+                border-radius: 999px;
                 background: transparent;
-                color: #7b8794;
+                color: var(--muted);
                 cursor: pointer;
                 font: inherit;
                 font-size: 0.76rem;
@@ -636,6 +737,7 @@
             .locale-toggle:hover,
             .theme-toggle:hover {
                 color: var(--text);
+                background: color-mix(in srgb, var(--panel-muted) 68%, transparent);
             }
 
             .locale-current,
@@ -721,10 +823,29 @@
             }
 
             .session-user {
-                margin-left: 0.35rem;
+                display: inline-flex;
+                align-items: center;
+                gap: 0.36rem;
+                min-height: 2.32rem;
+                padding: 0.26rem 0.58rem 0.26rem 0.3rem;
+                border: 1px solid transparent;
+                border-radius: 999px;
+                background: transparent;
                 color: var(--muted);
                 font-size: 0.82rem;
+                font-weight: 700;
                 white-space: nowrap;
+            }
+
+            .user-avatar {
+                width: 1.72rem;
+                height: 1.72rem;
+                border-radius: 999px;
+                background: linear-gradient(135deg, var(--color-brand-gradient-start), var(--color-brand-gradient-end));
+                color: #fff;
+                font-size: 0.72rem;
+                font-weight: 850;
+                line-height: 1;
             }
 
             .logout-form {
@@ -732,11 +853,15 @@
             }
 
             .logout-button {
-                min-height: 2.2rem;
-                padding: 0.35rem 0.65rem;
-                border: 1px solid var(--line);
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.34rem;
+                min-height: 2.32rem;
+                padding: 0.38rem 0.62rem;
+                border: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
                 border-radius: 999px;
-                background: color-mix(in srgb, var(--panel) 82%, transparent);
+                background: color-mix(in srgb, var(--panel) 72%, transparent);
                 color: var(--muted);
                 cursor: pointer;
                 font: inherit;
@@ -746,7 +871,26 @@
 
             .logout-button:hover {
                 color: var(--text);
-                background: var(--panel);
+                background: color-mix(in srgb, var(--panel-muted) 72%, transparent);
+            }
+
+            @media (max-width: 1100px) {
+                .topbar {
+                    grid-template-columns: minmax(0, 1fr) auto;
+                }
+
+                .brand {
+                    max-width: 100%;
+                }
+
+                .nav,
+                .nav-actions {
+                    display: none;
+                }
+
+                .mobile-nav {
+                    display: block;
+                }
             }
 
             .page-card {
@@ -1156,9 +1300,10 @@
 
                 .topbar {
                     align-items: center;
-                    flex-direction: row;
-                    gap: 0.75rem;
+                    gap: 0.65rem;
                     margin-bottom: 0.8rem;
+                    padding: 0.58rem;
+                    border-radius: 1.05rem;
                 }
 
                 .brand {
@@ -1202,7 +1347,6 @@
                 }
 
                 .mobile-nav {
-                    display: block;
                     flex: 0 0 auto;
                 }
 
@@ -1240,6 +1384,7 @@
             $brandLogoMode = in_array($configuredBrandLogoMode, ['mark', 'wide'], true) ? $configuredBrandLogoMode : 'mark';
             $footerCopyrightHtml = trim((string) config('helpdesk.footer.copyright_html', ''));
             $availableThemes = ['default', 'dark', 'pastel', 'contrast'];
+            $userInitial = mb_strtoupper(mb_substr($currentUser?->loginName() ?? '?', 0, 1));
         @endphp
         <div class="shell">
             <header class="topbar">
@@ -1266,23 +1411,56 @@
                 <nav class="nav" aria-label="{{ __('layout.nav.main') }}">
                     @php($activeLocale = $currentLocale ?? app()->getLocale())
                     <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
-                        {{ __('layout.nav.dashboard') }}
+                        <span class="nav-link-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="4" y="4" width="6.5" height="6.5" rx="1.4"></rect>
+                                <rect x="13.5" y="4" width="6.5" height="6.5" rx="1.4"></rect>
+                                <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.4"></rect>
+                                <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.4"></rect>
+                            </svg>
+                        </span>
+                        <span>{{ __('layout.nav.dashboard') }}</span>
                     </a>
                     <a class="nav-link {{ request()->routeIs('tickets.index') ? 'active' : '' }}" href="{{ route('tickets.index') }}">
-                        {{ __('layout.nav.tickets') }}
+                        <span class="nav-link-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M7 4h7l3 3v13H7z"></path>
+                                <path d="M14 4v4h4"></path>
+                                <path d="M9.5 12h5"></path>
+                                <path d="M9.5 16h4"></path>
+                            </svg>
+                        </span>
+                        <span>{{ __('layout.nav.tickets') }}</span>
                     </a>
                     @if ($canManageAnnouncements ?? false)
                         <a class="nav-link {{ request()->routeIs('announcements.*') ? 'active' : '' }}" href="{{ route('announcements.index') }}">
-                            {{ __('layout.nav.announcements') }}
+                            <span class="nav-link-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M18 9a6 6 0 1 0-12 0c0 7-2.5 7-2.5 7h17S18 16 18 9"></path>
+                                    <path d="M10 20a2.4 2.4 0 0 0 4 0"></path>
+                                </svg>
+                            </span>
+                            <span>{{ __('layout.nav.announcements') }}</span>
                         </a>
                     @endif
+                </nav>
 
+                <div class="nav-actions">
                     <details class="locale-switcher">
                         <summary
                             class="locale-toggle"
                             aria-label="{{ __('layout.nav.current', ['locale' => strtoupper($activeLocale)]) }}"
                             title="{{ __('layout.nav.switch') }}"
                         >
+                            <span class="control-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="9"></circle>
+                                    <path d="M3.6 9h16.8"></path>
+                                    <path d="M3.6 15h16.8"></path>
+                                    <path d="M12 3a14 14 0 0 1 0 18"></path>
+                                    <path d="M12 3a14 14 0 0 0 0 18"></path>
+                                </svg>
+                            </span>
                             <span class="locale-current">{{ strtoupper($activeLocale) }}</span>
                             <span class="locale-chevron" aria-hidden="true">▾</span>
                         </summary>
@@ -1316,6 +1494,11 @@
                             title="{{ __('layout.nav.theme_switch') }}"
                             data-theme-current-label="{{ __('layout.nav.theme_current', ['theme' => '__THEME__']) }}"
                         >
+                            <span class="control-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 3 4.8 6v5.4c0 4.4 3 7.6 7.2 9.1 4.2-1.5 7.2-4.7 7.2-9.1V6z"></path>
+                                </svg>
+                            </span>
                             <span class="theme-current" data-theme-current>{{ __('layout.nav.themes.default') }}</span>
                             <span class="theme-chevron" aria-hidden="true">▾</span>
                         </summary>
@@ -1338,13 +1521,25 @@
                     </details>
 
                     @auth
-                        <span class="session-user">{{ $currentUser?->loginName() }}</span>
+                        <span class="session-user">
+                            <span class="user-avatar" aria-hidden="true">{{ $userInitial }}</span>
+                            <span>{{ $currentUser?->loginName() }}</span>
+                        </span>
                         <form class="logout-form" method="post" action="{{ route('logout') }}">
                             @csrf
-                            <button class="logout-button" type="submit">{{ __('layout.nav.logout') }}</button>
+                            <button class="logout-button" type="submit">
+                                <span class="logout-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M10 17l5-5-5-5"></path>
+                                        <path d="M15 12H3"></path>
+                                        <path d="M13 4h5a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-5"></path>
+                                    </svg>
+                                </span>
+                                <span>{{ __('layout.nav.logout') }}</span>
+                            </button>
                         </form>
                     @endauth
-                </nav>
+                </div>
 
                 <details class="mobile-nav">
                     <summary class="mobile-nav-toggle" aria-label="{{ __('layout.nav.mobile_menu') }}">
