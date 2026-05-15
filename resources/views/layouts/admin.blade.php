@@ -1410,28 +1410,30 @@
 
                 <nav class="nav" aria-label="{{ __('layout.nav.main') }}">
                     @php($activeLocale = $currentLocale ?? app()->getLocale())
-                    <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
-                        <span class="nav-link-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                <rect x="4" y="4" width="6.5" height="6.5" rx="1.4"></rect>
-                                <rect x="13.5" y="4" width="6.5" height="6.5" rx="1.4"></rect>
-                                <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.4"></rect>
-                                <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.4"></rect>
-                            </svg>
-                        </span>
-                        <span>{{ __('layout.nav.dashboard') }}</span>
-                    </a>
-                    <a class="nav-link {{ request()->routeIs('tickets.index') ? 'active' : '' }}" href="{{ route('tickets.index') }}">
-                        <span class="nav-link-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M7 4h7l3 3v13H7z"></path>
-                                <path d="M14 4v4h4"></path>
-                                <path d="M9.5 12h5"></path>
-                                <path d="M9.5 16h4"></path>
-                            </svg>
-                        </span>
-                        <span>{{ __('layout.nav.tickets') }}</span>
-                    </a>
+                    @auth
+                        <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
+                            <span class="nav-link-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="4" y="4" width="6.5" height="6.5" rx="1.4"></rect>
+                                    <rect x="13.5" y="4" width="6.5" height="6.5" rx="1.4"></rect>
+                                    <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.4"></rect>
+                                    <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.4"></rect>
+                                </svg>
+                            </span>
+                            <span>{{ __('layout.nav.dashboard') }}</span>
+                        </a>
+                        <a class="nav-link {{ request()->routeIs('tickets.index') ? 'active' : '' }}" href="{{ route('tickets.index') }}">
+                            <span class="nav-link-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M7 4h7l3 3v13H7z"></path>
+                                    <path d="M14 4v4h4"></path>
+                                    <path d="M9.5 12h5"></path>
+                                    <path d="M9.5 16h4"></path>
+                                </svg>
+                            </span>
+                            <span>{{ __('layout.nav.tickets') }}</span>
+                        </a>
+                    @endauth
                     @if ($canManageAnnouncements ?? false)
                         <a class="nav-link {{ request()->routeIs('announcements.*') ? 'active' : '' }}" href="{{ route('announcements.index') }}">
                             <span class="nav-link-icon" aria-hidden="true">
@@ -1552,12 +1554,14 @@
 
                     <div class="mobile-nav-panel">
                         <div class="mobile-nav-section">
-                            <a class="mobile-nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
-                                {{ __('layout.nav.dashboard') }}
-                            </a>
-                            <a class="mobile-nav-link {{ request()->routeIs('tickets.index') ? 'active' : '' }}" href="{{ route('tickets.index') }}">
-                                {{ __('layout.nav.tickets') }}
-                            </a>
+                            @auth
+                                <a class="mobile-nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
+                                    {{ __('layout.nav.dashboard') }}
+                                </a>
+                                <a class="mobile-nav-link {{ request()->routeIs('tickets.index') ? 'active' : '' }}" href="{{ route('tickets.index') }}">
+                                    {{ __('layout.nav.tickets') }}
+                                </a>
+                            @endauth
                             <a class="mobile-nav-link {{ request()->routeIs('announcements.*') ? 'active' : '' }}" href="{{ route('announcements.active') }}">
                                 {{ __('layout.nav.announcements') }}
                             </a>
