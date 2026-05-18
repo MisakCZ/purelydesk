@@ -6,6 +6,7 @@ use App\Models\Announcement;
 use App\Models\Ticket;
 use App\Policies\AnnouncementPolicy;
 use App\Policies\TicketPolicy;
+use App\Services\TicketActivityService;
 use App\Support\HelpdeskAuth;
 use App\Support\LocaleManager;
 use Illuminate\Support\Facades\Gate;
@@ -39,6 +40,9 @@ class AppServiceProvider extends ServiceProvider
                 'currentUser' => $currentUser,
                 'currentLocale' => app()->getLocale(),
                 'supportedLocales' => $localeManager->supportedLocales(),
+                'unreadTicketActivityCount' => $currentUser !== null
+                    ? app(TicketActivityService::class)->unreadTicketCountForUser($currentUser)
+                    : 0,
             ]);
         });
     }

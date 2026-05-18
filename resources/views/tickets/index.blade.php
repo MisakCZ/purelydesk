@@ -952,6 +952,11 @@
             flex-wrap: wrap;
         }
 
+        .ticket-unread-badge {
+            background: var(--color-primary-soft);
+            color: var(--color-primary);
+        }
+
         .ticket-deadline-badge {
             display: inline-flex;
             align-items: center;
@@ -2337,6 +2342,7 @@
                 <div class="ticket-card-list">
                 @foreach ($tickets as $ticket)
                     @php
+                        $unreadSummary = $unreadSummaries[$ticket->id] ?? null;
                         $statusSlug = $ticket->status?->slug;
                         $isResolved = $statusSlug === 'resolved';
                         $isClosed = in_array($statusSlug, ['closed', 'cancelled'], true) || (bool) ($ticket->status?->is_closed ?? false);
@@ -2450,6 +2456,12 @@
                                     <span class="badge-dot"></span>
                                     <span class="badge-label" data-ticket-field-value>{{ $ticket->priority?->translatedName() ?? __('tickets.common.not_available') }}</span>
                                 </span>
+                                @if (($unreadSummary['count'] ?? 0) > 0)
+                                    <span class="badge ticket-unread-badge" title="{{ trans_choice('activities.ticket_notice', $unreadSummary['count'], ['count' => $unreadSummary['count']]) }}">
+                                        <span class="badge-dot"></span>
+                                        {{ trans_choice('activities.badge.new_count', $unreadSummary['count'], ['count' => $unreadSummary['count']]) }}
+                                    </span>
+                                @endif
                                 <div class="ticket-card-deadline">
                                     <span class="ticket-deadline-badge" data-state="{{ $deadlineState }}" title="{{ __('tickets.index.meta.deadline_label') }}">
                                         <span class="badge-icon" aria-hidden="true">

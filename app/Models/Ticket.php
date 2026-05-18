@@ -386,4 +386,14 @@ class Ticket extends Model
     {
         return $this->hasMany(TicketHistory::class);
     }
+
+    public function activities(): HasMany
+    {
+        return $this->hasMany(TicketActivity::class);
+    }
+
+    public function readStates(): HasMany
+    {
+        return $this->hasMany(TicketReadState::class);
+    }
 }

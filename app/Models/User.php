@@ -134,6 +134,11 @@ class User extends Authenticatable
         return $this->hasMany(TicketHistory::class);
     }
 
+    public function ticketReadStates(): HasMany
+    {
+        return $this->hasMany(TicketReadState::class);
+    }
+
     public function announcements(): HasMany
     {
         return $this->hasMany(Announcement::class, 'author_id');

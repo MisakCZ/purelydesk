@@ -25,7 +25,7 @@ flowchart LR
 - Tickety: záznamy ticketů, stav, priorita, kategorie, viditelnost, zadavatel, řešitel, sledující a historie.
 - Komentáře a interní poznámky: veřejná konverzace viditelná zadavateli je oddělená od interních poznámek pro pracovníky helpdesku.
 - Přílohy: metadata jsou v databázi, soubory jsou v neveřejném úložišti.
-- Notifikace: odchozí e-mailové notifikace se vybírají podle typu události a filtrují přes oprávnění.
+- Notifikace: odchozí e-mailové notifikace se vybírají podle typu události a filtrují přes oprávnění. Webové UI zároveň sleduje nepřečtené aktivity ticketů pro kontext zadavatele, řešitele a sledujících.
 - Scheduler: opakované workflow příkazy, například automatické uzavření resolved ticketů a volitelný inbound polling.
 - Dokumentace a konfigurace: veřejná dokumentace používá bezpečné placeholdery; tajné hodnoty konkrétní instalace patří do `.env`.
 
@@ -105,6 +105,8 @@ flowchart TD
 ## Tok e-mailů
 
 Odchozí e-mailové notifikace jsou běžná funkcionalita. Laravel odesílá notifikace přes nastavený mail transport. Příjemci se vybírají podle typu události, deduplikují se a filtrují přes aktuální oprávnění ticketu. Interní poznámky neposílají běžné ticketové notifikace.
+
+Webové rozhraní má samostatný přehled nepřečtených aktivit. Nejde o realtime kanál; aplikace ukládá záznamy aktivit ticketů a per-user read state, aby uživatelé viděli komentáře a změny ticketů, které ještě neotevřeli. Počty jsou omezené na tickety, kde je uživatel zadavatel, řešitel nebo sledující a zároveň projde aktuálními policy kontrolami. Interní poznámky se počítají pouze uživatelům, kteří je smějí vidět.
 
 Inbound Maildir reply processing je experimentální funkcionalita ve vývoji. Zamýšlená první verze zpracovává pouze odpovědi na existující ticket notifikace a ukládá platné odpovědi jako veřejné komentáře.
 

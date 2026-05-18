@@ -845,6 +845,25 @@
             background: #fff;
         }
 
+        .comment-card.is-unread-activity {
+            border-color: color-mix(in srgb, var(--color-primary) 38%, #e5ebf1);
+            background: linear-gradient(135deg, color-mix(in srgb, var(--color-primary-soft) 34%, #fff), #fff);
+            box-shadow: 0 14px 32px color-mix(in srgb, var(--color-primary) 10%, transparent);
+        }
+
+        .ticket-unread-notice {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.8rem;
+            padding: 0.85rem 1rem;
+            border: 1px solid color-mix(in srgb, var(--color-primary) 26%, var(--color-border));
+            border-radius: 1rem;
+            background: color-mix(in srgb, var(--color-primary-soft) 48%, var(--color-surface));
+            color: var(--color-text);
+            font-weight: 700;
+        }
+
         .comment-head {
             display: flex;
             align-items: baseline;
@@ -1234,6 +1253,13 @@
                         'date' => $ticket->archived_at?->locale($locale)->translatedFormat($dateTimeFormat) ?? __('tickets.common.not_available'),
                         'user' => $ticket->archivedBy?->displayName() ?? __('tickets.common.not_available'),
                     ]) }}
+                </div>
+            @endif
+
+            @if (($unreadActivities?->count() ?? 0) > 0)
+                <div class="ticket-unread-notice" role="status">
+                    <span>{{ trans_choice('activities.ticket_notice', $unreadActivities->count(), ['count' => $unreadActivities->count()]) }}</span>
+                    <a class="dashboard-link" href="#comments">{{ __('tickets.show.comments.heading') }}</a>
                 </div>
             @endif
 
@@ -1905,7 +1931,7 @@
                 @else
                     <div class="comment-list">
                         @foreach ($publicCommentThreads as $comment)
-                            <article class="comment-card">
+                            <article id="comment-{{ $comment->id }}" class="comment-card {{ in_array((int) $comment->id, $unreadPublicCommentIds ?? [], true) ? 'is-unread-activity' : '' }}">
                                 <div class="comment-head">
                                     <div class="comment-author">{{ $comment->user?->displayName() ?? __('tickets.common.unknown_user') }}</div>
                                     <div class="comment-time">{{ $comment->created_at?->locale($locale)->translatedFormat($dateTimeFormat) ?? __('tickets.common.not_available') }}</div>
@@ -2007,7 +2033,7 @@
                                 @if ($comment->publicReplies->isNotEmpty())
                                     <div class="comment-children" aria-label="{{ __('tickets.show.comments.children_label') }}">
                                         @foreach ($comment->publicReplies as $reply)
-                                            <article class="comment-card reply-card">
+                                            <article id="comment-{{ $reply->id }}" class="comment-card reply-card {{ in_array((int) $reply->id, $unreadPublicCommentIds ?? [], true) ? 'is-unread-activity' : '' }}">
                                                 <div class="comment-head">
                                                     <div class="comment-author">{{ $reply->user?->displayName() ?? __('tickets.common.unknown_user') }}</div>
                                                     <div class="comment-time">{{ $reply->created_at?->locale($locale)->translatedFormat($dateTimeFormat) ?? __('tickets.common.not_available') }}</div>
@@ -2129,7 +2155,7 @@
                     @else
                         <div class="comment-list">
                             @foreach ($ticket->internalComments as $note)
-                                <article class="comment-card internal-note-card">
+                                <article id="internal-note-{{ $note->id }}" class="comment-card internal-note-card {{ in_array((int) $note->id, $unreadInternalNoteIds ?? [], true) ? 'is-unread-activity' : '' }}">
                                     <div class="comment-head">
                                         <div class="comment-author">{{ $note->user?->displayName() ?? __('tickets.common.unknown_user') }}</div>
                                         <div class="comment-time">{{ $note->created_at?->locale($locale)->translatedFormat($dateTimeFormat) ?? __('tickets.common.not_available') }}</div>
@@ -2229,7 +2255,7 @@
                     @else
                         <div class="comment-list">
                             @foreach ($ticket->history as $historyEntry)
-                                <article class="comment-card">
+                                <article id="history-entry-{{ $historyEntry->id }}" class="comment-card {{ in_array((int) $historyEntry->id, $unreadHistoryIds ?? [], true) ? 'is-unread-activity' : '' }}">
                                     <div class="comment-head">
                                         <div class="comment-author">{{ $historyEntry->user?->displayName() ?? __('tickets.show.history.system_user') }}</div>
                                         <div class="comment-time">{{ $historyEntry->created_at?->locale($locale)->translatedFormat($dateTimeFormat) ?? __('tickets.common.not_available') }}</div>

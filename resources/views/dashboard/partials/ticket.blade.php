@@ -26,6 +26,12 @@
             <span class="badge-dot"></span>
             {{ $ticket->priority?->translatedName() ?? __('tickets.common.not_available') }}
         </span>
+        @if (($unreadSummary['count'] ?? 0) > 0)
+            <span class="badge badge-tone-blue" title="{{ trans_choice('activities.ticket_notice', $unreadSummary['count'], ['count' => $unreadSummary['count']]) }}">
+                <span class="badge-dot"></span>
+                {{ trans_choice('activities.badge.new_count', $unreadSummary['count'], ['count' => $unreadSummary['count']]) }}
+            </span>
+        @endif
     </div>
 
     <div class="dashboard-ticket-requester">

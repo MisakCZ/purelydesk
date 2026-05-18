@@ -891,6 +891,7 @@
                         @else
                             <div class="dashboard-current-list">
                                 @foreach ($dashboard['solverSections']['current_tickets'] as $ticket)
+                                    @php($unreadSummary = $dashboard['unreadSummaries'][$ticket->id] ?? null)
                                     <article class="dashboard-current-item">
                                         <div class="dashboard-current-main">
                                             <a class="ticket-number" href="{{ route('tickets.show', $ticket) }}">
@@ -918,6 +919,14 @@
                                                     {{ $ticket->status?->translatedName() ?? __('tickets.common.not_available') }}
                                                 </span>
                                             </span>
+                                            @if (($unreadSummary['count'] ?? 0) > 0)
+                                                <span class="dashboard-current-meta-item">
+                                                    <span class="badge badge-tone-blue" title="{{ trans_choice('activities.ticket_notice', $unreadSummary['count'], ['count' => $unreadSummary['count']]) }}">
+                                                        <span class="badge-dot"></span>
+                                                        {{ trans_choice('activities.badge.new_count', $unreadSummary['count'], ['count' => $unreadSummary['count']]) }}
+                                                    </span>
+                                                </span>
+                                            @endif
                                             <span class="dashboard-current-meta-item">
                                                 <span class="dashboard-current-meta-label">{{ __('dashboard.current.columns.deadline') }}:</span>
                                                 {{ $ticket->expected_resolution_at?->locale($locale)->translatedFormat($deadlineFormat) ?? __('tickets.common.not_available') }}

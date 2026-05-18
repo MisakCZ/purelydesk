@@ -21,7 +21,7 @@ class DashboardDataService
      */
     public function forUser(User $user): array
     {
-        return [
+        $data = [
             'announcements' => $this->activeAnnouncements($user),
             'pinnedTickets' => $this->pinnedTickets($user),
             'userSections' => [
@@ -76,6 +76,26 @@ class DashboardDataService
             'isSolverDashboard' => $user->isSolver(),
             'isAdminDashboard' => $user->isAdmin(),
         ];
+
+        $data['unreadSummaries'] = app(TicketActivityService::class)
+            ->unreadSummaryForTickets($user, $this->dashboardTickets($data));
+
+        return $data;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return Collection<int, Ticket>
+     */
+    private function dashboardTickets(array $data): Collection
+    {
+        $tickets = collect()->merge($data['pinnedTickets'] ?? collect());
+
+        foreach ([...($data['userSections'] ?? []), ...($data['solverSections'] ?? [])] as $sectionTickets) {
+            $tickets = $tickets->merge($sectionTickets);
+        }
+
+        return $tickets;
     }
 
     /**

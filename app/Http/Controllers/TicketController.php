@@ -22,6 +22,7 @@ use App\Policies\TicketPolicy;
 use App\Support\LocaleManager;
 use App\Support\ResolvesHelpdeskUser;
 use App\Services\TicketHistoryService;
+use App\Services\TicketActivityService;
 use App\Services\TicketAttachmentService;
 use App\Services\TicketNotificationService;
 use App\Services\TicketWatcherService;
@@ -94,6 +95,10 @@ class TicketController extends Controller
                 ->get();
         }
 
+        $unreadSummaries = $actor instanceof User
+            ? $this->ticketActivityService()->unreadSummaryForTickets($actor, $tickets->getCollection()->concat($pinnedTickets))
+            : [];
+
         $activeAnnouncements = Announcement::query()
             ->active()
             ->publicVisible()
@@ -118,6 +123,7 @@ class TicketController extends Controller
             'hasActiveFilters' => collect($this->filterOnlyTicketState($filters))->contains(fn ($value) => $value !== ''),
             'canCreateTickets' => $this->ticketPolicy()->create($actor),
             'canViewArchivedTickets' => $canViewArchivedTickets,
+            'unreadSummaries' => $unreadSummaries,
         ]);
     }
 
@@ -235,6 +241,30 @@ class TicketController extends Controller
             ->assignableSolvers()
             ->orderBy('name')
             ->get(['id', 'name', 'display_name', 'username']);
+        $unreadActivities = $actor instanceof User
+            ? $this->ticketActivityService()->unreadActivitiesForTicket($actor, $ticket)
+            : collect();
+        $unreadPublicCommentIds = $unreadActivities
+            ->where('subject_type', TicketComment::class)
+            ->where('type', 'public_comment')
+            ->pluck('subject_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+        $unreadInternalNoteIds = $unreadActivities
+            ->where('subject_type', TicketComment::class)
+            ->where('type', 'internal_note')
+            ->pluck('subject_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+        $unreadHistoryIds = $unreadActivities
+            ->where('subject_type', TicketHistory::class)
+            ->pluck('subject_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        if ($actor instanceof User) {
+            $this->ticketActivityService()->markTicketRead($actor, $ticket);
+        }
 
         return view('tickets.show', [
             'ticket' => $ticket,
@@ -271,6 +301,10 @@ class TicketController extends Controller
             'canReportProblemPersists' => $canReportProblemPersists,
             'canArchiveTicket' => $canArchiveTicket,
             'canRestoreTicket' => $canRestoreTicket,
+            'unreadActivities' => $unreadActivities,
+            'unreadPublicCommentIds' => $unreadPublicCommentIds,
+            'unreadInternalNoteIds' => $unreadInternalNoteIds,
+            'unreadHistoryIds' => $unreadHistoryIds,
         ]);
     }
 
@@ -558,6 +592,23 @@ class TicketController extends Controller
             $action,
             $actor,
         );
+        $history = $this->latestHistoryForAction($ticket, $action);
+
+        if ($history instanceof TicketHistory) {
+            if ($action === 'assignee_update'
+                && (int) ($beforeNotificationSnapshot['assignee_id'] ?? 0) !== (int) ($ticket->assignee_id ?? 0)
+                && $ticket->assignee_id !== null
+            ) {
+                $newAssignee = User::query()->find($ticket->assignee_id);
+
+                if ($newAssignee instanceof User) {
+                    $this->ticketActivityService()->ensureReadStateAtCurrentActivity($ticket, $newAssignee);
+                }
+            }
+
+            $this->ticketActivityService()->recordTicketUpdate($ticket, $history, $action, $actor);
+        }
+
         $this->ticketWatcherService()->syncAutomaticParticipants($ticket);
         $this->sendTicketUpdateNotification($ticket, $action, $actor, $beforeNotificationSnapshot);
 
@@ -575,6 +626,20 @@ class TicketController extends Controller
         return redirect()
             ->route('tickets.show', $ticket)
             ->with('status', $successMessage);
+    }
+
+    private function latestHistoryForAction(Ticket $ticket, string $action): ?TicketHistory
+    {
+        $history = $ticket->history()
+            ->where('event', TicketHistory::EVENT_UPDATED)
+            ->latest('id')
+            ->first();
+
+        if (! $history instanceof TicketHistory || ($history->meta['action'] ?? null) !== $action) {
+            return null;
+        }
+
+        return $history;
     }
 
     /**
@@ -1439,6 +1504,11 @@ class TicketController extends Controller
     private function ticketHistoryService(): TicketHistoryService
     {
         return app(TicketHistoryService::class);
+    }
+
+    private function ticketActivityService(): TicketActivityService
+    {
+        return app(TicketActivityService::class);
     }
 
     private function ticketNotificationService(): TicketNotificationService

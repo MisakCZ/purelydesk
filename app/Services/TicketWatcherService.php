@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Ticket;
 use App\Models\TicketWatcher;
+use App\Models\User;
 use Illuminate\Support\Facades\Schema;
 
 class TicketWatcherService
@@ -51,6 +52,7 @@ class TicketWatcherService
     {
         if (! $this->supportsWatcherFlags()) {
             $ticket->watchers()->syncWithoutDetaching([$userId]);
+            $this->markExistingActivityReadForWatcher($ticket, $userId);
 
             return;
         }
@@ -63,6 +65,8 @@ class TicketWatcherService
         $watcher->is_manual = true;
         $watcher->is_auto_participant = (bool) ($watcher->is_auto_participant ?? false);
         $watcher->save();
+
+        $this->markExistingActivityReadForWatcher($ticket, $userId);
     }
 
     public function stopManualWatching(Ticket $ticket, int $userId): void
@@ -100,5 +104,14 @@ class TicketWatcherService
         }
 
         return $supportsWatcherFlags;
+    }
+
+    private function markExistingActivityReadForWatcher(Ticket $ticket, int $userId): void
+    {
+        $user = User::query()->find($userId);
+
+        if ($user instanceof User) {
+            app(TicketActivityService::class)->ensureReadStateAtCurrentActivity($ticket, $user);
+        }
     }
 }

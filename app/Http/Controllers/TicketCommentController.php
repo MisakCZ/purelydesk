@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Policies\TicketPolicy;
 use App\Support\ResolvesHelpdeskUser;
 use App\Services\TicketAttachmentService;
+use App\Services\TicketActivityService;
 use App\Services\TicketHistoryService;
 use App\Services\TicketNotificationService;
 use App\Services\TicketWorkflowAutomationService;
@@ -49,6 +50,8 @@ class TicketCommentController extends Controller
             'public',
         );
 
+        $this->ticketActivityService()->recordPublicComment($ticket, $comment, $actor);
+
         $workflowAttributes = $this->workflowAutomationService()->attributesForRequesterActivity($ticket, $actor);
 
         if ($workflowAttributes !== []) {
@@ -58,6 +61,13 @@ class TicketCommentController extends Controller
                 'requester_public_comment',
                 $actor,
             );
+            $history = $ticket->history()
+                ->latest('id')
+                ->first();
+
+            if ($history !== null && ($history->meta['action'] ?? null) === 'requester_public_comment') {
+                $this->ticketActivityService()->recordTicketUpdate($ticket, $history, 'requester_public_comment', $actor);
+            }
         } else {
             $ticket->refresh();
         }
@@ -79,7 +89,10 @@ class TicketCommentController extends Controller
             'note_body' => ['required', 'string'],
         ]);
 
-        $this->createComment($ticket, $validated['note_body'], 'internal', 'internalNote', 'note_body');
+        $actor = $this->currentHelpdeskUser();
+        $comment = $this->createComment($ticket, $validated['note_body'], 'internal', 'internalNote', 'note_body');
+
+        $this->ticketActivityService()->recordInternalNote($ticket, $comment, $actor);
 
         return redirect()
             ->route('tickets.show', $ticket)
@@ -176,6 +189,11 @@ class TicketCommentController extends Controller
     private function ticketNotificationService(): TicketNotificationService
     {
         return app(TicketNotificationService::class);
+    }
+
+    private function ticketActivityService(): TicketActivityService
+    {
+        return app(TicketActivityService::class);
     }
 
     private function ticketAttachmentService(): TicketAttachmentService

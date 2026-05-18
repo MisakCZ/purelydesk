@@ -25,7 +25,7 @@ flowchart LR
 - Tickets: ticket records, status, priority, category, visibility, requester, assignee, watchers, and history.
 - Comments and internal notes: requester-visible public conversation is separated from staff-only internal notes.
 - Attachments: metadata is stored in the database, while files are stored in private storage.
-- Notifications: outgoing e-mail notifications are selected by event type and filtered through permissions.
+- Notifications: outgoing e-mail notifications are selected by event type and filtered through permissions. The web UI also tracks unread ticket activity for requester, assignee, and watcher contexts.
 - Scheduler: recurring workflow commands such as resolved-ticket auto-close and optional inbound polling.
 - Documentation and configuration: public documentation uses safe placeholders; deployment-specific secrets belong in `.env`.
 
@@ -105,6 +105,8 @@ flowchart TD
 ## E-mail Flow
 
 Outgoing e-mail notifications are normal functionality. Laravel sends notifications through the configured mail transport. Recipients are selected by event type, deduplicated, and filtered through current ticket permissions. Internal notes do not send regular ticket notifications.
+
+The web interface has a separate unread activity overview. It is not a realtime channel; it stores ticket activity records and per-user read state so users can see comments and ticket changes they have not opened yet. Counts are limited to tickets the user participates in as requester, assignee, or watcher and still pass current policy checks. Internal notes are counted only for users allowed to view internal notes.
 
 Inbound Maildir reply processing is experimental and under development. The intended first version only processes replies to existing ticket notifications and stores valid replies as public comments.
 

@@ -19,6 +19,7 @@
                     'ticket' => $ticket,
                     'locale' => $locale,
                     'dateTimeFormat' => $dateTimeFormat,
+                    'unreadSummary' => $dashboard['unreadSummaries'][$ticket->id] ?? null,
                 ])
             @endforeach
         </div>

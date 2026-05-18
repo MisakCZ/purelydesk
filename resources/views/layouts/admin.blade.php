@@ -690,12 +690,14 @@
 
             .locale-switcher,
             .theme-switcher,
+            .activity-inbox-link,
             .session-user,
             .logout-form {
                 position: relative;
             }
 
             .theme-switcher::before,
+            .activity-inbox-link::before,
             .session-user::before,
             .logout-form::before {
                 content: "";
@@ -852,6 +854,54 @@
                 font-size: 0.72rem;
                 font-weight: 850;
                 line-height: 1;
+            }
+
+            .activity-inbox-link {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 2.32rem;
+                min-height: 2.32rem;
+                border-radius: 999px;
+                border: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
+                color: var(--muted);
+                text-decoration: none;
+                background: color-mix(in srgb, var(--panel) 92%, var(--color-surface-muted));
+            }
+
+            .activity-inbox-link:hover {
+                color: var(--text);
+                background: color-mix(in srgb, var(--accent-soft) 28%, var(--panel));
+                border-color: color-mix(in srgb, var(--accent) 24%, var(--color-border));
+            }
+
+            .activity-inbox-link.has-unread,
+            .activity-inbox-link.active {
+                color: var(--accent);
+                border-color: color-mix(in srgb, var(--accent) 18%, var(--color-border));
+                background: var(--accent-soft);
+            }
+
+            .activity-inbox-link svg {
+                width: 1rem;
+                height: 1rem;
+            }
+
+            .activity-inbox-count {
+                position: absolute;
+                top: -0.22rem;
+                right: -0.18rem;
+                min-width: 1.12rem;
+                height: 1.12rem;
+                padding: 0 0.28rem;
+                border: 2px solid var(--panel);
+                border-radius: 999px;
+                background: var(--color-danger);
+                color: #fff;
+                font-size: 0.64rem;
+                font-weight: 850;
+                line-height: 0.9rem;
+                text-align: center;
             }
 
             .logout-form {
@@ -1574,7 +1624,7 @@
                         </summary>
 
                         <div class="theme-menu" role="menu" aria-label="{{ __('layout.nav.theme') }}">
-                            @foreach ($availableThemes as $theme)
+                            <?php foreach ($availableThemes as $theme): ?>
                                 <button
                                     class="theme-option"
                                     type="button"
@@ -1586,11 +1636,26 @@
                                     <span class="theme-option-label">{{ __('layout.nav.themes.'.$theme) }}</span>
                                     <span class="theme-option-check" aria-hidden="true" hidden>✓</span>
                                 </button>
-                            @endforeach
+                            <?php endforeach; ?>
                         </div>
                     </details>
 
-                    @auth
+                    <?php if (auth()->check()): ?>
+                        <?php $hasUnreadTicketActivity = ($unreadTicketActivityCount ?? 0) > 0; ?>
+                        <a
+                            class="activity-inbox-link {{ $hasUnreadTicketActivity ? 'has-unread' : '' }} {{ request()->routeIs('activities.*') ? 'active' : '' }}"
+                            href="{{ route('activities.index') }}"
+                            aria-label="{{ __('activities.header_label') }}"
+                            title="{{ $hasUnreadTicketActivity ? __('activities.header_unread_title') : __('activities.header_empty_title') }}"
+                        >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M4 5h16v14H4z"></path>
+                                <path d="m4 7 8 6 8-6"></path>
+                            </svg>
+                            @if ($hasUnreadTicketActivity)
+                                <span class="activity-inbox-count">{{ $unreadTicketActivityCount }}</span>
+                            @endif
+                        </a>
                         <span class="session-user">
                             <span class="user-avatar" aria-hidden="true">{{ $userInitial }}</span>
                             <span>{{ $currentUser?->loginName() }}</span>
@@ -1608,7 +1673,7 @@
                                 <span>{{ __('layout.nav.logout') }}</span>
                             </button>
                         </form>
-                    @endauth
+                    <?php endif; ?>
                 </div>
 
                 <details class="mobile-nav">
@@ -1622,14 +1687,20 @@
 
                     <div class="mobile-nav-panel">
                         <div class="mobile-nav-section">
-                            @auth
+                            <?php if (auth()->check()): ?>
+                                <?php if (($unreadTicketActivityCount ?? 0) > 0): ?>
+                                    <a class="mobile-nav-link {{ request()->routeIs('activities.*') ? 'active' : '' }}" href="{{ route('activities.index') }}">
+                                        {{ __('activities.header_label') }}
+                                        <span class="badge badge-tone-blue">{{ $unreadTicketActivityCount }}</span>
+                                    </a>
+                                <?php endif; ?>
                                 <a class="mobile-nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
                                     {{ __('layout.nav.dashboard') }}
                                 </a>
                                 <a class="mobile-nav-link {{ request()->routeIs('tickets.index') ? 'active' : '' }}" href="{{ route('tickets.index') }}">
                                     {{ __('layout.nav.tickets') }}
                                 </a>
-                            @endauth
+                            <?php endif; ?>
                             <a class="mobile-nav-link {{ request()->routeIs('announcements.*') ? 'active' : '' }}" href="{{ route('announcements.active') }}">
                                 {{ __('layout.nav.announcements') }}
                             </a>
