@@ -308,10 +308,18 @@
                 border-left: 1px solid color-mix(in srgb, var(--line) 48%, transparent);
             }
 
+            .mobile-topbar-actions {
+                display: none;
+                align-items: center;
+                justify-content: flex-end;
+                gap: 0.45rem;
+                min-width: max-content;
+            }
+
             .mobile-nav {
                 display: none;
                 position: relative;
-                margin-left: auto;
+                margin-left: 0;
             }
 
             .mobile-nav-toggle {
@@ -944,6 +952,10 @@
                     display: none;
                 }
 
+                .mobile-topbar-actions {
+                    display: flex;
+                }
+
                 .mobile-nav {
                     display: block;
                 }
@@ -1425,27 +1437,46 @@
                 }
 
                 .brand {
+                    gap: 0.45rem;
                     max-width: 100%;
                     flex: 1 1 auto;
                 }
 
                 .brand--wide {
+                    gap: 0.24rem;
                     max-width: 100%;
+                }
+
+                .brand-media {
+                    min-width: 0;
                 }
 
                 .brand-mark,
                 .brand-logo-mark {
-                    max-width: 2.25rem;
-                    max-height: 2.25rem;
+                    width: 1.72rem;
+                    height: 1.72rem;
+                    max-width: 1.72rem;
+                    max-height: 1.72rem;
+                    border-radius: 0.62rem;
                 }
 
                 .brand-logo-wide {
-                    max-width: 11.25rem;
-                    max-height: 2.25rem;
+                    min-width: 0;
+                    max-width: 6rem;
+                    max-height: 1.4rem;
+                }
+
+                .brand-copy {
+                    flex: 1 1 auto;
+                    min-width: 0;
+                    padding-left: 0.5rem;
                 }
 
                 .brand-copy h1 {
-                    font-size: 1rem;
+                    overflow: hidden;
+                    font-size: 0.92rem;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
                 }
 
                 .brand-copy p {
@@ -1460,11 +1491,30 @@
                     padding-left: 0.5rem;
                 }
 
+                .mobile-topbar-actions {
+                    gap: 0.38rem;
+                }
+
+                .mobile-topbar-actions .activity-inbox-link,
+                .mobile-topbar-actions .mobile-nav-toggle {
+                    width: 2.4rem;
+                    min-width: 2.4rem;
+                    height: 2.4rem;
+                    min-height: 2.4rem;
+                    border-radius: 0.82rem;
+                }
+
+                .mobile-topbar-actions .activity-inbox-link svg {
+                    width: 0.96rem;
+                    height: 0.96rem;
+                }
+
                 .nav {
                     display: none;
                 }
 
-                .mobile-nav {
+                .mobile-nav,
+                .mobile-topbar-actions {
                     flex: 0 0 auto;
                 }
 
@@ -1528,6 +1578,7 @@
 
                 <nav class="nav" aria-label="{{ __('layout.nav.main') }}">
                     @php($activeLocale = $currentLocale ?? app()->getLocale())
+                    <?php $hasUnreadTicketActivity = auth()->check() && (($unreadTicketActivityCount ?? 0) > 0); ?>
                     @auth
                         <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
                             <span class="nav-link-icon" aria-hidden="true">
@@ -1641,7 +1692,6 @@
                     </details>
 
                     <?php if (auth()->check()): ?>
-                        <?php $hasUnreadTicketActivity = ($unreadTicketActivityCount ?? 0) > 0; ?>
                         <a
                             class="activity-inbox-link {{ $hasUnreadTicketActivity ? 'has-unread' : '' }} {{ request()->routeIs('activities.*') ? 'active' : '' }}"
                             href="{{ route('activities.index') }}"
@@ -1676,84 +1726,103 @@
                     <?php endif; ?>
                 </div>
 
-                <details class="mobile-nav">
-                    <summary class="mobile-nav-toggle" aria-label="{{ __('layout.nav.mobile_menu') }}">
-                        <span class="mobile-nav-lines" aria-hidden="true">
-                            <span></span>
-                            <span></span>
-                            <span></span>
-                        </span>
-                    </summary>
+                <div class="mobile-topbar-actions">
+                    <?php if (auth()->check()): ?>
+                        <a
+                            class="activity-inbox-link {{ $hasUnreadTicketActivity ? 'has-unread' : '' }} {{ request()->routeIs('activities.*') ? 'active' : '' }}"
+                            href="{{ route('activities.index') }}"
+                            aria-label="{{ __('activities.header_label') }}"
+                            title="{{ $hasUnreadTicketActivity ? __('activities.header_unread_title') : __('activities.header_empty_title') }}"
+                        >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M4 5h16v14H4z"></path>
+                                <path d="m4 7 8 6 8-6"></path>
+                            </svg>
+                            @if ($hasUnreadTicketActivity)
+                                <span class="activity-inbox-count">{{ $unreadTicketActivityCount }}</span>
+                            @endif
+                        </a>
+                    <?php endif; ?>
 
-                    <div class="mobile-nav-panel">
-                        <div class="mobile-nav-section">
-                            <?php if (auth()->check()): ?>
-                                <?php if (($unreadTicketActivityCount ?? 0) > 0): ?>
+                    <details class="mobile-nav">
+                        <summary class="mobile-nav-toggle" aria-label="{{ __('layout.nav.mobile_menu') }}">
+                            <span class="mobile-nav-lines" aria-hidden="true">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </span>
+                        </summary>
+
+                        <div class="mobile-nav-panel">
+                            <div class="mobile-nav-section">
+                                <?php if (auth()->check()): ?>
                                     <a class="mobile-nav-link {{ request()->routeIs('activities.*') ? 'active' : '' }}" href="{{ route('activities.index') }}">
                                         {{ __('activities.header_label') }}
-                                        <span class="badge badge-tone-blue">{{ $unreadTicketActivityCount }}</span>
+                                        @if ($hasUnreadTicketActivity)
+                                            <span class="badge badge-tone-blue">{{ $unreadTicketActivityCount }}</span>
+                                        @endif
+                                    </a>
+                                    <a class="mobile-nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
+                                        {{ __('layout.nav.dashboard') }}
+                                    </a>
+                                    <a class="mobile-nav-link {{ request()->routeIs('tickets.index') ? 'active' : '' }}" href="{{ route('tickets.index') }}">
+                                        {{ __('layout.nav.tickets') }}
                                     </a>
                                 <?php endif; ?>
-                                <a class="mobile-nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
-                                    {{ __('layout.nav.dashboard') }}
+                                <a class="mobile-nav-link {{ request()->routeIs('announcements.*') ? 'active' : '' }}" href="{{ route('announcements.active') }}">
+                                    {{ __('layout.nav.announcements') }}
                                 </a>
-                                <a class="mobile-nav-link {{ request()->routeIs('tickets.index') ? 'active' : '' }}" href="{{ route('tickets.index') }}">
-                                    {{ __('layout.nav.tickets') }}
-                                </a>
-                            <?php endif; ?>
-                            <a class="mobile-nav-link {{ request()->routeIs('announcements.*') ? 'active' : '' }}" href="{{ route('announcements.active') }}">
-                                {{ __('layout.nav.announcements') }}
-                            </a>
-                        </div>
-
-                        <div class="mobile-nav-section" aria-label="{{ __('layout.nav.language') }}">
-                            <div class="mobile-nav-caption">{{ __('layout.nav.language') }}</div>
-                            @foreach (($supportedLocales ?? config('helpdesk.supported_locales', [])) as $supportedLocale)
-                                <form class="locale-form" method="post" action="{{ route('locale.update') }}">
-                                    @csrf
-                                    <input type="hidden" name="locale" value="{{ $supportedLocale }}">
-                                    <button
-                                        class="locale-option {{ $activeLocale === $supportedLocale ? 'active' : '' }}"
-                                        type="submit"
-                                        aria-pressed="{{ $activeLocale === $supportedLocale ? 'true' : 'false' }}"
-                                    >
-                                        <span class="locale-option-label">{{ __('layout.nav.locales.'.$supportedLocale) }}</span>
-                                        @if ($activeLocale === $supportedLocale)
-                                            <span class="locale-option-check" aria-hidden="true">✓</span>
-                                        @endif
-                                    </button>
-                                </form>
-                            @endforeach
-                        </div>
-
-                        <div class="mobile-nav-section" data-theme-switcher aria-label="{{ __('layout.nav.theme') }}">
-                            <div class="mobile-nav-caption">{{ __('layout.nav.theme') }}</div>
-                            @foreach ($availableThemes as $theme)
-                                <button
-                                    class="theme-option"
-                                    type="button"
-                                    role="menuitemradio"
-                                    aria-checked="false"
-                                    data-theme-option="{{ $theme }}"
-                                    data-theme-label="{{ __('layout.nav.themes.'.$theme) }}"
-                                >
-                                    <span class="theme-option-label">{{ __('layout.nav.themes.'.$theme) }}</span>
-                                    <span class="theme-option-check" aria-hidden="true" hidden>✓</span>
-                                </button>
-                            @endforeach
-                        </div>
-
-                        @auth
-                            <div class="mobile-nav-section">
-                                <span class="mobile-nav-account">{{ $currentUser?->loginName() }}</span>
-                                <form class="logout-form" method="post" action="{{ route('logout') }}">
-                                    @csrf
-                                    <button class="logout-button" type="submit">{{ __('layout.nav.logout') }}</button>
-                                </form>
                             </div>
-                        @endauth
-                    </div>
-                </details>
+
+                            <div class="mobile-nav-section" aria-label="{{ __('layout.nav.language') }}">
+                                <div class="mobile-nav-caption">{{ __('layout.nav.language') }}</div>
+                                @foreach (($supportedLocales ?? config('helpdesk.supported_locales', [])) as $supportedLocale)
+                                    <form class="locale-form" method="post" action="{{ route('locale.update') }}">
+                                        @csrf
+                                        <input type="hidden" name="locale" value="{{ $supportedLocale }}">
+                                        <button
+                                            class="locale-option {{ $activeLocale === $supportedLocale ? 'active' : '' }}"
+                                            type="submit"
+                                            aria-pressed="{{ $activeLocale === $supportedLocale ? 'true' : 'false' }}"
+                                        >
+                                            <span class="locale-option-label">{{ __('layout.nav.locales.'.$supportedLocale) }}</span>
+                                            @if ($activeLocale === $supportedLocale)
+                                                <span class="locale-option-check" aria-hidden="true">✓</span>
+                                            @endif
+                                        </button>
+                                    </form>
+                                @endforeach
+                            </div>
+
+                            <div class="mobile-nav-section" data-theme-switcher aria-label="{{ __('layout.nav.theme') }}">
+                                <div class="mobile-nav-caption">{{ __('layout.nav.theme') }}</div>
+                                @foreach ($availableThemes as $theme)
+                                    <button
+                                        class="theme-option"
+                                        type="button"
+                                        role="menuitemradio"
+                                        aria-checked="false"
+                                        data-theme-option="{{ $theme }}"
+                                        data-theme-label="{{ __('layout.nav.themes.'.$theme) }}"
+                                    >
+                                        <span class="theme-option-label">{{ __('layout.nav.themes.'.$theme) }}</span>
+                                        <span class="theme-option-check" aria-hidden="true" hidden>✓</span>
+                                    </button>
+                                @endforeach
+                            </div>
+
+                            @auth
+                                <div class="mobile-nav-section">
+                                    <span class="mobile-nav-account">{{ $currentUser?->loginName() }}</span>
+                                    <form class="logout-form" method="post" action="{{ route('logout') }}">
+                                        @csrf
+                                        <button class="logout-button" type="submit">{{ __('layout.nav.logout') }}</button>
+                                    </form>
+                                </div>
+                            @endauth
+                        </div>
+                    </details>
+                </div>
             </header>
 
             <main class="page-card">
