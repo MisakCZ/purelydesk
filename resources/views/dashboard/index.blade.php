@@ -329,6 +329,13 @@
             line-height: 1.25;
         }
 
+        .dashboard-metric-note {
+            color: var(--color-muted, #64748b);
+            font-size: 0.74rem;
+            font-weight: 620;
+            line-height: 1.35;
+        }
+
         .dashboard-tone-blue .dashboard-metric-icon,
         .dashboard-sla-card.dashboard-tone-blue .dashboard-sla-icon {
             background: var(--dashboard-blue-soft);
@@ -584,6 +591,30 @@
             line-height: 1.35;
         }
 
+        .dashboard-sla-note {
+            margin: 0.18rem 0 0;
+            color: var(--color-muted, #64748b);
+            font-size: 0.73rem;
+            font-weight: 650;
+            line-height: 1.28;
+        }
+
+        .dashboard-tone-red .dashboard-sla-note {
+            color: var(--dashboard-red);
+        }
+
+        .dashboard-tone-amber .dashboard-sla-note {
+            color: var(--dashboard-amber);
+        }
+
+        .dashboard-tone-blue .dashboard-sla-note {
+            color: var(--dashboard-blue);
+        }
+
+        .dashboard-tone-green .dashboard-sla-note {
+            color: var(--dashboard-green);
+        }
+
         .dashboard-section,
         .dashboard-admin {
             display: grid;
@@ -741,6 +772,10 @@
                 font-size: 0.82rem;
             }
 
+            .dashboard-metric-note {
+                display: none;
+            }
+
             .dashboard-announcements-head,
             .dashboard-announcement-head,
             .dashboard-announcement-foot,
@@ -839,6 +874,10 @@
             .dashboard-sla-detail {
                 font-size: 0.69rem;
                 line-height: 1.28;
+            }
+
+            .dashboard-sla-note {
+                display: none;
             }
 
             .dashboard-section,
@@ -949,6 +988,7 @@
                             <span class="dashboard-metric-content">
                                 <span class="dashboard-metric-count">{{ $dashboard['solverCounts'][$summaryKey] ?? 0 }}</span>
                                 <span class="dashboard-metric-title">{{ __('dashboard.summary.'.$summaryKey) }}</span>
+                                <span class="dashboard-metric-note">{{ __('dashboard.summary_notes.'.$summaryKey) }}</span>
                             </span>
                         </a>
                     @endforeach

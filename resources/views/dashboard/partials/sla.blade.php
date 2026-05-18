@@ -21,6 +21,9 @@
                 $slaItem = $items[$slaKey] ?? ['count' => 0, 'ticket' => null, 'url' => $href];
                 $slaTicket = $slaItem['ticket'];
                 $slaUrl = $slaItem['url'] ?? $href;
+                $noteKey = $slaKey === 'resolved'
+                    ? 'dashboard.sla.resolved.note_'.$context
+                    : 'dashboard.sla.'.$slaKey.'.note';
             @endphp
 
             <a class="dashboard-sla-card dashboard-tone-{{ $sla['tone'] }}" href="{{ $slaUrl }}" data-sla-key="{{ $slaKey }}" data-sla-count="{{ $slaItem['count'] }}">
@@ -33,6 +36,13 @@
                     <p class="dashboard-sla-detail">
                         @if ($slaTicket)
                             {{ __('dashboard.sla.'.$slaKey.'.ticket', ['ticket' => $slaTicket->ticket_number ?? __('tickets.common.no_number')]) }}
+                        @else
+                            {{ __('dashboard.sla.none') }}
+                        @endif
+                    </p>
+                    <p class="dashboard-sla-note">
+                        @if ($slaItem['count'] > 0)
+                            {{ __($noteKey) }}
                         @else
                             {{ __('dashboard.sla.none') }}
                         @endif
