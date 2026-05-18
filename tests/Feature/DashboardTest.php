@@ -282,7 +282,6 @@ class DashboardTest extends TestCase
             ->assertOk()
             ->assertSeeText(__('dashboard.sla.heading'))
             ->assertSeeText(__('dashboard.sla.resolved.label'))
-            ->assertSeeText(__('dashboard.sla.resolved.note_requester'))
             ->assertSee('data-sla-key="resolved" data-sla-count="1"', false)
             ->assertSee(e(route('tickets.index', ['scope' => 'open', 'relation' => 'requester', 'due' => 'due_today'])), false)
             ->assertSee(e(route('tickets.index', ['scope' => 'open', 'relation' => 'requester', 'due' => 'due_soon'])), false)

@@ -329,13 +329,6 @@
             line-height: 1.25;
         }
 
-        .dashboard-metric-note {
-            color: var(--color-muted, #64748b);
-            font-size: 0.74rem;
-            font-weight: 620;
-            line-height: 1.35;
-        }
-
         .dashboard-tone-blue .dashboard-metric-icon,
         .dashboard-sla-card.dashboard-tone-blue .dashboard-sla-icon {
             background: var(--dashboard-blue-soft);
@@ -583,29 +576,12 @@
             font-weight: 790;
         }
 
-        .dashboard-sla-detail,
-        .dashboard-sla-note {
+        .dashboard-sla-detail {
             margin: 0.22rem 0 0;
             color: var(--color-muted, #64748b);
             font-size: 0.78rem;
             font-weight: 620;
             line-height: 1.35;
-        }
-
-        .dashboard-tone-red .dashboard-sla-note {
-            color: var(--dashboard-red);
-        }
-
-        .dashboard-tone-amber .dashboard-sla-note {
-            color: var(--dashboard-amber);
-        }
-
-        .dashboard-tone-blue .dashboard-sla-note {
-            color: var(--dashboard-blue);
-        }
-
-        .dashboard-tone-green .dashboard-sla-note {
-            color: var(--dashboard-green);
         }
 
         .dashboard-section,
@@ -705,12 +681,12 @@
 
         @media (max-width: 640px) {
             .dashboard-shell {
-                gap: 1rem;
+                gap: 0.85rem;
             }
 
             .dashboard-metrics {
-                grid-template-columns: 1fr;
-                gap: 0.75rem;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 0.6rem;
             }
 
             .dashboard-create-row {
@@ -738,7 +714,31 @@
 
             .dashboard-metric-card {
                 min-height: auto;
-                padding: 0.9rem;
+                gap: 0.7rem;
+                padding: 0.78rem 0.8rem;
+            }
+
+            .dashboard-metric-card--waiting-for-user {
+                display: none;
+            }
+
+            .dashboard-metric-icon {
+                width: 2.7rem;
+                height: 2.7rem;
+                border-radius: 0.7rem;
+            }
+
+            .dashboard-icon-svg {
+                width: 1.58rem;
+                height: 1.58rem;
+            }
+
+            .dashboard-metric-count {
+                font-size: 1.55rem;
+            }
+
+            .dashboard-metric-title {
+                font-size: 0.82rem;
             }
 
             .dashboard-announcements-head,
@@ -754,7 +754,24 @@
 
             .dashboard-card-head,
             .dashboard-sla {
-                padding: 0.9rem;
+                padding: 0.85rem;
+            }
+
+            .dashboard-card-head {
+                padding-bottom: 0.72rem;
+            }
+
+            .dashboard-card-title,
+            .dashboard-sla-title,
+            .dashboard-section-head h3,
+            .dashboard-admin-head h3 {
+                font-size: 0.95rem;
+            }
+
+            .dashboard-card-subtitle,
+            .dashboard-section-head p,
+            .dashboard-admin-head p {
+                font-size: 0.77rem;
             }
 
             .dashboard-table-wrap,
@@ -763,8 +780,70 @@
                 margin-left: 0.9rem;
             }
 
+            .dashboard-current-list {
+                margin: 0 0.85rem 0.85rem;
+            }
+
+            .dashboard-current-item {
+                gap: 0.4rem;
+                padding: 0.74rem 0.78rem;
+            }
+
+            .dashboard-current-main {
+                gap: 0.24rem;
+            }
+
+            .dashboard-current-main .ticket-number {
+                font-size: 0.76rem;
+            }
+
+            .dashboard-current-subject {
+                font-size: 0.88rem;
+            }
+
+            .dashboard-current-meta {
+                gap: 0.28rem 0.42rem;
+                font-size: 0.71rem;
+            }
+
+            .dashboard-current-meta .badge {
+                padding: 0.24rem 0.48rem;
+                font-size: 0.7rem;
+            }
+
+            .dashboard-sla-list {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 0.6rem;
+            }
+
             .dashboard-sla-card {
                 min-height: auto;
+                gap: 0.58rem;
+                padding: 0.78rem;
+            }
+
+            .dashboard-sla-icon {
+                width: 2.45rem;
+                height: 2.45rem;
+                border-radius: 0.68rem;
+            }
+
+            .dashboard-sla-count {
+                font-size: 1.52rem;
+            }
+
+            .dashboard-sla-label {
+                font-size: 0.8rem;
+            }
+
+            .dashboard-sla-detail {
+                font-size: 0.69rem;
+                line-height: 1.28;
+            }
+
+            .dashboard-section,
+            .dashboard-admin {
+                padding: 0.82rem;
             }
         }
     </style>
@@ -863,14 +942,13 @@
                         'due_soon' => ['tone' => 'amber', 'icon' => 'clock', 'href' => route('tickets.index', ['scope' => 'open', 'relation' => 'assigned', 'due' => 'due_soon'])],
                         'waiting_for_user' => ['tone' => 'violet', 'icon' => 'users', 'href' => route('tickets.index', ['status' => 'waiting_user'])],
                     ] as $summaryKey => $summary)
-                        <a class="dashboard-metric-card dashboard-tone-{{ $summary['tone'] }}" href="{{ $summary['href'] }}">
+                        <a class="dashboard-metric-card dashboard-tone-{{ $summary['tone'] }} {{ $summaryKey === 'waiting_for_user' ? 'dashboard-metric-card--waiting-for-user' : '' }}" href="{{ $summary['href'] }}">
                             <span class="dashboard-metric-icon" aria-hidden="true">
                                 @include('dashboard.partials.icon', ['name' => $summary['icon']])
                             </span>
                             <span class="dashboard-metric-content">
                                 <span class="dashboard-metric-count">{{ $dashboard['solverCounts'][$summaryKey] ?? 0 }}</span>
                                 <span class="dashboard-metric-title">{{ __('dashboard.summary.'.$summaryKey) }}</span>
-                                <span class="dashboard-metric-note">{{ __('dashboard.summary_notes.'.$summaryKey) }}</span>
                             </span>
                         </a>
                     @endforeach
