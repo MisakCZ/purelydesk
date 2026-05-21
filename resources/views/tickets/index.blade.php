@@ -530,6 +530,18 @@
             min-width: 0;
         }
 
+        .filter-field-active {
+            border-color: color-mix(in srgb, var(--color-primary, #0f766e) 24%, var(--color-border, #e5ebf1));
+            background: linear-gradient(145deg, color-mix(in srgb, var(--color-primary-soft, #dff5f2) 54%, var(--color-surface, #fff)), color-mix(in srgb, var(--color-surface-muted, #f8fafc) 82%, var(--color-surface, #fff)));
+            box-shadow:
+                inset 0 1px 0 color-mix(in srgb, #fff 76%, transparent),
+                0 8px 20px rgba(15, 23, 42, 0.05);
+        }
+
+        .filter-field-active .filter-label {
+            color: var(--color-primary, #0f766e);
+        }
+
         .filter-head {
             display: flex;
             align-items: center;
@@ -1342,13 +1354,37 @@
                 border-radius: 0.9rem;
             }
 
-            .filter-insights {
-                grid-template-columns: 1fr;
-                gap: 0.45rem;
+            .ticket-index-shell .filter-insights {
+                display: grid !important;
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                gap: 0.42rem;
+                margin-bottom: 0.68rem;
             }
 
             .filter-insight {
                 min-height: auto;
+                gap: 0.48rem;
+                padding: 0.5rem 0.54rem;
+            }
+
+            .filter-insight-icon {
+                width: 1.85rem;
+                height: 1.85rem;
+                border-radius: 0.68rem;
+            }
+
+            .filter-insight-icon svg {
+                width: 0.98rem;
+                height: 0.98rem;
+            }
+
+            .filter-insight-label {
+                font-size: 0.62rem;
+            }
+
+            .filter-insight-value {
+                margin-top: 0.12rem;
+                font-size: 0.86rem;
             }
 
             .filter-disclosure-summary {
@@ -1383,20 +1419,49 @@
                 margin-top: 0.55rem;
             }
 
-            .filter-grid {
-                grid-template-columns: 1fr;
+            .ticket-index-shell .filter-grid {
+                display: grid !important;
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
                 gap: 0.45rem;
             }
 
-            .filter-field {
-                padding: 0.48rem 0.55rem 0.55rem;
-                border-radius: 0.78rem;
+            .ticket-index-shell .filter-field-search {
+                grid-column: 1 / -1;
             }
 
-            .filter-input,
-            .filter-select {
-                min-height: 2.35rem;
-                font-size: 0.9rem;
+            .ticket-index-shell .filter-field {
+                min-height: 5.2rem;
+                padding: 0.66rem 0.66rem 0.62rem;
+                border-radius: 1rem;
+            }
+
+            .ticket-index-shell .filter-field-active {
+                box-shadow:
+                    inset 0 1px 0 color-mix(in srgb, #fff 72%, transparent),
+                    0 10px 20px rgba(15, 23, 42, 0.06);
+            }
+
+            .ticket-index-shell .filter-input,
+            .ticket-index-shell .filter-select {
+                min-height: 2rem;
+                border: 0;
+                background: transparent;
+                padding-top: 0;
+                padding-bottom: 0;
+                font-size: 0.96rem;
+                font-weight: 700;
+                box-shadow: none;
+            }
+
+            .ticket-index-shell .filter-input {
+                padding-left: 1.95rem;
+                padding-right: 0.1rem;
+            }
+
+            .ticket-index-shell .filter-control-select::after {
+                right: 0.14rem;
+                width: 0.56rem;
+                height: 0.56rem;
             }
 
             .filter-card-head,
@@ -1447,6 +1512,13 @@
                 flex-direction: column;
             }
         }
+
+        @media (max-width: 339px) {
+            .ticket-index-shell .filter-insights,
+            .ticket-index-shell .filter-grid {
+                grid-template-columns: 1fr !important;
+            }
+        }
     </style>
 @endpush
 
@@ -1459,10 +1531,6 @@
             ]) }};
             const filterForm = document.querySelector('[data-ticket-filters]');
             const filterDisclosure = document.querySelector('[data-filter-disclosure]');
-
-            if (filterDisclosure && window.matchMedia('(max-width: 768px)').matches) {
-                filterDisclosure.open = false;
-            }
 
             if (filterForm) {
                 const searchInput = filterForm.querySelector('[data-filter-search-input]');
@@ -2057,7 +2125,7 @@
                 <input type="hidden" name="direction" value="{{ $filters['direction'] }}">
 
                 <div class="filter-grid">
-                    <div class="filter-field">
+                    <div @class(['filter-field', 'filter-field-search', 'filter-field-active' => $filters['search'] !== ''])>
                         <div class="filter-head">
                             <label class="filter-label" for="search_input">{{ __('tickets.index.filters.search') }}</label>
                             @if ($filters['search'] !== '')
@@ -2089,7 +2157,7 @@
                         </div>
                     </div>
 
-                    <div class="filter-field">
+                    <div @class(['filter-field', 'filter-field-active' => $filters['status'] !== ''])>
                         <div class="filter-head">
                             <label class="filter-label" for="status">{{ __('tickets.index.filters.status') }}</label>
                             @if ($filters['status'] !== '')
@@ -2113,7 +2181,7 @@
                         </div>
                     </div>
 
-                    <div class="filter-field">
+                    <div @class(['filter-field', 'filter-field-active' => $filters['priority'] !== ''])>
                         <div class="filter-head">
                             <label class="filter-label" for="priority">{{ __('tickets.index.filters.priority') }}</label>
                             @if ($filters['priority'] !== '')
@@ -2137,7 +2205,7 @@
                         </div>
                     </div>
 
-                    <div class="filter-field">
+                    <div @class(['filter-field', 'filter-field-active' => $filters['category'] !== ''])>
                         <div class="filter-head">
                             <label class="filter-label" for="category">{{ __('tickets.index.filters.category') }}</label>
                             @if ($filters['category'] !== '')
@@ -2161,7 +2229,7 @@
                         </div>
                     </div>
 
-                    <div class="filter-field">
+                    <div @class(['filter-field', 'filter-field-active' => $filters['relation'] !== ''])>
                         <div class="filter-head">
                             <label class="filter-label" for="relation">{{ __('tickets.index.filters.relation') }}</label>
                             @if ($filters['relation'] !== '')
@@ -2186,7 +2254,7 @@
                         </div>
                     </div>
 
-                    <div class="filter-field">
+                    <div @class(['filter-field', 'filter-field-active' => $filters['scope'] !== ''])>
                         <div class="filter-head">
                             <label class="filter-label" for="scope">{{ __('tickets.index.filters.scope') }}</label>
                             @if ($filters['scope'] !== '')
@@ -2210,7 +2278,7 @@
                     </div>
 
                     @if ($canViewArchivedTickets)
-                        <div class="filter-field">
+                        <div @class(['filter-field', 'filter-field-active' => $filters['archive'] !== ''])>
                             <div class="filter-head">
                                 <label class="filter-label" for="archive">{{ __('tickets.index.filters.archive') }}</label>
                                 @if ($filters['archive'] !== '')

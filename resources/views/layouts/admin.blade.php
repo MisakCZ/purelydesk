@@ -1666,11 +1666,11 @@
                             data-theme-current-label="{{ __('layout.nav.theme_current', ['theme' => '__THEME__']) }}"
                         >
                             <span class="control-icon" aria-hidden="true">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M12 3 4.8 6v5.4c0 4.4 3 7.6 7.2 9.1 4.2-1.5 7.2-4.7 7.2-9.1V6z"></path>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M12 7.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9Z"></path>
+                                    <path d="M19.4 12a7.7 7.7 0 0 0-.1-1l1.9-1.4-1.9-3.2-2.2.8a7.3 7.3 0 0 0-1.7-1l-.3-2.4H10l-.3 2.4a7.3 7.3 0 0 0-1.7 1l-2.2-.8-1.9 3.2 1.9 1.4a7.7 7.7 0 0 0 0 2L3.9 14.5l1.9 3.2 2.2-.8c.5.4 1.1.7 1.7 1l.3 2.4h4.4l.3-2.4c.6-.3 1.2-.6 1.7-1l2.2.8 1.9-3.2-1.9-1.4c.1-.3.1-.7.1-1Z"></path>
                                 </svg>
                             </span>
-                            <span class="theme-current" data-theme-current>{{ __('layout.nav.themes.default') }}</span>
                             <span class="theme-chevron" aria-hidden="true">▾</span>
                         </summary>
 
