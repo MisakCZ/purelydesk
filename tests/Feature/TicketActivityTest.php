@@ -95,6 +95,56 @@ class TicketActivityTest extends TestCase
         $this->assertSame(1, $this->activities()->unreadTicketCountForUser($assignee));
     }
 
+    public function test_internal_note_is_unread_for_other_solver_who_can_view_internal_notes(): void
+    {
+        $requester = $this->createUser($this->userRole);
+        $assignee = $this->createUser($this->solverRole);
+        $author = $this->createUser($this->solverRole);
+        $otherSolver = $this->createUser($this->solverRole);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'assignee' => $assignee,
+            'visibility' => Ticket::VISIBILITY_INTERNAL,
+        ]);
+
+        $this->actingAs($author)
+            ->post(route('tickets.internal-notes.store', $ticket), ['note_body' => 'Internal note for solver team'])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        $this->assertSame(0, $this->activities()->unreadActivityCountForUser($requester));
+        $this->assertSame(0, $this->activities()->unreadActivityCountForUser($author));
+        $this->assertSame(1, $this->activities()->unreadActivityCountForUser($otherSolver));
+        $this->assertSame(TicketActivity::TYPE_INTERNAL_NOTE, $this->activities()->unreadActivitiesForUser($otherSolver)->first()?->type);
+
+        $this->actingAs($otherSolver)
+            ->get(route('activities.index'))
+            ->assertOk()
+            ->assertSeeText(__('activities.types.internal_note'))
+            ->assertSeeText($ticket->subject);
+
+        $this->actingAs($otherSolver)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('activity-inbox-count', false)
+            ->assertSee('>1</span>', false);
+    }
+
+    public function test_public_comment_is_not_unread_for_unrelated_solver(): void
+    {
+        $requester = $this->createUser($this->userRole);
+        $otherSolver = $this->createUser($this->solverRole);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'visibility' => Ticket::VISIBILITY_INTERNAL,
+        ]);
+
+        $this->actingAs($requester)
+            ->post(route('tickets.comments.store', $ticket), ['body' => 'Public comment for participants'])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        $this->assertSame(0, $this->activities()->unreadActivityCountForUser($otherSolver));
+    }
+
     public function test_private_ticket_activity_does_not_leak_to_unauthorized_watcher(): void
     {
         $requester = $this->createUser($this->userRole);

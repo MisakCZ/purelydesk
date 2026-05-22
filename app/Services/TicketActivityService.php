@@ -218,7 +218,17 @@ class TicketActivityService
                     ->on('ticket_read_states.ticket_id', '=', 'ticket_activities.ticket_id')
                     ->where('ticket_read_states.user_id', '=', $user->id);
             })
-            ->whereIn('ticket_activities.ticket_id', $this->visibleParticipantTicketQuery($user))
+            ->where(function (Builder $query) use ($user): void {
+                $query->whereIn('ticket_activities.ticket_id', $this->visibleParticipantTicketQuery($user));
+
+                if ($user->isAdmin() || $user->isSolver()) {
+                    $query->orWhere(function (Builder $query) use ($user): void {
+                        $query
+                            ->where('ticket_activities.type', TicketActivity::TYPE_INTERNAL_NOTE)
+                            ->whereIn('ticket_activities.ticket_id', $this->visibleInternalNoteTicketQuery($user));
+                    });
+                }
+            })
             ->where(function (Builder $query) use ($user): void {
                 $query
                     ->whereNull('ticket_activities.actor_id')
@@ -253,6 +263,14 @@ class TicketActivityService
             });
     }
 
+    private function visibleInternalNoteTicketQuery(User $user): Builder
+    {
+        return Ticket::query()
+            ->visibleTo($user)
+            ->select('tickets.id')
+            ->when(Ticket::supportsArchiving() && ! $user->isAdmin(), fn (Builder $query) => $query->whereNull('archived_at'));
+    }
+
     private function applyActivityVisibility(Builder $query, User $user): void
     {
         if ($user->isAdmin() || $user->isSolver()) {
@@ -266,6 +284,10 @@ class TicketActivityService
     {
         if (! app(TicketPolicy::class)->view($user, $ticket)) {
             return false;
+        }
+
+        if (app(TicketPolicy::class)->viewInternalNotes($user, $ticket)) {
+            return true;
         }
 
         if ((int) $ticket->requester_id === (int) $user->id || (int) $ticket->assignee_id === (int) $user->id) {
