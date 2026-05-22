@@ -1278,7 +1278,8 @@
 
         .pagination-meta {
             color: #5b6b79;
-            font-size: 0.95rem;
+            font-size: 0.84rem;
+            line-height: 1.45;
         }
 
         .pagination {
@@ -1292,15 +1293,17 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            min-width: 2.6rem;
-            min-height: 2.6rem;
-            padding: 0.55rem 0.8rem;
+            min-width: 2.15rem;
+            min-height: 2.15rem;
+            padding: 0.42rem 0.68rem;
             border: 1px solid #d9e0e7;
-            border-radius: 0.8rem;
+            border-radius: 0.7rem;
             background: #fff;
             color: #13202b;
             text-decoration: none;
-            font-weight: 600;
+            font-size: 0.84rem;
+            font-weight: 650;
+            line-height: 1;
         }
 
         .page-link:hover {
