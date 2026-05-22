@@ -1932,6 +1932,7 @@
         ];
         $scopeFilterLabels = [
             'open' => __('tickets.index.filters.scope_open'),
+            'active' => __('tickets.index.filters.scope_active'),
             'finished' => __('tickets.index.filters.scope_finished'),
         ];
         $archiveFilterLabels = [
@@ -2272,6 +2273,7 @@
                             <select class="filter-select" id="scope" name="scope" data-filter-auto-submit>
                                 <option value="">{{ __('tickets.index.filters.scope_all') }}</option>
                                 <option value="open" @selected($filters['scope'] === 'open')>{{ __('tickets.index.filters.scope_open') }}</option>
+                                <option value="active" @selected($filters['scope'] === 'active')>{{ __('tickets.index.filters.scope_active') }}</option>
                                 <option value="finished" @selected($filters['scope'] === 'finished')>{{ __('tickets.index.filters.scope_finished') }}</option>
                             </select>
                         </div>

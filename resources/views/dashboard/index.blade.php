@@ -976,7 +976,7 @@
                 <div class="dashboard-metrics" aria-label="{{ __('dashboard.summary.label') }}">
                     @foreach ([
                         'new_unassigned_tickets' => ['tone' => 'blue', 'icon' => 'inbox', 'href' => route('tickets.index', ['status' => 'new', 'relation' => 'unassigned'])],
-                        'my_assigned_tickets' => ['tone' => 'green', 'icon' => 'user', 'href' => route('tickets.index', ['scope' => 'open', 'relation' => 'assigned'])],
+                        'my_assigned_tickets' => ['tone' => 'green', 'icon' => 'user', 'href' => route('tickets.index', ['scope' => 'active', 'relation' => 'assigned'])],
                         'due_today' => ['tone' => 'red', 'icon' => 'calendar', 'href' => route('tickets.index', ['scope' => 'open', 'relation' => 'assigned', 'due' => 'due_today'])],
                         'due_soon' => ['tone' => 'amber', 'icon' => 'clock', 'href' => route('tickets.index', ['scope' => 'open', 'relation' => 'assigned', 'due' => 'due_soon'])],
                         'waiting_for_user' => ['tone' => 'violet', 'icon' => 'users', 'href' => route('tickets.index', ['status' => 'waiting_user'])],

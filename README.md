@@ -115,6 +115,7 @@ The most important configuration areas are:
 - `HELPDESK_BRAND_LOGO_PATH`, `HELPDESK_BRAND_FALLBACK_TEXT`, and `HELPDESK_BRAND_LOGO_MODE` for optional deployed header branding. Do not commit real internal logos.
 - `HELPDESK_RESOLVED_AUTO_CLOSE_DAYS` for automatic closing of resolved tickets.
 - `HELPDESK_EXPECTED_RESOLUTION_*` for priority-based expected resolution defaults and due-soon / overdue assignee reminders.
+- `HELPDESK_TICKETS_PER_PAGE` for the number of tickets shown on one ticket list page.
 - `HELPDESK_ATTACHMENT_*` for attachment limits and storage path.
 - `APP_LOCALE` and `APP_FALLBACK_LOCALE` for the default UI language.
 

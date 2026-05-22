@@ -381,7 +381,7 @@ class DashboardTest extends TestCase
             ->assertSeeText(__('dashboard.admin.heading'))
             ->assertSeeText(__('dashboard.current.heading'))
             ->assertSeeText(__('dashboard.summary.new_unassigned_tickets'))
-            ->assertSee(e(route('tickets.index', ['scope' => 'open', 'relation' => 'assigned'])), false);
+            ->assertSee(e(route('tickets.index', ['scope' => 'active', 'relation' => 'assigned'])), false);
     }
 
     public function test_solver_dashboard_shows_assigned_open_tickets_without_expected_resolution(): void

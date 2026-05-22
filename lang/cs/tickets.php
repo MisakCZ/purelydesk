@@ -53,6 +53,7 @@ return [
             'relation_unassigned' => 'Nepřiřazené',
             'scope_all' => 'Všechny',
             'scope_open' => 'Otevřené',
+            'scope_active' => 'Aktivní',
             'scope_finished' => 'Ukončené',
             'archive_active' => 'Aktivní',
             'archive_archived' => 'Archivované',

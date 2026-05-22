@@ -137,7 +137,7 @@ class TicketActivityTest extends TestCase
         $this->assertSame(0, $this->activities()->unreadTicketCountForUser($requester));
     }
 
-    public function test_header_count_counts_tickets_not_individual_activities(): void
+    public function test_header_count_counts_individual_unread_activities(): void
     {
         $requester = $this->createUser($this->userRole);
         $assignee = $this->createUser($this->solverRole);
@@ -157,7 +157,7 @@ class TicketActivityTest extends TestCase
             ->get(route('dashboard'))
             ->assertOk()
             ->assertSee('activity-inbox-count', false)
-            ->assertSee('>1</span>', false);
+            ->assertSee('>2</span>', false);
     }
 
     public function test_mark_all_read_marks_only_visible_activities(): void

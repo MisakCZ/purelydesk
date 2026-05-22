@@ -69,7 +69,7 @@ class TicketController extends Controller
             $this->applyTicketFilters($this->ticketIndexQuery($actor, $filters['archive']), $filters, $actor),
             $filters,
         )
-            ->paginate(15)
+            ->paginate($this->ticketIndexPerPage())
             ->appends($this->nonDefaultTicketIndexQuery($filters));
 
         $tickets->getCollection()->transform(function (Ticket $ticket) use ($actor, $canUseInlineListEditing) {
@@ -460,6 +460,11 @@ class TicketController extends Controller
         );
         $this->ticketWatcherService()->syncAutomaticParticipants($ticket);
         $this->ticketNotificationService()->notify($ticket, 'created', $actor, excludeActor: false);
+        $this->storeTicketIndexFilters(
+            $request,
+            $actor,
+            $this->removeUnauthorizedArchiveFilter($this->defaultTicketFilters(), $actor),
+        );
 
         return redirect()
             ->route('tickets.index')
@@ -917,6 +922,9 @@ class TicketController extends Controller
             ->when($filters['scope'] === 'open', function (Builder $query): void {
                 $query->whereDoesntHave('status', fn (Builder $query) => $this->whereStatusIdentifiers($query, ['closed', 'cancelled']));
             })
+            ->when($filters['scope'] === 'active', function (Builder $query): void {
+                $this->whereActiveTicketStatus($query);
+            })
             ->when($filters['scope'] === 'finished', function (Builder $query): void {
                 $query->whereHas('status', fn (Builder $query) => $this->whereStatusIdentifiers($query, ['closed', 'cancelled']));
             })
@@ -1017,6 +1025,19 @@ class TicketController extends Controller
         if (Schema::hasColumn('ticket_statuses', 'code')) {
             $query->orWhereIn('code', $identifiers);
         }
+    }
+
+    private function whereActiveTicketStatus(Builder $query): void
+    {
+        $query->whereDoesntHave('status', function (Builder $query): void {
+            $query->where(function (Builder $query): void {
+                $this->whereStatusIdentifiers($query, ['resolved', 'closed', 'cancelled']);
+            });
+
+            if (Schema::hasColumn('ticket_statuses', 'is_closed')) {
+                $query->orWhere('is_closed', true);
+            }
+        });
     }
 
     private function applyTicketSorting(Builder $query, array $filters): Builder
@@ -1167,6 +1188,17 @@ class TicketController extends Controller
         ];
     }
 
+    private function ticketIndexPerPage(): int
+    {
+        $perPage = (int) config('helpdesk.tickets.per_page', 15);
+
+        if ($perPage < 1) {
+            return 15;
+        }
+
+        return min($perPage, 100);
+    }
+
     private function normalizeTicketFilters(array $filters): array
     {
         $sort = (string) ($filters['sort'] ?? self::DEFAULT_INDEX_SORT);
@@ -1182,7 +1214,7 @@ class TicketController extends Controller
             'priority' => (string) ($filters['priority'] ?? ''),
             'category' => (string) ($filters['category'] ?? ''),
             'relation' => in_array($relation, ['requester', 'assigned', 'watched', 'unassigned'], true) ? $relation : '',
-            'scope' => in_array($scope, ['open', 'finished'], true) ? $scope : '',
+            'scope' => in_array($scope, ['open', 'active', 'finished'], true) ? $scope : '',
             'due' => in_array($due, ['overdue_or_soon', 'overdue', 'due_soon', 'due_today', 'missing_expected_resolution'], true) ? $due : '',
             'watched' => (string) ($filters['watched'] ?? '') === '1' ? '1' : '',
             'archive' => $archive === 'archived' ? 'archived' : '',

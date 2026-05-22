@@ -73,6 +73,11 @@ class TicketActivityService
             ->count('ticket_activities.ticket_id');
     }
 
+    public function unreadActivityCountForUser(User $user): int
+    {
+        return (int) $this->unreadActivitiesQuery($user)->count();
+    }
+
     /**
      * @return Collection<int, TicketActivity>
      */

@@ -51,6 +51,12 @@ Upravte `.env` a nastavte alespoň:
 
 Zpracování příchozích odpovědí je volitelné a experimentální. Ponechte `HELPDESK_INBOUND_MAIL_ENABLED=false`, pokud výslovně netestujete doručení do Maildiru a routing reply adresy/domény.
 
+Hlavní seznam ticketů zobrazuje `HELPDESK_TICKETS_PER_PAGE` ticketů na stránku. Výchozí hodnota je `15`. Po změně této hodnoty v `.env` na instalaci s cachovanou konfigurací spusťte:
+
+```bash
+php artisan config:clear
+```
+
 ## Vygenerování aplikačního klíče
 
 ```bash

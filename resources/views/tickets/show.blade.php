@@ -1926,6 +1926,69 @@
                     @endif
                 </div>
 
+                @if ($canCommentPublic)
+                    <form
+                        id="comment-editor"
+                        class="comment-form"
+                        data-editor-panel
+                        method="post"
+                        action="{{ route('tickets.comments.store', $ticket) }}"
+                        enctype="multipart/form-data"
+                        hidden
+                    >
+                        @csrf
+
+                        <div class="comment-form-head">
+                            <h3>{{ __('tickets.show.comments.form_heading') }}</h3>
+                            <p>{{ __('tickets.show.comments.form_subheading') }}</p>
+                        </div>
+
+                        @if ($commentErrors->any())
+                            <ul class="field-error-list">
+                                @foreach ($commentErrors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        @endif
+
+                        <div>
+                            <textarea class="textarea" name="body" required>{{ $replyParentId === '' ? old('body') : '' }}</textarea>
+                            @if ($commentErrors->has('body'))
+                                <div class="field-error">{{ $commentErrors->first('body') }}</div>
+                            @endif
+                        </div>
+
+                        <div>
+                            @include('tickets._attachment_input', [
+                                'id' => 'comment-attachments',
+                                'errors' => $commentErrors,
+                                'showErrors' => $replyParentId === '',
+                            ])
+                        </div>
+
+                        <div class="comment-form-actions">
+                            <button class="button button-primary ticket-detail-action" type="submit">
+                                <span class="ticket-detail-action-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M5 12.5l4.2 4.2L19 6.8"></path>
+                                        <path d="M19 13v5a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h7"></path>
+                                    </svg>
+                                </span>
+                                <span>{{ __('tickets.show.comments.form_submit') }}</span>
+                            </button>
+                            <button class="button button-secondary ticket-detail-action" type="button" data-editor-cancel="comment-editor">
+                                <span class="ticket-detail-action-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M6 6l12 12"></path>
+                                        <path d="M18 6L6 18"></path>
+                                    </svg>
+                                </span>
+                                <span>{{ __('tickets.common.close') }}</span>
+                            </button>
+                        </div>
+                    </form>
+                @endif
+
                 @if ($publicCommentThreads->isEmpty())
                     <div class="comment-empty">{{ __('tickets.show.comments.empty') }}</div>
                 @else
@@ -2052,69 +2115,6 @@
                             </article>
                         @endforeach
                     </div>
-                @endif
-
-                @if ($canCommentPublic)
-                    <form
-                        id="comment-editor"
-                        class="comment-form"
-                        data-editor-panel
-                        method="post"
-                        action="{{ route('tickets.comments.store', $ticket) }}"
-                        enctype="multipart/form-data"
-                        hidden
-                    >
-                        @csrf
-
-                        <div class="comment-form-head">
-                            <h3>{{ __('tickets.show.comments.form_heading') }}</h3>
-                            <p>{{ __('tickets.show.comments.form_subheading') }}</p>
-                        </div>
-
-                        @if ($commentErrors->any())
-                            <ul class="field-error-list">
-                                @foreach ($commentErrors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
-                            </ul>
-                        @endif
-
-                        <div>
-                            <textarea class="textarea" name="body" required>{{ $replyParentId === '' ? old('body') : '' }}</textarea>
-                            @if ($commentErrors->has('body'))
-                                <div class="field-error">{{ $commentErrors->first('body') }}</div>
-                            @endif
-                        </div>
-
-                        <div>
-                            @include('tickets._attachment_input', [
-                                'id' => 'comment-attachments',
-                                'errors' => $commentErrors,
-                                'showErrors' => $replyParentId === '',
-                            ])
-                        </div>
-
-                        <div class="comment-form-actions">
-                            <button class="button button-primary ticket-detail-action" type="submit">
-                                <span class="ticket-detail-action-icon" aria-hidden="true">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M5 12.5l4.2 4.2L19 6.8"></path>
-                                        <path d="M19 13v5a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h7"></path>
-                                    </svg>
-                                </span>
-                                <span>{{ __('tickets.show.comments.form_submit') }}</span>
-                            </button>
-                            <button class="button button-secondary ticket-detail-action" type="button" data-editor-cancel="comment-editor">
-                                <span class="ticket-detail-action-icon" aria-hidden="true">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M6 6l12 12"></path>
-                                        <path d="M18 6L6 18"></path>
-                                    </svg>
-                                </span>
-                                <span>{{ __('tickets.common.close') }}</span>
-                            </button>
-                        </div>
-                    </form>
                 @endif
             </section>
 

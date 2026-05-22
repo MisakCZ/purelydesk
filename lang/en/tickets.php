@@ -53,6 +53,7 @@ return [
             'relation_unassigned' => 'Unassigned',
             'scope_all' => 'All',
             'scope_open' => 'Open',
+            'scope_active' => 'Active',
             'scope_finished' => 'Finished',
             'archive_active' => 'Active',
             'archive_archived' => 'Archived',

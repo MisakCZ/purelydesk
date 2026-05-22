@@ -115,6 +115,7 @@ Nejdůležitější oblasti konfigurace jsou:
 - `HELPDESK_BRAND_LOGO_PATH`, `HELPDESK_BRAND_FALLBACK_TEXT` a `HELPDESK_BRAND_LOGO_MODE` pro volitelný branding hlavičky. Skutečná interní loga necommitujte.
 - `HELPDESK_RESOLVED_AUTO_CLOSE_DAYS` pro automatické uzavírání vyřešených ticketů.
 - `HELPDESK_EXPECTED_RESOLUTION_*` pro výchozí očekávané termíny podle priority a připomínky řešiteli při blížícím se nebo překročeném termínu.
+- `HELPDESK_TICKETS_PER_PAGE` pro počet ticketů zobrazených na jedné stránce seznamu.
 - `HELPDESK_ATTACHMENT_*` pro limity příloh a storage cestu.
 - `APP_LOCALE` a `APP_FALLBACK_LOCALE` pro výchozí jazyk UI.
 

@@ -51,6 +51,12 @@ Edit `.env` and configure at least:
 
 Inbound reply processing is optional and experimental. Keep `HELPDESK_INBOUND_MAIL_ENABLED=false` unless you are explicitly testing Maildir delivery and reply routing.
 
+The main ticket list shows `HELPDESK_TICKETS_PER_PAGE` tickets per page. The default is `15`. After changing this value in `.env` on an installation with cached configuration, run:
+
+```bash
+php artisan config:clear
+```
+
 ## Generate the Application Key
 
 ```bash

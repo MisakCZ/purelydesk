@@ -41,7 +41,7 @@ class AppServiceProvider extends ServiceProvider
                 'currentLocale' => app()->getLocale(),
                 'supportedLocales' => $localeManager->supportedLocales(),
                 'unreadTicketActivityCount' => $currentUser !== null
-                    ? app(TicketActivityService::class)->unreadTicketCountForUser($currentUser)
+                    ? app(TicketActivityService::class)->unreadActivityCountForUser($currentUser)
                     : 0,
             ]);
         });

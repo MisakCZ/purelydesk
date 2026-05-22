@@ -1673,6 +1673,66 @@ class TicketVisibilityTest extends TestCase
             ->assertDontSeeText($openTicket->subject);
     }
 
+    public function test_ticket_index_active_scope_filter_excludes_resolved_and_closed_tickets(): void
+    {
+        $admin = $this->createUserWithRole($this->adminRole);
+        $assignedStatus = TicketStatus::query()->create([
+            'name' => 'Assigned',
+            'slug' => 'assigned',
+            'sort_order' => 2,
+        ]);
+        $resolvedStatus = TicketStatus::query()->create([
+            'name' => 'Resolved',
+            'slug' => 'resolved',
+            'sort_order' => 8,
+        ]);
+        $closedStatus = TicketStatus::query()->create([
+            'name' => 'Closed',
+            'slug' => 'closed',
+            'sort_order' => 9,
+            'is_closed' => true,
+        ]);
+        $activeTicket = $this->createTicket([
+            'subject' => 'Active status filtered ticket',
+            'status' => $assignedStatus,
+        ]);
+        $resolvedTicket = $this->createTicket([
+            'subject' => 'Resolved status filtered ticket',
+            'status' => $resolvedStatus,
+        ]);
+        $closedTicket = $this->createTicket([
+            'subject' => 'Closed status filtered ticket',
+            'status' => $closedStatus,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('tickets.index', ['scope' => 'active']))
+            ->assertOk()
+            ->assertSeeText($activeTicket->subject)
+            ->assertDontSeeText($resolvedTicket->subject)
+            ->assertDontSeeText($closedTicket->subject);
+    }
+
+    public function test_ticket_index_uses_configured_page_size(): void
+    {
+        config(['helpdesk.tickets.per_page' => 2]);
+
+        $admin = $this->createUserWithRole($this->adminRole);
+
+        $this->createTicket(['subject' => 'Configured page size ticket A']);
+        $this->createTicket(['subject' => 'Configured page size ticket B']);
+        $this->createTicket(['subject' => 'Configured page size ticket C']);
+
+        $this->actingAs($admin)
+            ->get(route('tickets.index'))
+            ->assertOk()
+            ->assertSeeText(__('tickets.index.pagination.meta', [
+                'from' => 1,
+                'to' => 2,
+                'total' => 3,
+            ]));
+    }
+
     public function test_removing_assignee_on_assigned_ticket_moves_status_to_new(): void
     {
         $requester = $this->createUserWithRole($this->userRole);
@@ -2463,6 +2523,26 @@ class TicketVisibilityTest extends TestCase
             ->assertOk()
             ->assertSeeText($matchingTicket->subject)
             ->assertDontSeeText($nonMatchingTicket->subject);
+    }
+
+    public function test_creating_ticket_resets_persisted_list_filters_so_new_ticket_is_visible(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+
+        $this->actingAs($requester)
+            ->get(route('tickets.index', ['search' => 'previous-filter']))
+            ->assertOk();
+
+        $this->post(route('tickets.store'), [
+            'subject' => 'Freshly created visible ticket',
+            'description' => 'This ticket should be visible after creation.',
+            'priority_id' => $this->defaultPriority->id,
+            'category_id' => $this->defaultCategory->id,
+        ])->assertRedirect(route('tickets.index'));
+
+        $this->get(route('tickets.index'))
+            ->assertOk()
+            ->assertSeeText('Freshly created visible ticket');
     }
 
     public function test_new_tickets_use_yearly_ticket_number_sequence(): void

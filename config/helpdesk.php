@@ -96,6 +96,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Helpdesk Ticket List
+    |--------------------------------------------------------------------------
+    |
+    | Number of tickets displayed on one page in the main ticket list. The
+    | controller clamps the value to a safe range before using it.
+    |
+    */
+    'tickets' => [
+        'per_page' => (int) env('HELPDESK_TICKETS_PER_PAGE', 15),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Helpdesk Notifications
     |--------------------------------------------------------------------------
     |

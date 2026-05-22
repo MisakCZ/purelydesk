@@ -289,7 +289,8 @@ class DashboardDataService
     {
         return $this->baseTicketQuery($user)
             ->where('assignee_id', $user->id)
-            ->tap(fn (Builder $query) => $this->whereNotFinal($query));
+            ->tap(fn (Builder $query) => $this->whereNotFinal($query))
+            ->tap(fn (Builder $query) => $this->whereStatusNotIn($query, ['resolved']));
     }
 
     private function waitingForUserQuery(User $user): Builder
