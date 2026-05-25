@@ -168,7 +168,8 @@ class TicketActivityService
     public function markAllVisibleRead(User $user): int
     {
         $latestByTicket = $this->unreadActivitiesQuery($user)
-            ->selectRaw('ticket_activities.ticket_id, max(ticket_activities.id) as last_activity_id')
+            ->select('ticket_activities.ticket_id')
+            ->selectRaw('max(ticket_activities.id) as last_activity_id')
             ->groupBy('ticket_activities.ticket_id')
             ->get();
 
