@@ -9,10 +9,9 @@ return [
     'login' => [
         'page_title' => 'Přihlášení',
         'title' => 'Přihlášení do helpdesku',
-        'subtitle' => 'Použijte své běžné LDAP přihlašovací údaje.',
+        'subtitle' => 'Použijte své běžné síťové přihlašovací údaje.',
         'username' => 'Uživatelské jméno',
         'password' => 'Heslo',
-        'remember' => 'Zůstat přihlášen',
         'submit' => 'Přihlásit',
         'demo' => [
             'title' => 'Demo přihlášení je zapnuté pro lokální vývoj.',
