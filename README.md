@@ -110,6 +110,7 @@ The most important configuration areas are:
 - `DB_*` for MariaDB/MySQL connection settings.
 - `LDAP_*` for LDAP login and role mapping.
 - `HELPDESK_DEMO_LOGIN_ENABLED` for explicit local-only demo login without LDAP.
+- `HELPDESK_REMEMBER_LOGIN_ENABLED` and `HELPDESK_REMEMBER_LOGIN_DEFAULT` for optional persistent browser login using Laravel remember-me cookies.
 - `MAIL_*` and `HELPDESK_MAIL_NOTIFICATIONS` for outgoing notifications.
 - `HELPDESK_INBOUND_*` for optional experimental inbound reply processing through Maildir.
 - `HELPDESK_BRAND_LOGO_PATH`, `HELPDESK_BRAND_FALLBACK_TEXT`, and `HELPDESK_BRAND_LOGO_MODE` for optional deployed header branding. Do not commit real internal logos.

@@ -64,6 +64,8 @@ return [
     */
     'auth' => [
         'allow_temporary_user_fallback' => env('HELPDESK_ALLOW_TEMPORARY_USER_FALLBACK', false),
+        'remember_login_enabled' => env('HELPDESK_REMEMBER_LOGIN_ENABLED', true),
+        'remember_login_default' => env('HELPDESK_REMEMBER_LOGIN_DEFAULT', false),
     ],
 
     /*

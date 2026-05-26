@@ -21,6 +21,22 @@
             gap: 1rem;
         }
 
+        .login-checkbox {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            color: var(--muted);
+            font-size: 0.9rem;
+            font-weight: 650;
+            line-height: 1.35;
+        }
+
+        .login-checkbox input {
+            width: 1rem;
+            height: 1rem;
+            accent-color: var(--primary);
+        }
+
         .demo-login-note {
             margin-bottom: 1rem;
             padding: 0.75rem;
@@ -104,6 +120,19 @@
                             required
                         >
                     </div>
+
+                    @if ($rememberLoginEnabled ?? false)
+                        <label class="login-checkbox" for="remember">
+                            <input
+                                id="remember"
+                                type="checkbox"
+                                name="remember"
+                                value="1"
+                                @checked(old('remember', $rememberLoginDefault ?? false))
+                            >
+                            <span>{{ __('auth.login.remember') }}</span>
+                        </label>
+                    @endif
 
                     <div class="form-actions">
                         <button class="button button-primary app-action" type="submit">

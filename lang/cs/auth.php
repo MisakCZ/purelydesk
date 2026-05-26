@@ -12,6 +12,7 @@ return [
         'subtitle' => 'Použijte své běžné LDAP přihlašovací údaje.',
         'username' => 'Uživatelské jméno',
         'password' => 'Heslo',
+        'remember' => 'Zůstat přihlášen',
         'submit' => 'Přihlásit',
         'demo' => [
             'title' => 'Demo přihlášení je zapnuté pro lokální vývoj.',

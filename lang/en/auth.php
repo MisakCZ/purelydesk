@@ -12,6 +12,7 @@ return [
         'subtitle' => 'Use your standard LDAP credentials.',
         'username' => 'Username',
         'password' => 'Password',
+        'remember' => 'Stay signed in',
         'submit' => 'Sign in',
         'demo' => [
             'title' => 'Demo login is enabled for local development.',

@@ -57,6 +57,8 @@ The main ticket list shows `HELPDESK_TICKETS_PER_PAGE` tickets per page. The def
 php artisan config:clear
 ```
 
+Persistent browser login is optional. When `HELPDESK_REMEMBER_LOGIN_ENABLED=true`, the login form can show a "Stay signed in" checkbox backed by Laravel's standard remember-me cookie. `HELPDESK_REMEMBER_LOGIN_DEFAULT=false` keeps the checkbox unchecked by default. Remembered users are still loaded from the local synchronized `users` table and inactive users are blocked by the application middleware.
+
 ## Generate the Application Key
 
 ```bash

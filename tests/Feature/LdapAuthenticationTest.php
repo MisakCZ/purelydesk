@@ -10,6 +10,7 @@ use App\Services\Ldap\LdapUserData;
 use App\Services\Ldap\LdapUserSynchronizer;
 use Database\Seeders\DemoUserSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Auth;
 use Tests\TestCase;
 
 class LdapAuthenticationTest extends TestCase
@@ -88,6 +89,139 @@ class LdapAuthenticationTest extends TestCase
             ->assertRedirect(route('dashboard'));
 
         $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_login_without_remember_me_does_not_queue_recaller_cookie(): void
+    {
+        config([
+            'helpdesk.ldap.enabled' => true,
+            'helpdesk.auth.remember_login_enabled' => true,
+        ]);
+
+        $user = User::query()->create([
+            'name' => 'LDAP User',
+            'email' => 'ldap@example.com',
+            'password' => 'not-used-for-ldap',
+            'auth_source' => 'ldap',
+            'is_active' => true,
+        ]);
+
+        $this->mock(LdapAuthenticator::class, function ($mock) use ($user): void {
+            $mock->shouldReceive('authenticate')
+                ->once()
+                ->with('ldapuser', 'secret')
+                ->andReturn($user);
+        });
+
+        $this->post(route('login.store'), [
+            'username' => 'ldapuser',
+            'password' => 'secret',
+        ])
+            ->assertRedirect(route('dashboard'))
+            ->assertCookieMissing(Auth::guard()->getRecallerName());
+    }
+
+    public function test_login_with_remember_me_queues_recaller_cookie(): void
+    {
+        config([
+            'helpdesk.ldap.enabled' => true,
+            'helpdesk.auth.remember_login_enabled' => true,
+        ]);
+
+        $user = User::query()->create([
+            'name' => 'LDAP User',
+            'email' => 'ldap@example.com',
+            'password' => 'not-used-for-ldap',
+            'auth_source' => 'ldap',
+            'is_active' => true,
+        ]);
+
+        $this->mock(LdapAuthenticator::class, function ($mock) use ($user): void {
+            $mock->shouldReceive('authenticate')
+                ->once()
+                ->with('ldapuser', 'secret')
+                ->andReturn($user);
+        });
+
+        $this->post(route('login.store'), [
+            'username' => 'ldapuser',
+            'password' => 'secret',
+            'remember' => '1',
+        ])
+            ->assertRedirect(route('dashboard'))
+            ->assertCookie(Auth::guard()->getRecallerName());
+    }
+
+    public function test_disabled_remember_feature_ignores_posted_remember_value(): void
+    {
+        config([
+            'helpdesk.ldap.enabled' => true,
+            'helpdesk.auth.remember_login_enabled' => false,
+        ]);
+
+        $user = User::query()->create([
+            'name' => 'LDAP User',
+            'email' => 'ldap@example.com',
+            'password' => 'not-used-for-ldap',
+            'auth_source' => 'ldap',
+            'is_active' => true,
+        ]);
+
+        $this->mock(LdapAuthenticator::class, function ($mock) use ($user): void {
+            $mock->shouldReceive('authenticate')
+                ->once()
+                ->with('ldapuser', 'secret')
+                ->andReturn($user);
+        });
+
+        $this->get(route('login'))
+            ->assertOk()
+            ->assertDontSeeText(__('auth.login.remember'));
+
+        $this->post(route('login.store'), [
+            'username' => 'ldapuser',
+            'password' => 'secret',
+            'remember' => '1',
+        ])
+            ->assertRedirect(route('dashboard'))
+            ->assertCookieMissing(Auth::guard()->getRecallerName());
+    }
+
+    public function test_logout_invalidates_authenticated_session(): void
+    {
+        $user = User::query()->create([
+            'name' => 'LDAP User',
+            'email' => 'ldap@example.com',
+            'password' => 'not-used-for-ldap',
+            'auth_source' => 'ldap',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('logout'))
+            ->assertRedirect(route('login'));
+
+        $this->assertGuest();
+
+        $this->get(route('dashboard'))
+            ->assertRedirect(route('login'));
+    }
+
+    public function test_inactive_local_user_cannot_continue_using_the_app(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Inactive User',
+            'email' => 'inactive@example.com',
+            'password' => 'not-used',
+            'auth_source' => 'ldap',
+            'is_active' => false,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertRedirect(route('login'));
+
+        $this->assertGuest();
     }
 
     public function test_local_demo_login_can_authenticate_by_email_when_safe_and_enabled(): void

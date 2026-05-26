@@ -18,6 +18,8 @@ class LoginController extends Controller
     {
         return view('auth.login', [
             'demoLoginEnabled' => $demoAuthenticator->enabled(),
+            'rememberLoginEnabled' => (bool) config('helpdesk.auth.remember_login_enabled', true),
+            'rememberLoginDefault' => (bool) config('helpdesk.auth.remember_login_default', false),
         ]);
     }
 
@@ -29,6 +31,7 @@ class LoginController extends Controller
         $validated = $request->validate([
             'username' => ['required', 'string', 'max:255', 'regex:/^[^\x00\(\)\*\\\\]+$/u'],
             'password' => ['required', 'string'],
+            'remember' => ['nullable', 'boolean'],
         ]);
 
         if (config('helpdesk.ldap.enabled', false)) {
@@ -49,7 +52,10 @@ class LoginController extends Controller
             }
         }
 
-        Auth::login($user, $request->boolean('remember'));
+        $remember = (bool) config('helpdesk.auth.remember_login_enabled', true)
+            && $request->boolean('remember');
+
+        Auth::login($user, $remember);
         $request->session()->regenerate();
 
         return redirect()->intended(route('dashboard'));

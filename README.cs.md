@@ -110,6 +110,7 @@ Nejdůležitější oblasti konfigurace jsou:
 - `DB_*` pro připojení k MariaDB/MySQL.
 - `LDAP_*` pro LDAP přihlášení a mapování rolí.
 - `HELPDESK_DEMO_LOGIN_ENABLED` pro explicitní lokální demo přihlášení bez LDAPu.
+- `HELPDESK_REMEMBER_LOGIN_ENABLED` a `HELPDESK_REMEMBER_LOGIN_DEFAULT` pro volitelné trvalejší přihlášení v prohlížeči pomocí Laravel remember-me cookies.
 - `MAIL_*` a `HELPDESK_MAIL_NOTIFICATIONS` pro odchozí notifikace.
 - `HELPDESK_INBOUND_*` pro volitelné experimentální zpracování příchozích odpovědí přes Maildir.
 - `HELPDESK_BRAND_LOGO_PATH`, `HELPDESK_BRAND_FALLBACK_TEXT` a `HELPDESK_BRAND_LOGO_MODE` pro volitelný branding hlavičky. Skutečná interní loga necommitujte.

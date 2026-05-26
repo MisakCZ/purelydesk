@@ -57,6 +57,8 @@ Hlavní seznam ticketů zobrazuje `HELPDESK_TICKETS_PER_PAGE` ticketů na strán
 php artisan config:clear
 ```
 
+Trvalejší přihlášení v prohlížeči je volitelné. Pokud je `HELPDESK_REMEMBER_LOGIN_ENABLED=true`, přihlašovací formulář může zobrazit volbu „Zůstat přihlášen“ postavenou na standardní Laravel remember-me cookie. `HELPDESK_REMEMBER_LOGIN_DEFAULT=false` nechává volbu ve výchozím stavu nezaškrtnutou. Zapamatovaní uživatelé se stále načítají z lokální synchronizované tabulky `users` a neaktivní uživatele blokuje aplikační middleware.
+
 ## Vygenerování aplikačního klíče
 
 ```bash
