@@ -2036,13 +2036,23 @@
                     const pageInterval = Math.max(30, Number(refreshRoot.dataset.refreshPageInterval || 180)) * 1000;
                     const notice = document.querySelector('[data-page-refresh-notice]');
                     const noticeAction = document.querySelector('[data-page-refresh-action]');
+                    const baseDocumentTitle = document.title;
                     let baselineUnreadCount = Number(refreshRoot.dataset.refreshUnreadCount || 0);
                     let baselineLatestActivityId = null;
                     let lastPageCheckAt = 0;
                     let noticeVisible = false;
 
+                    const setDocumentTitleCount = (count) => {
+                        const normalizedCount = Math.max(0, Number(count || 0));
+                        document.title = normalizedCount > 0
+                            ? `(${normalizedCount}) ${baseDocumentTitle}`
+                            : baseDocumentTitle;
+                    };
+
                     const setInboxCount = (count) => {
                         const normalizedCount = Math.max(0, Number(count || 0));
+
+                        setDocumentTitleCount(normalizedCount);
 
                         document.querySelectorAll('[data-activity-inbox-link]').forEach((link) => {
                             link.classList.toggle('has-unread', normalizedCount > 0);
