@@ -27,6 +27,7 @@ Route::middleware('helpdesk.auth')->group(function (): void {
 
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::get('/activities', [ActivityController::class, 'index'])->name('activities.index');
+    Route::get('/activities/poll', [ActivityController::class, 'poll'])->name('activities.poll');
     Route::post('/activities/mark-all-read', [ActivityController::class, 'markAllRead'])->name('activities.mark-all-read');
     Route::get('/tickets/create', [TicketController::class, 'create'])->name('tickets.create');
     Route::get('/tickets', [TicketController::class, 'index'])->name('tickets.index');

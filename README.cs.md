@@ -117,6 +117,7 @@ Nejdůležitější oblasti konfigurace jsou:
 - `HELPDESK_RESOLVED_AUTO_CLOSE_DAYS` pro automatické uzavírání vyřešených ticketů.
 - `HELPDESK_EXPECTED_RESOLUTION_*` pro výchozí očekávané termíny podle priority a připomínky řešiteli při blížícím se nebo překročeném termínu.
 - `HELPDESK_TICKETS_PER_PAGE` pro počet ticketů zobrazených na jedné stránce seznamu.
+- `HELPDESK_WEB_REFRESH_*` pro lehký browser polling indikátorů nepřečtených aktivit a výzev k obnovení stránky.
 - `HELPDESK_ATTACHMENT_*` pro limity příloh a storage cestu.
 - `APP_LOCALE` a `APP_FALLBACK_LOCALE` pro výchozí jazyk UI.
 

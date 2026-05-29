@@ -106,7 +106,7 @@ flowchart TD
 
 Outgoing e-mail notifications are normal functionality. Laravel sends notifications through the configured mail transport. Recipients are selected by event type, deduplicated, and filtered through current ticket permissions. Internal notes do not send regular ticket notifications.
 
-The web interface has a separate unread activity overview. It is not a realtime channel; it stores ticket activity records and per-user read state so users can see comments and ticket changes they have not opened yet. Counts are limited to tickets the user participates in as requester, assignee, or watcher and still pass current policy checks. Internal notes are counted only for users allowed to view internal notes.
+The web interface has a separate unread activity overview. It is not a realtime channel; it stores ticket activity records and per-user read state so users can see comments and ticket changes they have not opened yet. Counts are limited to tickets the user participates in as requester, assignee, or watcher and still pass current policy checks. Internal notes are counted only for users allowed to view internal notes. The browser can use lightweight polling to refresh the header activity indicator and show a manual refresh prompt on overview/detail pages when new visible activity appears.
 
 Inbound Maildir reply processing is experimental and under development. The intended first version only processes replies to existing ticket notifications and stores valid replies as public comments.
 

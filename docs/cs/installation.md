@@ -59,6 +59,8 @@ php artisan config:clear
 
 Trvalejší přihlášení v prohlížeči je volitelné. Pokud je `HELPDESK_REMEMBER_LOGIN_ENABLED=true`, přihlašovací formulář může zobrazit volbu „Zůstat přihlášen“ postavenou na standardní Laravel remember-me cookie. `HELPDESK_REMEMBER_LOGIN_DEFAULT=false` nechává volbu ve výchozím stavu nezaškrtnutou. Zapamatovaní uživatelé se stále načítají z lokální synchronizované tabulky `users` a neaktivní uživatele blokuje aplikační middleware.
 
+Webové UI může při přihlášeném uživateli pravidelně kontrolovat nepřečtené aktivity ticketů. `HELPDESK_WEB_REFRESH_ENABLED=true` zapíná lehký polling indikátoru aktivit v hlavičce. `HELPDESK_WEB_REFRESH_INTERVAL_SECONDS` určuje, jak často se obnovuje badge nepřečtených aktivit, a `HELPDESK_WEB_REFRESH_PAGE_CHECK_SECONDS` určuje, jak často přehledové/detailní stránky zjišťují, zda mají zobrazit ruční výzvu „Obnovit stránku“. Aplikace automaticky nereeloaduje formuláře s rozepsaným vstupem.
+
 ## Vygenerování aplikačního klíče
 
 ```bash

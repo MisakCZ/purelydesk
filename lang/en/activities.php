@@ -7,6 +7,10 @@ return [
     'header_label' => 'Activities',
     'header_unread_title' => 'Unread ticket activity',
     'header_empty_title' => 'No unread activity',
+    'refresh' => [
+        'message' => 'New visible ticket activity is available.',
+        'action' => 'Refresh page',
+    ],
     'badge' => [
         'new' => 'New',
         'new_count' => '{1} 1 new|[2,*] :count new',

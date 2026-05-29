@@ -59,6 +59,8 @@ php artisan config:clear
 
 Persistent browser login is optional. When `HELPDESK_REMEMBER_LOGIN_ENABLED=true`, the login form can show a "Stay signed in" checkbox backed by Laravel's standard remember-me cookie. `HELPDESK_REMEMBER_LOGIN_DEFAULT=false` keeps the checkbox unchecked by default. Remembered users are still loaded from the local synchronized `users` table and inactive users are blocked by the application middleware.
 
+The web UI can periodically poll for unread ticket activity while the user is signed in. `HELPDESK_WEB_REFRESH_ENABLED=true` enables lightweight polling for the header activity indicator. `HELPDESK_WEB_REFRESH_INTERVAL_SECONDS` controls how often the unread activity badge is refreshed, and `HELPDESK_WEB_REFRESH_PAGE_CHECK_SECONDS` controls how often overview/detail pages check whether they should show a manual "Refresh page" prompt. The application does not automatically reload forms with user input.
+
 ## Generate the Application Key
 
 ```bash

@@ -78,6 +78,39 @@ class TicketActivityService
         return (int) $this->unreadActivitiesQuery($user)->count();
     }
 
+    public function latestVisibleActivityIdForUser(User $user, ?Ticket $ticket = null): ?int
+    {
+        if ($ticket instanceof Ticket) {
+            if (! app(TicketPolicy::class)->view($user, $ticket)) {
+                return null;
+            }
+
+            $activityId = $this->visibleActivitiesForTicketQuery($user, $ticket)
+                ->latest('ticket_activities.id')
+                ->value('ticket_activities.id');
+
+            return $activityId !== null ? (int) $activityId : null;
+        }
+
+        $activityId = TicketActivity::query()
+            ->where(function (Builder $query) use ($user): void {
+                $query->whereIn('ticket_activities.ticket_id', $this->visibleParticipantTicketQuery($user));
+
+                if ($user->isAdmin() || $user->isSolver()) {
+                    $query->orWhere(function (Builder $query) use ($user): void {
+                        $query
+                            ->where('ticket_activities.type', TicketActivity::TYPE_INTERNAL_NOTE)
+                            ->whereIn('ticket_activities.ticket_id', $this->visibleInternalNoteTicketQuery($user));
+                    });
+                }
+            })
+            ->tap(fn (Builder $query) => $this->applyActivityVisibility($query, $user))
+            ->latest('ticket_activities.id')
+            ->value('ticket_activities.id');
+
+        return $activityId !== null ? (int) $activityId : null;
+    }
+
     /**
      * @return Collection<int, TicketActivity>
      */

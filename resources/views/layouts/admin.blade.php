@@ -969,6 +969,43 @@
                 overflow: hidden;
             }
 
+            .page-refresh-notice {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 0.85rem;
+                margin: 1rem 1rem 0;
+                padding: 0.7rem 0.82rem;
+                border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--line));
+                border-radius: 0.95rem;
+                background: color-mix(in srgb, var(--accent-soft) 48%, var(--panel));
+                color: var(--text);
+                font-size: 0.88rem;
+                font-weight: 650;
+                box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+            }
+
+            .page-refresh-notice button {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 2.05rem;
+                padding: 0.35rem 0.68rem;
+                border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--line));
+                border-radius: 999px;
+                background: var(--panel);
+                color: var(--accent);
+                cursor: pointer;
+                font: inherit;
+                font-size: 0.82rem;
+                font-weight: 760;
+                white-space: nowrap;
+            }
+
+            .page-refresh-notice button:hover {
+                background: color-mix(in srgb, var(--accent-soft) 70%, var(--panel));
+            }
+
             .site-footer {
                 margin-top: 1rem;
                 color: var(--muted);
@@ -1553,8 +1590,30 @@
             $footerCopyrightHtml = trim((string) config('helpdesk.footer.copyright_html', ''));
             $availableThemes = ['default', 'dark', 'pastel', 'contrast'];
             $userInitial = mb_strtoupper(mb_substr($currentUser?->loginName() ?? '?', 0, 1));
+            $webRefreshEnabled = auth()->check() && (bool) config('helpdesk.web_refresh.enabled', true);
+            $webRefreshScope = 'none';
+            $webRefreshTicketId = null;
+
+            if ($webRefreshEnabled && request()->routeIs('dashboard', 'tickets.index', 'activities.*')) {
+                $webRefreshScope = 'overview';
+            } elseif ($webRefreshEnabled && request()->routeIs('tickets.show')) {
+                $webRefreshScope = 'ticket';
+                $routeTicket = request()->route('ticket');
+                $webRefreshTicketId = is_object($routeTicket) && isset($routeTicket->id) ? (int) $routeTicket->id : null;
+            }
         @endphp
-        <div class="shell">
+        <div
+            class="shell"
+            @if ($webRefreshEnabled)
+                data-helpdesk-refresh="true"
+                data-refresh-endpoint="{{ route('activities.poll') }}"
+                data-refresh-scope="{{ $webRefreshScope }}"
+                data-refresh-ticket-id="{{ $webRefreshTicketId }}"
+                data-refresh-activity-interval="{{ (int) config('helpdesk.web_refresh.activity_interval_seconds', 60) }}"
+                data-refresh-page-interval="{{ (int) config('helpdesk.web_refresh.page_check_seconds', 180) }}"
+                data-refresh-unread-count="{{ (int) ($unreadTicketActivityCount ?? 0) }}"
+            @endif
+        >
             <header class="topbar">
                 <a class="brand {{ $brandLogoPath !== '' && $brandLogoMode === 'wide' ? 'brand--wide' : '' }}" href="{{ route('dashboard') }}" aria-label="{{ config('app.name', 'Helpdesk') }}">
                     <div class="brand-media">
@@ -1693,17 +1752,20 @@
 
                     <?php if (auth()->check()): ?>
                         <a
+                            data-activity-inbox-link
                             class="activity-inbox-link {{ $hasUnreadTicketActivity ? 'has-unread' : '' }} {{ request()->routeIs('activities.*') ? 'active' : '' }}"
                             href="{{ route('activities.index') }}"
                             aria-label="{{ __('activities.header_label') }}"
                             title="{{ $hasUnreadTicketActivity ? __('activities.header_unread_title') : __('activities.header_empty_title') }}"
+                            data-unread-title="{{ __('activities.header_unread_title') }}"
+                            data-empty-title="{{ __('activities.header_empty_title') }}"
                         >
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <path d="M4 5h16v14H4z"></path>
                                 <path d="m4 7 8 6 8-6"></path>
                             </svg>
                             @if ($hasUnreadTicketActivity)
-                                <span class="activity-inbox-count">{{ $unreadTicketActivityCount }}</span>
+                                <span class="activity-inbox-count" data-activity-inbox-count>{{ $unreadTicketActivityCount }}</span>
                             @endif
                         </a>
                         <span class="session-user">
@@ -1729,17 +1791,20 @@
                 <div class="mobile-topbar-actions">
                     <?php if (auth()->check()): ?>
                         <a
+                            data-activity-inbox-link
                             class="activity-inbox-link {{ $hasUnreadTicketActivity ? 'has-unread' : '' }} {{ request()->routeIs('activities.*') ? 'active' : '' }}"
                             href="{{ route('activities.index') }}"
                             aria-label="{{ __('activities.header_label') }}"
                             title="{{ $hasUnreadTicketActivity ? __('activities.header_unread_title') : __('activities.header_empty_title') }}"
+                            data-unread-title="{{ __('activities.header_unread_title') }}"
+                            data-empty-title="{{ __('activities.header_empty_title') }}"
                         >
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <path d="M4 5h16v14H4z"></path>
                                 <path d="m4 7 8 6 8-6"></path>
                             </svg>
                             @if ($hasUnreadTicketActivity)
-                                <span class="activity-inbox-count">{{ $unreadTicketActivityCount }}</span>
+                                <span class="activity-inbox-count" data-activity-inbox-count>{{ $unreadTicketActivityCount }}</span>
                             @endif
                         </a>
                     <?php endif; ?>
@@ -1759,7 +1824,7 @@
                                     <a class="mobile-nav-link {{ request()->routeIs('activities.*') ? 'active' : '' }}" href="{{ route('activities.index') }}">
                                         {{ __('activities.header_label') }}
                                         @if ($hasUnreadTicketActivity)
-                                            <span class="badge badge-tone-blue">{{ $unreadTicketActivityCount }}</span>
+                                            <span class="badge badge-tone-blue" data-activity-menu-count>{{ $unreadTicketActivityCount }}</span>
                                         @endif
                                     </a>
                                     <a class="mobile-nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
@@ -1826,6 +1891,12 @@
             </header>
 
             <main class="page-card">
+                @if ($webRefreshEnabled && $webRefreshScope !== 'none')
+                    <div class="page-refresh-notice" data-page-refresh-notice role="status" hidden>
+                        <span>{{ __('activities.refresh.message') }}</span>
+                        <button type="button" data-page-refresh-action>{{ __('activities.refresh.action') }}</button>
+                    </div>
+                @endif
                 @yield('content')
             </main>
 
@@ -1951,6 +2022,140 @@
                     document.addEventListener('keydown', (event) => {
                         if (event.key === 'Escape') {
                             mobileNav.removeAttribute('open');
+                        }
+                    });
+                }
+
+                const refreshRoot = document.querySelector('[data-helpdesk-refresh="true"]');
+
+                if (refreshRoot) {
+                    const endpoint = refreshRoot.dataset.refreshEndpoint;
+                    const refreshScope = refreshRoot.dataset.refreshScope || 'none';
+                    const ticketId = Number(refreshRoot.dataset.refreshTicketId || 0);
+                    const activityInterval = Math.max(15, Number(refreshRoot.dataset.refreshActivityInterval || 60)) * 1000;
+                    const pageInterval = Math.max(30, Number(refreshRoot.dataset.refreshPageInterval || 180)) * 1000;
+                    const notice = document.querySelector('[data-page-refresh-notice]');
+                    const noticeAction = document.querySelector('[data-page-refresh-action]');
+                    let baselineUnreadCount = Number(refreshRoot.dataset.refreshUnreadCount || 0);
+                    let baselineLatestActivityId = null;
+                    let lastPageCheckAt = 0;
+                    let noticeVisible = false;
+
+                    const setInboxCount = (count) => {
+                        const normalizedCount = Math.max(0, Number(count || 0));
+
+                        document.querySelectorAll('[data-activity-inbox-link]').forEach((link) => {
+                            link.classList.toggle('has-unread', normalizedCount > 0);
+                            link.setAttribute('title', normalizedCount > 0 ? link.dataset.unreadTitle : link.dataset.emptyTitle);
+
+                            let badge = link.querySelector('[data-activity-inbox-count]');
+
+                            if (normalizedCount > 0) {
+                                if (! badge) {
+                                    badge = document.createElement('span');
+                                    badge.className = 'activity-inbox-count';
+                                    badge.dataset.activityInboxCount = '';
+                                    link.appendChild(badge);
+                                }
+
+                                badge.textContent = String(normalizedCount);
+                            } else if (badge) {
+                                badge.remove();
+                            }
+                        });
+
+                        document.querySelectorAll('.mobile-nav-link[href$="/activities"]').forEach((link) => {
+                            let badge = link.querySelector('[data-activity-menu-count]');
+
+                            if (normalizedCount > 0) {
+                                if (! badge) {
+                                    badge = document.createElement('span');
+                                    badge.className = 'badge badge-tone-blue';
+                                    badge.dataset.activityMenuCount = '';
+                                    link.appendChild(badge);
+                                }
+
+                                badge.textContent = String(normalizedCount);
+                            } else if (badge) {
+                                badge.remove();
+                            }
+                        });
+                    };
+
+                    const showRefreshNotice = () => {
+                        if (! notice || noticeVisible || refreshScope === 'none') {
+                            return;
+                        }
+
+                        notice.hidden = false;
+                        noticeVisible = true;
+                    };
+
+                    noticeAction?.addEventListener('click', () => {
+                        window.location.reload();
+                    });
+
+                    const pollActivities = async (checkPage = false) => {
+                        if (! endpoint || document.hidden) {
+                            return;
+                        }
+
+                        const url = new URL(endpoint, window.location.origin);
+
+                        if (refreshScope === 'ticket' && ticketId > 0) {
+                            url.searchParams.set('ticket_id', String(ticketId));
+                        }
+
+                        const response = await fetch(url.toString(), {
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
+                            },
+                            credentials: 'same-origin',
+                        });
+
+                        if (! response.ok) {
+                            return;
+                        }
+
+                        const payload = await response.json();
+                        const unreadCount = Number(payload.unread_count || 0);
+                        const latestActivityId = payload.latest_activity_id === null
+                            ? null
+                            : Number(payload.latest_activity_id || 0);
+
+                        setInboxCount(unreadCount);
+
+                        if (baselineLatestActivityId === null) {
+                            baselineLatestActivityId = latestActivityId;
+                            baselineUnreadCount = unreadCount;
+                            return;
+                        }
+
+                        if (! checkPage || noticeVisible || refreshScope === 'none') {
+                            return;
+                        }
+
+                        if ((latestActivityId !== null && latestActivityId > baselineLatestActivityId) || unreadCount > baselineUnreadCount) {
+                            showRefreshNotice();
+                        }
+                    };
+
+                    pollActivities(false).catch(() => {});
+
+                    window.setInterval(() => {
+                        const shouldCheckPage = Date.now() - lastPageCheckAt >= pageInterval;
+
+                        if (shouldCheckPage) {
+                            lastPageCheckAt = Date.now();
+                        }
+
+                        pollActivities(shouldCheckPage).catch(() => {});
+                    }, activityInterval);
+
+                    document.addEventListener('visibilitychange', () => {
+                        if (! document.hidden) {
+                            pollActivities(true).catch(() => {});
                         }
                     });
                 }

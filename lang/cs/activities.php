@@ -7,6 +7,10 @@ return [
     'header_label' => 'Aktivity',
     'header_unread_title' => 'Nepřečtené aktivity ticketů',
     'header_empty_title' => 'Žádné nepřečtené aktivity',
+    'refresh' => [
+        'message' => 'Jsou dostupné nové viditelné aktivity ticketů.',
+        'action' => 'Obnovit stránku',
+    ],
     'badge' => [
         'new' => 'Nové',
         'new_count' => '{1} 1 nové|[2,4] :count nové|[5,*] :count nových',

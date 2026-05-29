@@ -106,7 +106,7 @@ flowchart TD
 
 Odchozí e-mailové notifikace jsou běžná funkcionalita. Laravel odesílá notifikace přes nastavený mail transport. Příjemci se vybírají podle typu události, deduplikují se a filtrují přes aktuální oprávnění ticketu. Interní poznámky neposílají běžné ticketové notifikace.
 
-Webové rozhraní má samostatný přehled nepřečtených aktivit. Nejde o realtime kanál; aplikace ukládá záznamy aktivit ticketů a per-user read state, aby uživatelé viděli komentáře a změny ticketů, které ještě neotevřeli. Počty jsou omezené na tickety, kde je uživatel zadavatel, řešitel nebo sledující a zároveň projde aktuálními policy kontrolami. Interní poznámky se počítají pouze uživatelům, kteří je smějí vidět.
+Webové rozhraní má samostatný přehled nepřečtených aktivit. Nejde o realtime kanál; aplikace ukládá záznamy aktivit ticketů a per-user read state, aby uživatelé viděli komentáře a změny ticketů, které ještě neotevřeli. Počty jsou omezené na tickety, kde je uživatel zadavatel, řešitel nebo sledující a zároveň projde aktuálními policy kontrolami. Interní poznámky se počítají pouze uživatelům, kteří je smějí vidět. Prohlížeč může používat lehký polling k aktualizaci indikátoru aktivit v hlavičce a k zobrazení ruční výzvy k obnovení přehledové/detailní stránky, pokud se objeví nová viditelná aktivita.
 
 Inbound Maildir reply processing je experimentální funkcionalita ve vývoji. Zamýšlená první verze zpracovává pouze odpovědi na existující ticket notifikace a ukládá platné odpovědi jako veřejné komentáře.
 

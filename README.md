@@ -117,6 +117,7 @@ The most important configuration areas are:
 - `HELPDESK_RESOLVED_AUTO_CLOSE_DAYS` for automatic closing of resolved tickets.
 - `HELPDESK_EXPECTED_RESOLUTION_*` for priority-based expected resolution defaults and due-soon / overdue assignee reminders.
 - `HELPDESK_TICKETS_PER_PAGE` for the number of tickets shown on one ticket list page.
+- `HELPDESK_WEB_REFRESH_*` for lightweight browser polling of unread activity indicators and page refresh prompts.
 - `HELPDESK_ATTACHMENT_*` for attachment limits and storage path.
 - `APP_LOCALE` and `APP_FALLBACK_LOCALE` for the default UI language.
 

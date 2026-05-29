@@ -210,6 +210,56 @@ class TicketActivityTest extends TestCase
             ->assertSee('>2</span>', false);
     }
 
+    public function test_activity_poll_returns_unread_count_and_latest_visible_activity(): void
+    {
+        $requester = $this->createUser($this->userRole);
+        $assignee = $this->createUser($this->solverRole);
+        $ticket = $this->createTicket(['requester' => $requester, 'assignee' => $assignee]);
+        $comment = TicketComment::query()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $assignee->id,
+            'visibility' => 'public',
+            'body' => 'Polling comment',
+        ]);
+        $activity = $this->activities()->recordPublicComment($ticket, $comment, $assignee);
+
+        $this->actingAs($requester)
+            ->getJson(route('activities.poll', ['ticket_id' => $ticket->id]))
+            ->assertOk()
+            ->assertJson([
+                'unread_count' => 1,
+                'latest_activity_id' => $activity->id,
+                'ticket_id' => $ticket->id,
+            ]);
+    }
+
+    public function test_activity_poll_does_not_expose_private_ticket_latest_activity_to_unauthorized_watcher(): void
+    {
+        $requester = $this->createUser($this->userRole);
+        $watcher = $this->createUser($this->userRole);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'visibility' => Ticket::VISIBILITY_PRIVATE,
+        ]);
+        $ticket->watchers()->attach($watcher->id);
+        $comment = TicketComment::query()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $requester->id,
+            'visibility' => 'public',
+            'body' => 'Private polling comment',
+        ]);
+        $this->activities()->recordPublicComment($ticket, $comment, $requester);
+
+        $this->actingAs($watcher)
+            ->getJson(route('activities.poll', ['ticket_id' => $ticket->id]))
+            ->assertOk()
+            ->assertJson([
+                'unread_count' => 0,
+                'latest_activity_id' => null,
+                'ticket_id' => null,
+            ]);
+    }
+
     public function test_mark_all_read_marks_only_visible_activities(): void
     {
         $viewer = $this->createUser($this->userRole);
