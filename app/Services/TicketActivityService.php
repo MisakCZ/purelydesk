@@ -14,6 +14,19 @@ use Illuminate\Support\Collection;
 
 class TicketActivityService
 {
+    public function recordTicketCreated(Ticket $ticket, ?User $actor): TicketActivity
+    {
+        return $this->createActivity($ticket, [
+            'actor_id' => $actor?->id,
+            'type' => TicketActivity::TYPE_TICKET_CREATED,
+            'visibility' => TicketActivity::VISIBILITY_PUBLIC,
+            'subject_type' => null,
+            'subject_id' => null,
+            'summary_key' => 'activities.summaries.ticket_created',
+            'meta' => [],
+        ]);
+    }
+
     public function recordPublicComment(Ticket $ticket, TicketComment $comment, ?User $actor): TicketActivity
     {
         return $this->createActivity($ticket, [
@@ -93,17 +106,7 @@ class TicketActivityService
         }
 
         $activityId = TicketActivity::query()
-            ->where(function (Builder $query) use ($user): void {
-                $query->whereIn('ticket_activities.ticket_id', $this->visibleParticipantTicketQuery($user));
-
-                if ($user->isAdmin() || $user->isSolver()) {
-                    $query->orWhere(function (Builder $query) use ($user): void {
-                        $query
-                            ->where('ticket_activities.type', TicketActivity::TYPE_INTERNAL_NOTE)
-                            ->whereIn('ticket_activities.ticket_id', $this->visibleInternalNoteTicketQuery($user));
-                    });
-                }
-            })
+            ->where(fn (Builder $query) => $this->applyReceivableActivityScope($query, $user))
             ->tap(fn (Builder $query) => $this->applyActivityVisibility($query, $user))
             ->latest('ticket_activities.id')
             ->value('ticket_activities.id');
@@ -252,17 +255,7 @@ class TicketActivityService
                     ->on('ticket_read_states.ticket_id', '=', 'ticket_activities.ticket_id')
                     ->where('ticket_read_states.user_id', '=', $user->id);
             })
-            ->where(function (Builder $query) use ($user): void {
-                $query->whereIn('ticket_activities.ticket_id', $this->visibleParticipantTicketQuery($user));
-
-                if ($user->isAdmin() || $user->isSolver()) {
-                    $query->orWhere(function (Builder $query) use ($user): void {
-                        $query
-                            ->where('ticket_activities.type', TicketActivity::TYPE_INTERNAL_NOTE)
-                            ->whereIn('ticket_activities.ticket_id', $this->visibleInternalNoteTicketQuery($user));
-                    });
-                }
-            })
+            ->where(fn (Builder $query) => $this->applyReceivableActivityScope($query, $user))
             ->where(function (Builder $query) use ($user): void {
                 $query
                     ->whereNull('ticket_activities.actor_id')
@@ -274,6 +267,31 @@ class TicketActivityService
                     ->orWhereColumn('ticket_activities.id', '>', 'ticket_read_states.last_read_activity_id');
             })
             ->tap(fn (Builder $query) => $this->applyActivityVisibility($query, $user));
+    }
+
+    private function applyReceivableActivityScope(Builder $query, User $user): void
+    {
+        $query->where(function (Builder $query) use ($user): void {
+            $query
+                ->where('ticket_activities.type', '!=', TicketActivity::TYPE_TICKET_CREATED)
+                ->whereIn('ticket_activities.ticket_id', $this->visibleParticipantTicketQuery($user));
+        });
+
+        if ($user->isSolver()) {
+            $query->orWhere(function (Builder $query) use ($user): void {
+                $query
+                    ->where('ticket_activities.type', TicketActivity::TYPE_TICKET_CREATED)
+                    ->whereIn('ticket_activities.ticket_id', $this->visibleSolverQueueTicketQuery($user));
+            });
+        }
+
+        if ($user->isAdmin() || $user->isSolver()) {
+            $query->orWhere(function (Builder $query) use ($user): void {
+                $query
+                    ->where('ticket_activities.type', TicketActivity::TYPE_INTERNAL_NOTE)
+                    ->whereIn('ticket_activities.ticket_id', $this->visibleInternalNoteTicketQuery($user));
+            });
+        }
     }
 
     private function visibleActivitiesForTicketQuery(User $user, Ticket $ticket): Builder
@@ -298,6 +316,14 @@ class TicketActivityService
     }
 
     private function visibleInternalNoteTicketQuery(User $user): Builder
+    {
+        return Ticket::query()
+            ->visibleTo($user)
+            ->select('tickets.id')
+            ->when(Ticket::supportsArchiving() && ! $user->isAdmin(), fn (Builder $query) => $query->whereNull('archived_at'));
+    }
+
+    private function visibleSolverQueueTicketQuery(User $user): Builder
     {
         return Ticket::query()
             ->visibleTo($user)

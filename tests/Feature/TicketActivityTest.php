@@ -210,6 +210,49 @@ class TicketActivityTest extends TestCase
             ->assertSee('>2</span>', false);
     }
 
+    public function test_new_ticket_activity_is_unread_only_for_solver_queue(): void
+    {
+        $requester = $this->createUser($this->userRole);
+        $solver = $this->createUser($this->solverRole);
+        $otherUser = $this->createUser($this->userRole);
+        $adminWithoutSolverRole = $this->createUser($this->adminRole);
+
+        $this->actingAs($requester)
+            ->post(route('tickets.store'), [
+                'subject' => 'Created ticket activity',
+                'description' => 'Solver queue should see this new ticket.',
+                'priority_id' => $this->normalPriority->id,
+                'category_id' => $this->defaultCategory->id,
+            ])
+            ->assertRedirect(route('tickets.index'));
+
+        $ticket = Ticket::query()->where('subject', 'Created ticket activity')->firstOrFail();
+
+        $this->assertDatabaseHas('ticket_activities', [
+            'ticket_id' => $ticket->id,
+            'actor_id' => $requester->id,
+            'type' => TicketActivity::TYPE_TICKET_CREATED,
+            'visibility' => TicketActivity::VISIBILITY_PUBLIC,
+        ]);
+        $this->assertSame(0, $this->activities()->unreadActivityCountForUser($requester));
+        $this->assertSame(1, $this->activities()->unreadActivityCountForUser($solver));
+        $this->assertSame(0, $this->activities()->unreadActivityCountForUser($otherUser));
+        $this->assertSame(0, $this->activities()->unreadActivityCountForUser($adminWithoutSolverRole));
+
+        $this->actingAs($solver)
+            ->get(route('activities.index'))
+            ->assertOk()
+            ->assertSeeText(__('activities.types.ticket_created'))
+            ->assertSeeText($ticket->subject);
+
+        $this->actingAs($solver)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('data-refresh-unread-count="1"', false)
+            ->assertSee('activity-inbox-count', false)
+            ->assertSee('>1</span>', false);
+    }
+
     public function test_activity_poll_returns_unread_count_and_latest_visible_activity(): void
     {
         $requester = $this->createUser($this->userRole);

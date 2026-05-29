@@ -452,6 +452,7 @@ class TicketController extends Controller
         $ticket->refresh();
         $ticket->load($this->ticketSnapshotRelations());
         $this->ensureOriginalSnapshot($ticket, 'create');
+        $this->ticketActivityService()->recordTicketCreated($ticket, $actor);
         $this->ticketAttachmentService()->storeMany(
             $ticket,
             $request->file('attachments', []),

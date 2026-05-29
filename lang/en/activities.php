@@ -39,6 +39,7 @@ return [
         'time' => 'Time',
     ],
     'types' => [
+        'ticket_created' => 'New ticket',
         'public_comment' => 'Public comment',
         'internal_note' => 'Internal note',
         'ticket_updated' => 'Ticket updated',
@@ -58,6 +59,7 @@ return [
         'restored' => 'Restored',
     ],
     'summaries' => [
+        'ticket_created' => 'A new ticket was created.',
         'public_comment' => 'A new public comment was added.',
         'public_reply' => 'A new public reply was added.',
         'internal_note' => 'A new internal note was added.',

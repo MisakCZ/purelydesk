@@ -39,6 +39,7 @@ return [
         'time' => 'Čas',
     ],
     'types' => [
+        'ticket_created' => 'Nový ticket',
         'public_comment' => 'Veřejný komentář',
         'internal_note' => 'Interní poznámka',
         'ticket_updated' => 'Úprava ticketu',
@@ -58,6 +59,7 @@ return [
         'restored' => 'Obnoveno',
     ],
     'summaries' => [
+        'ticket_created' => 'Byl založen nový ticket.',
         'public_comment' => 'Byl přidán nový veřejný komentář.',
         'public_reply' => 'Byla přidána nová veřejná odpověď.',
         'internal_note' => 'Byla přidána nová interní poznámka.',

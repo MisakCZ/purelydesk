@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TicketActivity extends Model
 {
+    public const TYPE_TICKET_CREATED = 'ticket_created';
     public const TYPE_PUBLIC_COMMENT = 'public_comment';
     public const TYPE_INTERNAL_NOTE = 'internal_note';
     public const TYPE_TICKET_UPDATED = 'ticket_updated';
