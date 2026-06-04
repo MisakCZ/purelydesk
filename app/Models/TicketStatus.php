@@ -78,8 +78,8 @@ class TicketStatus extends Model
     public static function badgeToneForSlug(?string $slug): string
     {
         return match ($slug) {
-            'assigned' => self::BADGE_TONE_BLUE,
-            'in_progress' => self::BADGE_TONE_BLUE,
+            'assigned' => self::BADGE_TONE_GREEN,
+            'in_progress' => self::BADGE_TONE_CYAN,
             'waiting_user', 'waiting_third_party' => self::BADGE_TONE_AMBER,
             'resolved' => self::BADGE_TONE_GREEN,
             'closed' => self::BADGE_TONE_NEUTRAL,

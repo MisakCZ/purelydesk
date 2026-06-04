@@ -120,42 +120,44 @@
             display: grid;
             grid-template-columns: auto minmax(0, 1fr);
             align-items: center;
-            gap: 0.58rem;
-            min-height: 3.85rem;
-            padding: 0.62rem 0.7rem;
-            border: 1px solid color-mix(in srgb, var(--color-border, #e5ebf1) 76%, transparent);
-            border-radius: 0.92rem;
-            background: color-mix(in srgb, var(--color-surface-muted, #f8fafc) 68%, var(--color-surface, #fff));
+            gap: 0.62rem;
+            min-height: 3.25rem;
+            padding: 0.58rem 0.78rem;
+            border: 1px solid #dfe7f0;
+            border-radius: 0.7rem;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
         }
 
         .filter-insight[data-tone="blue"] {
-            border-color: color-mix(in srgb, var(--ticket-blue) 22%, var(--color-border, #bfdbfe));
-            background: linear-gradient(145deg, var(--ticket-blue-soft), color-mix(in srgb, var(--color-surface, #fff) 94%, transparent));
+            border-color: #bfdbfe;
+            background: linear-gradient(180deg, #f8fbff 0%, #edf6ff 100%);
         }
 
         .filter-insight[data-tone="green"] {
-            border-color: color-mix(in srgb, var(--ticket-green) 22%, var(--color-border, #bbf7d0));
-            background: linear-gradient(145deg, var(--ticket-green-soft), color-mix(in srgb, var(--color-surface, #fff) 94%, transparent));
+            border-color: #bbf7d0;
+            background: linear-gradient(180deg, #f8fff9 0%, #edf9f0 100%);
         }
 
         .filter-insight[data-tone="amber"] {
-            border-color: color-mix(in srgb, var(--ticket-amber) 22%, var(--color-border, #fed7aa));
-            background: linear-gradient(145deg, var(--ticket-amber-soft), color-mix(in srgb, var(--color-surface, #fff) 94%, transparent));
+            border-color: #fde68a;
+            background: linear-gradient(180deg, #fffdf5 0%, #fff6dc 100%);
         }
 
         .filter-insight[data-tone="red"] {
-            border-color: color-mix(in srgb, var(--ticket-red) 22%, var(--color-border, #fecaca));
-            background: linear-gradient(145deg, var(--ticket-red-soft), color-mix(in srgb, var(--color-surface, #fff) 94%, transparent));
+            border-color: #fecaca;
+            background: linear-gradient(180deg, #fff1f2 0%, #ffe4e6 100%);
         }
 
         .filter-insight-icon {
             display: grid;
             place-items: center;
-            width: 2.05rem;
-            height: 2.05rem;
-            border-radius: 0.76rem;
-            background: color-mix(in srgb, currentColor 12%, var(--color-surface, #fff));
+            width: 1.72rem;
+            height: 1.72rem;
+            border-radius: 999px;
+            background: color-mix(in srgb, currentColor 12%, #fff);
             color: var(--color-primary, #0f766e);
+            box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 18%, transparent);
         }
 
         .filter-insight[data-tone="blue"] .filter-insight-icon {
@@ -175,8 +177,8 @@
         }
 
         .filter-insight-icon svg {
-            width: 1.08rem;
-            height: 1.08rem;
+            width: 0.92rem;
+            height: 0.92rem;
         }
 
         .filter-insight-label {
@@ -194,7 +196,7 @@
             margin-top: 0.16rem;
             overflow: hidden;
             color: var(--color-text, #13202b);
-            font-size: 0.95rem;
+            font-size: 0.92rem;
             font-weight: 820;
             line-height: 1.2;
             text-overflow: ellipsis;
@@ -515,7 +517,7 @@
 
         .filter-grid {
             display: grid;
-            grid-template-columns: minmax(11rem, 1.25fr) repeat(auto-fit, minmax(7.6rem, 0.82fr));
+            grid-template-columns: minmax(12rem, 1.25fr) repeat(auto-fit, minmax(8.2rem, 0.82fr));
             gap: 0.62rem;
             align-items: end;
         }
@@ -527,19 +529,169 @@
             border: 1px solid color-mix(in srgb, var(--color-border, #e5ebf1) 88%, transparent);
             border-radius: 0.9rem;
             background: color-mix(in srgb, var(--color-surface-muted, #f8fafc) 76%, var(--color-surface, #fff));
+            box-shadow: none;
             min-width: 0;
+            transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
         }
 
         .filter-field-active {
-            border-color: color-mix(in srgb, var(--color-primary, #0f766e) 24%, var(--color-border, #e5ebf1));
-            background: linear-gradient(145deg, color-mix(in srgb, var(--color-primary-soft, #dff5f2) 54%, var(--color-surface, #fff)), color-mix(in srgb, var(--color-surface-muted, #f8fafc) 82%, var(--color-surface, #fff)));
+            border-color: color-mix(in srgb, var(--color-primary, #0f766e) 26%, var(--color-border, #e5ebf1));
+            background: linear-gradient(180deg, color-mix(in srgb, var(--color-primary-soft, #dff5f2) 48%, var(--color-surface, #fff)), color-mix(in srgb, var(--color-surface-muted, #f8fafc) 82%, var(--color-surface, #fff)));
             box-shadow:
                 inset 0 1px 0 color-mix(in srgb, #fff 76%, transparent),
                 0 8px 20px rgba(15, 23, 42, 0.05);
         }
 
+        .filter-field:focus-within {
+            border-color: color-mix(in srgb, var(--color-primary, #0f766e) 34%, var(--color-border, #d9e0e7));
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary, #0f766e) 10%, transparent);
+        }
+
+        .filter-grid > .filter-field-active:nth-child(1) {
+            border-color: #bfdbfe;
+            background: linear-gradient(180deg, #f8fbff 0%, #edf6ff 100%);
+            color: #2563eb;
+        }
+
+        .filter-grid > .filter-field-active:nth-child(1) .filter-label {
+            color: #2563eb;
+        }
+
+        .filter-grid > .filter-field-active:nth-child(2) {
+            border-color: #bbf7d0;
+            background: linear-gradient(180deg, #f8fff9 0%, #edf9f0 100%);
+            color: #15803d;
+        }
+
+        .filter-grid > .filter-field-active:nth-child(2) .filter-label {
+            color: #15803d;
+        }
+
+        .filter-grid > .filter-field-active:nth-child(3) {
+            border-color: #fde68a;
+            background: linear-gradient(180deg, #fffdf5 0%, #fff6dc 100%);
+            color: #b45309;
+        }
+
+        .filter-grid > .filter-field-active:nth-child(3) .filter-label {
+            color: #b45309;
+        }
+
+        .filter-grid > .filter-field-active:nth-child(4) {
+            border-color: #ddd6fe;
+            background: linear-gradient(180deg, #fcfbff 0%, #f5f2ff 100%);
+            color: #7c3aed;
+        }
+
+        .filter-grid > .filter-field-active:nth-child(4) .filter-label {
+            color: #7c3aed;
+        }
+
+        .filter-grid > .filter-field-active:nth-child(5) {
+            border-color: #bae6fd;
+            background: linear-gradient(180deg, #f8fcff 0%, #eef7fb 100%);
+            color: #2f6f86;
+        }
+
+        .filter-grid > .filter-field-active:nth-child(5) .filter-label {
+            color: #2f6f86;
+        }
+
+        .filter-grid > .filter-field-active:nth-child(6) {
+            border-color: #99f6e4;
+            background: linear-gradient(180deg, #f7fffd 0%, #e9fbf7 100%);
+            color: #0f766e;
+        }
+
+        .filter-grid > .filter-field-active:nth-child(6) .filter-label {
+            color: #0f766e;
+        }
+
+        .filter-grid > .filter-field-active:nth-child(n + 7) {
+            border-color: #d6dee8;
+            background: linear-gradient(180deg, #fbfcfd 0%, #f1f5f9 100%);
+            color: #475569;
+        }
+
         .filter-field-active .filter-label {
             color: var(--color-primary, #0f766e);
+        }
+
+        :root[data-theme="dark"] .filter-field {
+            border-color: color-mix(in srgb, var(--color-border, #334155) 72%, transparent);
+            background: linear-gradient(180deg, color-mix(in srgb, var(--color-surface, #172033) 94%, #ffffff 3%), color-mix(in srgb, var(--color-surface-muted, #111827) 90%, #ffffff 2%));
+            color: #94a3b8;
+        }
+
+        :root[data-theme="dark"] .filter-insight {
+            border-color: color-mix(in srgb, var(--color-border, #334155) 72%, transparent);
+            background: linear-gradient(180deg, color-mix(in srgb, var(--color-surface, #172033) 94%, #ffffff 3%), color-mix(in srgb, var(--color-surface-muted, #111827) 90%, #ffffff 2%));
+        }
+
+        :root[data-theme="dark"] .filter-insight[data-tone="blue"] {
+            border-color: color-mix(in srgb, #93c5fd 54%, var(--color-border, #334155));
+            background: linear-gradient(180deg, color-mix(in srgb, #2563eb 18%, var(--color-surface, #172033)), color-mix(in srgb, #2563eb 10%, var(--color-surface-muted, #111827)));
+        }
+
+        :root[data-theme="dark"] .filter-insight[data-tone="green"] {
+            border-color: color-mix(in srgb, #86efac 54%, var(--color-border, #334155));
+            background: linear-gradient(180deg, color-mix(in srgb, #16a34a 18%, var(--color-surface, #172033)), color-mix(in srgb, #16a34a 10%, var(--color-surface-muted, #111827)));
+        }
+
+        :root[data-theme="dark"] .filter-insight[data-tone="amber"] {
+            border-color: color-mix(in srgb, #fdba74 56%, var(--color-border, #334155));
+            background: linear-gradient(180deg, color-mix(in srgb, #f97316 17%, var(--color-surface, #172033)), color-mix(in srgb, #f97316 10%, var(--color-surface-muted, #111827)));
+        }
+
+        :root[data-theme="dark"] .filter-insight[data-tone="red"] {
+            border-color: color-mix(in srgb, #fca5a5 56%, var(--color-border, #334155));
+            background: linear-gradient(180deg, color-mix(in srgb, #dc2626 18%, var(--color-surface, #172033)), color-mix(in srgb, #dc2626 10%, var(--color-surface-muted, #111827)));
+        }
+
+        :root[data-theme="dark"] .filter-grid > .filter-field-active:nth-child(1) {
+            border-color: color-mix(in srgb, #93c5fd 54%, var(--color-border, #334155));
+            background: linear-gradient(180deg, color-mix(in srgb, #2563eb 18%, var(--color-surface, #172033)), color-mix(in srgb, #2563eb 10%, var(--color-surface-muted, #111827)));
+            color: #93c5fd;
+        }
+
+        :root[data-theme="dark"] .filter-grid > .filter-field-active:nth-child(2) {
+            border-color: color-mix(in srgb, #86efac 54%, var(--color-border, #334155));
+            background: linear-gradient(180deg, color-mix(in srgb, #16a34a 18%, var(--color-surface, #172033)), color-mix(in srgb, #16a34a 10%, var(--color-surface-muted, #111827)));
+            color: #86efac;
+        }
+
+        :root[data-theme="dark"] .filter-grid > .filter-field-active:nth-child(3) {
+            border-color: color-mix(in srgb, #fdba74 56%, var(--color-border, #334155));
+            background: linear-gradient(180deg, color-mix(in srgb, #f97316 17%, var(--color-surface, #172033)), color-mix(in srgb, #f97316 10%, var(--color-surface-muted, #111827)));
+            color: #fdba74;
+        }
+
+        :root[data-theme="dark"] .filter-grid > .filter-field-active:nth-child(4) {
+            border-color: color-mix(in srgb, #c4b5fd 56%, var(--color-border, #334155));
+            background: linear-gradient(180deg, color-mix(in srgb, #7c3aed 18%, var(--color-surface, #172033)), color-mix(in srgb, #7c3aed 10%, var(--color-surface-muted, #111827)));
+            color: #c4b5fd;
+        }
+
+        :root[data-theme="dark"] .filter-grid > .filter-field-active:nth-child(5) {
+            border-color: color-mix(in srgb, #7dd3fc 52%, var(--color-border, #334155));
+            background: linear-gradient(180deg, color-mix(in srgb, #0284c7 16%, var(--color-surface, #172033)), color-mix(in srgb, #0284c7 9%, var(--color-surface-muted, #111827)));
+            color: #7dd3fc;
+        }
+
+        :root[data-theme="dark"] .filter-grid > .filter-field-active:nth-child(6) {
+            border-color: color-mix(in srgb, #5eead4 52%, var(--color-border, #334155));
+            background: linear-gradient(180deg, color-mix(in srgb, #0f766e 18%, var(--color-surface, #172033)), color-mix(in srgb, #0f766e 10%, var(--color-surface-muted, #111827)));
+            color: #5eead4;
+        }
+
+        :root[data-theme="dark"] .filter-grid > .filter-field-active:nth-child(n + 7) {
+            border-color: color-mix(in srgb, #94a3b8 46%, var(--color-border, #334155));
+            background: linear-gradient(180deg, color-mix(in srgb, #64748b 16%, var(--color-surface, #172033)), color-mix(in srgb, #64748b 9%, var(--color-surface-muted, #111827)));
+            color: #cbd5e1;
+        }
+
+        :root[data-theme="dark"] .filter-grid > .filter-field-active .filter-label {
+            color: currentColor;
         }
 
         .filter-head {
@@ -565,8 +717,8 @@
             justify-content: center;
             width: 1.15rem;
             height: 1.15rem;
-            border-radius: 0.4rem;
-            background: transparent;
+            border-radius: 999px;
+            background: color-mix(in srgb, #b42318 8%, var(--color-surface, #fff));
             color: #b42318;
             text-decoration: none;
             font-size: 0.95rem;
@@ -577,12 +729,13 @@
         }
 
         .filter-clear:hover {
-            background: #fff1f1;
+            background: #fee2e2;
             color: #991b1b;
         }
 
         .filter-control {
             position: relative;
+            min-width: 0;
         }
 
         .filter-control-select::after {
@@ -614,13 +767,13 @@
             width: 100%;
             min-height: 2.45rem;
             padding: 0.52rem 0.75rem;
-            border: 1px solid var(--color-border, #d7e0ea);
+            border: 1px solid color-mix(in srgb, var(--color-border, #d7e0ea) 82%, transparent);
             border-radius: 0.78rem;
-            background: var(--color-field-bg, #fff);
+            background: color-mix(in srgb, var(--color-field-bg, #fff) 88%, transparent);
             color: var(--color-text, #0f172a);
             font: inherit;
             font-size: 0.92rem;
-            font-weight: 500;
+            font-weight: 640;
             line-height: 1.35;
             box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
             transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
@@ -642,6 +795,9 @@
             outline: 2px solid rgba(15, 118, 110, 0.16);
             border-color: var(--color-primary, #0f766e);
             background: var(--color-field-bg, #fff);
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.75),
+                0 0 0 3px color-mix(in srgb, var(--color-primary, #0f766e) 8%, transparent);
         }
 
         .filter-input::placeholder {
@@ -1371,14 +1527,14 @@
             }
 
             .filter-insight-icon {
-                width: 1.85rem;
-                height: 1.85rem;
-                border-radius: 0.68rem;
+                width: 1.52rem;
+                height: 1.52rem;
+                border-radius: 999px;
             }
 
             .filter-insight-icon svg {
-                width: 0.98rem;
-                height: 0.98rem;
+                width: 0.84rem;
+                height: 0.84rem;
             }
 
             .filter-insight-label {
@@ -1446,23 +1602,17 @@
 
             .ticket-index-shell .filter-input,
             .ticket-index-shell .filter-select {
-                min-height: 2rem;
-                border: 0;
-                background: transparent;
-                padding-top: 0;
-                padding-bottom: 0;
-                font-size: 0.96rem;
-                font-weight: 700;
-                box-shadow: none;
+                min-height: 2.2rem;
+                font-size: 0.9rem;
+                font-weight: 650;
             }
 
             .ticket-index-shell .filter-input {
-                padding-left: 1.95rem;
-                padding-right: 0.1rem;
+                padding-left: 2.05rem;
             }
 
             .ticket-index-shell .filter-control-select::after {
-                right: 0.14rem;
+                right: 0.72rem;
                 width: 0.56rem;
                 height: 0.56rem;
             }

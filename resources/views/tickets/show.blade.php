@@ -203,14 +203,313 @@
         }
 
         .ticket-meta {
-            display: grid;
-            gap: 0.55rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem 0.7rem;
+            align-items: start;
         }
 
         .ticket-meta-row {
+            display: contents;
+        }
+
+        .ticket-meta-row > * {
+            min-width: 0;
+        }
+
+        .ticket-meta-row > .badge-switcher,
+        .ticket-meta-row > .badge {
+            width: 100%;
+        }
+
+        .ticket-meta-row > .badge-switcher > .badge,
+        .ticket-meta-row > .badge {
+            width: 100%;
+            min-width: 0;
+            justify-content: flex-start;
+            text-align: left;
+            white-space: normal;
+        }
+
+        .ticket-meta-row:first-child > :nth-child(1) {
+            order: 1;
+            flex: 1 1 calc(25% - 0.7rem);
+        }
+
+        .ticket-meta-row:first-child > :nth-child(2) {
+            order: 2;
+            flex: 1 1 calc(25% - 0.7rem);
+        }
+
+        .ticket-meta-row:nth-child(2) > :nth-child(1) {
+            order: 3;
+            flex: 1 1 calc(25% - 0.7rem);
+        }
+
+        .ticket-meta-row:nth-child(2) > :nth-child(2) {
+            order: 4;
+            flex: 1 1 calc(25% - 0.7rem);
+        }
+
+        .ticket-meta-row:first-child > :nth-child(3) {
+            order: 5;
+            flex: 0 1 auto;
+            width: auto;
+        }
+
+        .ticket-meta-row:first-child > :nth-child(4) {
+            order: 6;
+            flex: 0 1 auto;
+            width: auto;
+        }
+
+        .ticket-meta-row:first-child > :nth-child(5) {
+            order: 7;
+            flex: 0 1 auto;
+            width: auto;
+        }
+
+        .ticket-meta-row:first-child > :nth-child(-n + 2) > .badge,
+        .ticket-meta-row:first-child > :nth-child(-n + 2).badge,
+        .ticket-meta-row:nth-child(2) > * > .badge,
+        .ticket-meta-row:nth-child(2) > .badge {
+            min-height: 3.25rem;
+            padding: 0.58rem 0.78rem;
+            border-radius: 0.7rem;
+            border: 1px solid #dfe7f0;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            color: #1f2937;
+            font-size: 0.84rem;
+            font-weight: 780;
+            line-height: 1.25;
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
+            gap: 0.62rem;
+        }
+
+        .ticket-meta-row:first-child > :nth-child(-n + 2) .badge-tone-slate,
+        .ticket-meta-row:first-child > :nth-child(-n + 2).badge-tone-slate {
+            border-color: #d6dee8;
+            background: linear-gradient(180deg, #f7f9fc 0%, #eef3f8 100%);
+            color: #475569;
+        }
+
+        .ticket-meta-row:first-child > :nth-child(-n + 2) .badge-tone-blue,
+        .ticket-meta-row:first-child > :nth-child(-n + 2).badge-tone-blue {
+            border-color: #bfdbfe;
+            background: linear-gradient(180deg, #eff6ff 0%, #e6f0ff 100%);
+            color: #1d4ed8;
+        }
+
+        .ticket-meta-row:first-child > :nth-child(-n + 2) .badge-tone-amber,
+        .ticket-meta-row:first-child > :nth-child(-n + 2).badge-tone-amber {
+            border-color: #fde68a;
+            background: linear-gradient(180deg, #fffbeb 0%, #fff4d6 100%);
+            color: #b45309;
+        }
+
+        .ticket-meta-row:first-child > :nth-child(-n + 2) .badge-tone-violet,
+        .ticket-meta-row:first-child > :nth-child(-n + 2).badge-tone-violet {
+            border-color: #ddd6fe;
+            background: linear-gradient(180deg, #f5f3ff 0%, #f0ebff 100%);
+            color: #7c3aed;
+        }
+
+        .ticket-meta-row:first-child > :nth-child(-n + 2) .badge-tone-cyan,
+        .ticket-meta-row:first-child > :nth-child(-n + 2).badge-tone-cyan {
+            border-color: #99f6e4;
+            background: linear-gradient(180deg, #ecfeff 0%, #e3fbf7 100%);
+            color: #0f766e;
+        }
+
+        .ticket-meta-row:first-child > :nth-child(-n + 2) .badge-tone-green,
+        .ticket-meta-row:first-child > :nth-child(-n + 2).badge-tone-green {
+            border-color: #bbf7d0;
+            background: linear-gradient(180deg, #f0fdf4 0%, #e8f8ee 100%);
+            color: #15803d;
+        }
+
+        .ticket-meta-row:first-child > :nth-child(-n + 2) .badge-tone-neutral,
+        .ticket-meta-row:first-child > :nth-child(-n + 2).badge-tone-neutral {
+            border-color: #d1d5db;
+            background: linear-gradient(180deg, #f9fafb 0%, #eef0f3 100%);
+            color: #374151;
+        }
+
+        .ticket-meta-row:first-child > :nth-child(-n + 2) .badge-tone-red,
+        .ticket-meta-row:first-child > :nth-child(-n + 2).badge-tone-red {
+            border-color: #fecaca;
+            background: linear-gradient(180deg, #fff1f2 0%, #ffe4e6 100%);
+            color: #b91c1c;
+        }
+
+        .ticket-meta-row:nth-child(2) > * > .badge,
+        .ticket-meta-row:nth-child(2) > .badge {
+            border-color: #dbe3ec;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            color: #475569;
+        }
+
+        .ticket-meta-row:nth-child(2) > * > .badge.ticket-person-filled,
+        .ticket-meta-row:nth-child(2) > .badge.ticket-person-filled {
+            border-color: #d6e8f3;
+            background: linear-gradient(180deg, #f8fcff 0%, #eef7fb 100%);
+            color: #2f6f86;
+        }
+
+        .ticket-meta-row:nth-child(2) > :nth-child(2) > .badge.ticket-person-filled,
+        .ticket-meta-row:nth-child(2) > :nth-child(2).badge.ticket-person-filled {
+            border-color: #deddf3;
+            background: linear-gradient(180deg, #fbfaff 0%, #f3f2fb 100%);
+            color: #5d5a91;
+        }
+
+        .ticket-meta-row:first-child > :nth-child(-n + 2) .badge-dot,
+        .ticket-meta-row:nth-child(2) .badge-dot {
+            display: grid;
+            place-items: center;
+            width: 1.72rem;
+            height: 1.72rem;
+            border-radius: 999px;
+            background: color-mix(in srgb, currentColor 14%, #fff);
+            box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 18%, transparent);
+            opacity: 1;
+        }
+
+        .ticket-meta-row:first-child > :nth-child(-n + 2) .badge-dot::after,
+        .ticket-meta-row:nth-child(2) .badge-dot::after {
+            content: "";
+            width: 0.72rem;
+            height: 0.72rem;
+            border-radius: 999px;
+            background: currentColor;
+        }
+
+        .ticket-meta-row:nth-child(2) .badge-dot {
+            color: #64748b;
+        }
+
+        .ticket-primary-icon {
+            width: 1.72rem;
+            height: 1.72rem;
+            padding: 0.36rem;
+            border-radius: 999px;
+            background: #e8eef6;
+            color: #475569;
+            box-shadow: inset 0 0 0 1px #cfd8e3;
+            flex: 0 0 auto;
+        }
+
+        .ticket-person-filled .ticket-primary-icon {
+            background: color-mix(in srgb, currentColor 12%, #fff);
+            color: currentColor;
+            box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 18%, transparent);
+        }
+
+        .ticket-priority-icon {
+            display: grid;
+            place-items: center;
+            width: 1.72rem;
+            height: 1.72rem;
+            padding: 0.36rem;
+            border-radius: 0.46rem;
+            background: color-mix(in srgb, currentColor 12%, #fff);
+            color: currentColor;
+            box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 18%, transparent);
+            flex: 0 0 auto;
+        }
+
+        .ticket-meta-row:first-child > :nth-child(n + 3) > .badge,
+        .ticket-meta-row:first-child > :nth-child(n + 3).badge {
+            width: auto;
+            max-width: 100%;
+            min-height: 1.9rem;
+            padding: 0.08rem 0;
+            border: 0;
+            border-radius: 0;
+            background: transparent;
+            color: #64748b;
+            font-size: 0.8rem;
+            font-weight: 650;
+            line-height: 1.35;
+            box-shadow: none;
+        }
+
+        .ticket-meta-row:first-child > :nth-child(5) > .badge,
+        .ticket-meta-row:first-child > :nth-child(5).badge {
+            width: auto;
+        }
+
+        .ticket-meta-icon {
+            width: 0.95rem;
+            height: 0.95rem;
+            color: #64748b;
+            flex: 0 0 auto;
+        }
+
+        .ticket-meta-row:first-child > :nth-child(n + 3) .badge-caret {
+            opacity: 0.65;
+        }
+
+        .ticket-meta-row:first-child > :nth-child(n + 3) .badge-menu-toggle:hover {
+            box-shadow: none;
+            transform: none;
+        }
+
+        .expected-resolution-strip {
             display: flex;
+            align-items: center;
+            gap: 0.62rem;
             flex-wrap: wrap;
-            gap: 0.55rem;
+            margin-top: 0.75rem;
+            padding: 0.68rem 0.78rem;
+            border: 1px solid #dbeafe;
+            border-radius: 0.78rem;
+            background: linear-gradient(180deg, #f8fbff 0%, #eef6ff 100%);
+            color: #1d4ed8;
+            font-size: 0.86rem;
+            font-weight: 700;
+        }
+
+        .expected-resolution-icon {
+            display: grid;
+            place-items: center;
+            width: 1.45rem;
+            height: 1.45rem;
+            border-radius: 0.45rem;
+            background: #dbeafe;
+            color: #2563eb;
+            flex: 0 0 auto;
+        }
+
+        .expected-resolution-icon svg {
+            width: 0.92rem;
+            height: 0.92rem;
+        }
+
+        .expected-resolution-strip .hint-inline {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #64748b;
+            font-weight: 650;
+        }
+
+        .expected-resolution-strip .hint-inline::before {
+            content: "";
+            width: 1px;
+            height: 1rem;
+            background: #cbd5e1;
+        }
+
+        .expected-resolution-strip.text-warning {
+            border-color: #fde68a;
+            background: #fffbeb;
+            color: #92400e;
+        }
+
+        .expected-resolution-strip.text-warning .expected-resolution-icon {
+            background: #fde68a;
+            color: #92400e;
         }
 
         .hero-meta-actions {
@@ -1126,6 +1425,65 @@
                 padding: 1rem;
             }
 
+            .ticket-meta {
+                gap: 0.48rem 0.55rem;
+            }
+
+            .ticket-meta-row:first-child > :nth-child(1),
+            .ticket-meta-row:first-child > :nth-child(2),
+            .ticket-meta-row:nth-child(2) > :nth-child(1),
+            .ticket-meta-row:nth-child(2) > :nth-child(2) {
+                flex-basis: calc(50% - 0.55rem);
+            }
+
+            .ticket-meta-row:first-child > :nth-child(-n + 2) > .badge,
+            .ticket-meta-row:first-child > :nth-child(-n + 2).badge,
+            .ticket-meta-row:nth-child(2) > * > .badge,
+            .ticket-meta-row:nth-child(2) > .badge {
+                min-height: 2.65rem;
+                padding: 0.55rem 0.62rem;
+                border-radius: 0.72rem;
+                font-size: 0.8rem;
+            }
+
+            .ticket-meta-row:first-child > :nth-child(-n + 2) .badge-dot,
+            .ticket-meta-row:nth-child(2) .badge-dot {
+                width: 1.42rem;
+                height: 1.42rem;
+            }
+
+            .ticket-meta-row:first-child > :nth-child(-n + 2) .badge-dot::after,
+            .ticket-meta-row:nth-child(2) .badge-dot::after {
+                width: 0.58rem;
+                height: 0.58rem;
+            }
+
+            .ticket-primary-icon {
+                width: 1.42rem;
+                height: 1.42rem;
+                padding: 0.3rem;
+            }
+
+            .ticket-priority-icon {
+                width: 1.42rem;
+                height: 1.42rem;
+                padding: 0.3rem;
+            }
+
+            .ticket-meta-row:first-child > :nth-child(n + 3) > .badge,
+            .ticket-meta-row:first-child > :nth-child(n + 3).badge {
+                min-height: 1.55rem;
+                padding: 0.12rem 0;
+                font-size: 0.74rem;
+            }
+
+            .expected-resolution-strip {
+                align-items: flex-start;
+                gap: 0.38rem 0.55rem;
+                padding: 0.62rem 0.68rem;
+                font-size: 0.8rem;
+            }
+
             .ticket-hero-head,
             .ticket-hero-times {
                 align-items: flex-start;
@@ -1383,7 +1741,10 @@
                                         aria-expanded="{{ $priorityErrors->any() ? 'true' : 'false' }}"
                                         title="{{ __('tickets.show.hero.priority') }}"
                                     >
-                                        <span class="badge-dot"></span>
+                                        <svg class="ticket-priority-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path d="M5 21V4"></path>
+                                            <path d="M5 5h9.5l-.9 3 2.2 2.7H5"></path>
+                                        </svg>
                                         {{ __('tickets.show.hero.priority') }}: {{ $ticket->priority?->translatedName() ?? __('tickets.common.not_available') }}
                                         <span class="badge-caret" aria-hidden="true">▾</span>
                                     </summary>
@@ -1422,7 +1783,10 @@
                                 </details>
                             @else
                                 <span class="badge {{ $ticket->priority?->badgeToneClass() ?? 'badge-tone-slate' }}">
-                                    <span class="badge-dot"></span>
+                                    <svg class="ticket-priority-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M5 21V4"></path>
+                                        <path d="M5 5h9.5l-.9 3 2.2 2.7H5"></path>
+                                    </svg>
                                     {{ __('tickets.show.hero.priority') }}: {{ $ticket->priority?->translatedName() ?? __('tickets.common.not_available') }}
                                 </span>
                             @endif
@@ -1434,7 +1798,10 @@
                                         aria-expanded="{{ $categoryErrors->any() ? 'true' : 'false' }}"
                                         title="{{ __('tickets.show.hero.category') }}"
                                     >
-                                        <span class="badge-dot"></span>
+                                        <svg class="ticket-meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path d="M20.6 13.8 13.8 20.6a2 2 0 0 1-2.8 0L3 12.6V4h8.6l9 9a2 2 0 0 1 0 2.8Z"></path>
+                                            <path d="M7.5 7.5h.01"></path>
+                                        </svg>
                                         {{ __('tickets.show.hero.category') }}: {{ $ticket->category?->translatedName() ?? __('tickets.common.not_available') }}
                                         <span class="badge-caret" aria-hidden="true">▾</span>
                                     </summary>
@@ -1473,7 +1840,10 @@
                                 </details>
                             @else
                                 <span class="badge">
-                                    <span class="badge-dot"></span>
+                                    <svg class="ticket-meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M20.6 13.8 13.8 20.6a2 2 0 0 1-2.8 0L3 12.6V4h8.6l9 9a2 2 0 0 1 0 2.8Z"></path>
+                                        <path d="M7.5 7.5h.01"></path>
+                                    </svg>
                                     {{ __('tickets.show.hero.category') }}: {{ $ticket->category?->translatedName() ?? __('tickets.common.not_available') }}
                                 </span>
                             @endif
@@ -1485,7 +1855,12 @@
                                         aria-expanded="{{ $visibilityErrors->any() ? 'true' : 'false' }}"
                                         title="{{ __('tickets.show.hero.visibility') }}"
                                     >
-                                        <span class="badge-dot"></span>
+                                        <svg class="ticket-meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <circle cx="12" cy="12" r="9"></circle>
+                                            <path d="M3 12h18"></path>
+                                            <path d="M12 3a13.5 13.5 0 0 1 0 18"></path>
+                                            <path d="M12 3a13.5 13.5 0 0 0 0 18"></path>
+                                        </svg>
                                         {{ __('tickets.show.hero.visibility') }}: {{ $ticket->translatedVisibilityLabel() }}
                                         <span class="badge-caret" aria-hidden="true">▾</span>
                                     </summary>
@@ -1524,7 +1899,12 @@
                                 </details>
                             @else
                                 <span class="badge">
-                                    <span class="badge-dot"></span>
+                                    <svg class="ticket-meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <circle cx="12" cy="12" r="9"></circle>
+                                        <path d="M3 12h18"></path>
+                                        <path d="M12 3a13.5 13.5 0 0 1 0 18"></path>
+                                        <path d="M12 3a13.5 13.5 0 0 0 0 18"></path>
+                                    </svg>
                                     {{ __('tickets.show.hero.visibility') }}: {{ $ticket->translatedVisibilityLabel() }}
                                 </span>
                             @endif
@@ -1536,7 +1916,10 @@
                                         aria-expanded="{{ $watcherErrors->any() ? 'true' : 'false' }}"
                                         title="{{ __('tickets.show.hero.edit_title.watching') }}"
                                     >
-                                        <span class="badge-dot"></span>
+                                        <svg class="ticket-meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path>
+                                            <circle cx="12" cy="12" r="2.5"></circle>
+                                        </svg>
                                         {{ __('tickets.show.hero.watching') }}: {{ $isWatchingTicket ? __('tickets.common.yes') : __('tickets.common.no') }}
                                         <span class="badge-caret" aria-hidden="true">▾</span>
                                     </summary>
@@ -1587,7 +1970,10 @@
                                 </details>
                             @else
                                 <span class="badge{{ $isWatchingTicket ? ' badge-watching' : '' }}">
-                                    <span class="badge-dot"></span>
+                                    <svg class="ticket-meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path>
+                                        <circle cx="12" cy="12" r="2.5"></circle>
+                                    </svg>
                                     {{ __('tickets.show.hero.watching') }}: {{ $isWatchingTicket ? __('tickets.common.yes') : __('tickets.common.no') }}
                                 </span>
                             @endif
@@ -1597,11 +1983,14 @@
                             @if ($canUpdateRequester)
                                 <details class="badge-switcher" @if ($requesterErrors->any()) open @endif>
                                     <summary
-                                        class="badge badge-button badge-menu-toggle"
+                                        class="badge badge-button badge-menu-toggle{{ $ticket->requester_id !== null ? ' ticket-person-filled' : '' }}"
                                         aria-expanded="{{ $requesterErrors->any() ? 'true' : 'false' }}"
                                         title="{{ __('tickets.show.forms.change_requester') }}"
                                     >
-                                        <span class="badge-dot"></span>
+                                        <svg class="ticket-primary-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path d="M20 21a8 8 0 0 0-16 0"></path>
+                                            <circle cx="12" cy="7.5" r="4"></circle>
+                                        </svg>
                                         {{ __('tickets.show.hero.requester') }}: {{ $ticket->requester?->displayName() ?? __('tickets.common.not_available') }}
                                         <span class="badge-caret" aria-hidden="true">▾</span>
                                     </summary>
@@ -1639,8 +2028,11 @@
                                     </div>
                                 </details>
                             @else
-                                <span class="badge">
-                                    <span class="badge-dot"></span>
+                                <span class="badge{{ $ticket->requester_id !== null ? ' ticket-person-filled' : '' }}">
+                                    <svg class="ticket-primary-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M20 21a8 8 0 0 0-16 0"></path>
+                                        <circle cx="12" cy="7.5" r="4"></circle>
+                                    </svg>
                                     {{ __('tickets.show.hero.requester') }}: {{ $ticket->requester?->displayName() ?? __('tickets.common.not_available') }}
                                 </span>
                             @endif
@@ -1648,11 +2040,14 @@
                             @if ($canUpdateAssignee)
                                 <details class="badge-switcher" @if ($assigneeErrors->any()) open @endif>
                                     <summary
-                                        class="badge badge-button badge-menu-toggle"
+                                        class="badge badge-button badge-menu-toggle{{ $ticket->assignee_id !== null ? ' ticket-person-filled' : '' }}"
                                         aria-expanded="{{ $assigneeErrors->any() ? 'true' : 'false' }}"
                                         title="{{ __('tickets.show.hero.assignee') }}"
                                     >
-                                        <span class="badge-dot"></span>
+                                        <svg class="ticket-primary-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path d="M20 21a8 8 0 0 0-16 0"></path>
+                                            <circle cx="12" cy="7.5" r="4"></circle>
+                                        </svg>
                                         {{ __('tickets.show.hero.assignee') }}: {{ $ticket->assignee?->displayName() ?? __('tickets.common.unassigned') }}
                                         <span class="badge-caret" aria-hidden="true">▾</span>
                                     </summary>
@@ -1702,8 +2097,11 @@
                                     </div>
                                 </details>
                             @else
-                                <span class="badge">
-                                    <span class="badge-dot"></span>
+                                <span class="badge{{ $ticket->assignee_id !== null ? ' ticket-person-filled' : '' }}">
+                                    <svg class="ticket-primary-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M20 21a8 8 0 0 0-16 0"></path>
+                                        <circle cx="12" cy="7.5" r="4"></circle>
+                                    </svg>
                                     {{ __('tickets.show.hero.assignee') }}: {{ $ticket->assignee?->displayName() ?? __('tickets.common.unassigned') }}
                                 </span>
                             @endif
@@ -1750,7 +2148,17 @@
                         @endif
 
                         @if ($ticket->expected_resolution_at)
-                            <div class="content-meta-line">
+                            <div class="content-meta-line expected-resolution-strip">
+                                <span class="expected-resolution-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M7 3v3"></path>
+                                        <path d="M17 3v3"></path>
+                                        <path d="M4 8h16"></path>
+                                        <rect x="4" y="5" width="16" height="16" rx="2"></rect>
+                                        <path d="M9 13h3"></path>
+                                        <path d="M9 17h6"></path>
+                                    </svg>
+                                </span>
                                 {{ __('tickets.show.content.expected_resolution_at') }}:
                                 <strong>{{ $ticket->expected_resolution_at->locale($locale)->translatedFormat($dateTimeFormat) }}</strong>
                                 @if ($ticket->expected_resolution_source === 'auto')
@@ -1760,7 +2168,17 @@
                                 @endif
                             </div>
                         @elseif ($canUpdateAssignee && $ticket->assignee_id !== null && ! $ticket->hasStatusSlug(['closed', 'cancelled']))
-                            <div class="content-meta-line text-warning">
+                            <div class="content-meta-line expected-resolution-strip text-warning">
+                                <span class="expected-resolution-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M7 3v3"></path>
+                                        <path d="M17 3v3"></path>
+                                        <path d="M4 8h16"></path>
+                                        <rect x="4" y="5" width="16" height="16" rx="2"></rect>
+                                        <path d="M12 11v4"></path>
+                                        <path d="M12 18h.01"></path>
+                                    </svg>
+                                </span>
                                 {{ __('tickets.show.content.expected_resolution_missing') }}
                             </div>
                         @endif
