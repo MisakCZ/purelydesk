@@ -101,6 +101,7 @@ return [
             'id' => 'ID',
             'subject' => 'Předmět',
             'requester' => 'Zadavatel',
+            'assignee' => 'Řešitel',
             'priority' => 'Priorita',
             'status' => 'Stav',
             'deadline' => 'Termín',

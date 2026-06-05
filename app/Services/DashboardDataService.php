@@ -444,6 +444,7 @@ class DashboardDataService
             ->visibleTo($user)
             ->with([
                 'requester:id,name,display_name,username',
+                'assignee:id,name,display_name,username',
                 'status:id,name,slug',
                 'priority:id,name,slug',
             ]);

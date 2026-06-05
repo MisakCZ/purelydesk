@@ -1024,6 +1024,10 @@
                                                 {{ $ticket->requester?->displayName() ?? __('tickets.common.not_available') }}
                                             </span>
                                             <span class="dashboard-current-meta-item">
+                                                <span class="dashboard-current-meta-label">{{ __('dashboard.current.columns.assignee') }}:</span>
+                                                {{ $ticket->assignee?->displayName() ?? __('tickets.index.meta.assignee_unassigned') }}
+                                            </span>
+                                            <span class="dashboard-current-meta-item">
                                                 <span class="dashboard-current-meta-label">{{ __('dashboard.current.columns.priority') }}:</span>
                                                 <span class="badge {{ $ticket->priority?->badgeToneClass() ?? 'badge-tone-slate' }}">
                                                     <span class="badge-dot"></span>

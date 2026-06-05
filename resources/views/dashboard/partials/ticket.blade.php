@@ -36,6 +36,8 @@
 
     <div class="dashboard-ticket-requester">
         {{ __('tickets.index.meta.requester', ['name' => $ticket->requester?->displayName() ?? __('tickets.common.not_available')]) }}
+        <span aria-hidden="true">&middot;</span>
+        {{ __('tickets.index.meta.assignee', ['name' => $ticket->assignee?->displayName() ?? __('tickets.index.meta.assignee_unassigned')]) }}
     </div>
 
     <div class="dashboard-ticket-meta">

@@ -101,6 +101,7 @@ return [
             'id' => 'ID',
             'subject' => 'Subject',
             'requester' => 'Requester',
+            'assignee' => 'Assignee',
             'priority' => 'Priority',
             'status' => 'Status',
             'deadline' => 'Deadline',
