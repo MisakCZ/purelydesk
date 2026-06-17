@@ -17,7 +17,7 @@ Continuous integration runs Composer validation, Laravel tests, frontend build, 
 - Role mapping from LDAP groups.
 - Ticket visibility levels: `public`, `internal`, and `private`.
 - Sensitive request option during ticket creation.
-- Ticket comments and separate internal notes.
+- Ticket comments with up to two reply levels and separate internal notes.
 - Resolved-ticket workflow with requester confirmation and automatic closing.
 - Expected resolution deadlines with priority-based defaults, assignee reminders, and requester notifications for manual deadline changes.
 - Attachments for tickets and public comments.

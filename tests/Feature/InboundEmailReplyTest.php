@@ -85,6 +85,7 @@ class InboundEmailReplyTest extends TestCase
         );
 
         $this->assertSame('public', $comment->visibility);
+        $this->assertNull($comment->parent_id);
         $this->assertStringContainsString('Here is my reply.', $comment->body);
         $this->assertStringContainsString(
             __('notifications.inbound.attachments_ignored.comment_note', [], $sender->preferred_locale ?: app()->getLocale()),

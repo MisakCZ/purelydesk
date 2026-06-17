@@ -171,7 +171,8 @@ class TicketController extends Controller
             $ticket->load([
                 'internalComments' => fn ($query) => $query
                     ->with('user:id,name,display_name,username')
-                    ->orderBy('created_at'),
+                    ->orderBy('created_at')
+                    ->orderBy('id'),
             ]);
         } else {
             $ticket->setRelation('internalComments', collect());
@@ -191,10 +192,21 @@ class TicketController extends Controller
                                 'attachments' => fn ($attachmentQuery) => $attachmentQuery
                                     ->with('uploader:id,name,display_name,username')
                                     ->orderBy('created_at'),
+                                'publicReplies' => fn ($nestedReplyQuery) => $nestedReplyQuery
+                                    ->with([
+                                        'user:id,name,display_name,username',
+                                        'attachments' => fn ($attachmentQuery) => $attachmentQuery
+                                            ->with('uploader:id,name,display_name,username')
+                                            ->orderBy('created_at'),
+                                    ])
+                                    ->orderBy('created_at')
+                                    ->orderBy('id'),
                             ])
-                            ->orderBy('created_at'),
+                            ->orderBy('created_at')
+                            ->orderBy('id'),
                     ])
-                    ->orderBy('created_at'),
+                    ->orderBy('created_at')
+                    ->orderBy('id'),
             ]);
 
             $publicCommentThreads = $ticket->publicRootComments;
@@ -207,7 +219,8 @@ class TicketController extends Controller
                             ->with('uploader:id,name,display_name,username')
                             ->orderBy('created_at'),
                     ])
-                    ->orderBy('created_at'),
+                    ->orderBy('created_at')
+                    ->orderBy('id'),
             ]);
 
             $publicCommentThreads = $ticket->publicComments->map(function (TicketComment $comment) {

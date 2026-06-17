@@ -6,6 +6,7 @@ use App\Models\Role;
 use App\Models\Ticket;
 use App\Models\TicketAttachment;
 use App\Models\TicketCategory;
+use App\Models\TicketComment;
 use App\Models\TicketPriority;
 use App\Models\TicketStatus;
 use App\Models\User;
@@ -120,6 +121,44 @@ class TicketAttachmentTest extends TestCase
             ->get(route('tickets.show', $ticket))
             ->assertOk()
             ->assertSeeText('comment-note.txt');
+    }
+
+    public function test_user_can_add_public_reply_with_attachment(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'assignee' => $solver,
+        ]);
+        $parent = $ticket->comments()->create([
+            'user_id' => $requester->id,
+            'visibility' => 'public',
+            'body' => 'Parent comment for attachment reply.',
+        ]);
+        $file = UploadedFile::fake()->create('reply-note.txt', 3, 'text/plain');
+
+        $this->actingAs($solver)
+            ->post(route('tickets.comments.store', $ticket), [
+                'body' => 'Reply with attachment.',
+                'parent_id' => $parent->id,
+                'attachments' => [$file],
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        $reply = TicketComment::query()
+            ->where('parent_id', $parent->id)
+            ->firstOrFail();
+        $attachment = TicketAttachment::query()->firstOrFail();
+
+        $this->assertSame($reply->id, $attachment->ticket_comment_id);
+        Storage::disk('local')->assertExists($attachment->path);
+
+        $this->actingAs($requester)
+            ->get(route('tickets.show', $ticket))
+            ->assertOk()
+            ->assertSeeText('Reply with attachment.')
+            ->assertSeeText('reply-note.txt');
     }
 
     public function test_user_without_ticket_access_cannot_download_attachment(): void

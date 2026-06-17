@@ -56,6 +56,10 @@ class TicketEventNotification extends Notification
         }
 
         if ($this->event === 'public_comment') {
+            if (($this->context['is_reply'] ?? false) === true) {
+                $message->line(__('notifications.ticket.lines.comment_reply_context', [], $locale));
+            }
+
             $message
                 ->line(__('notifications.ticket.lines.comment_body', [], $locale))
                 ->line((string) ($this->context['comment_body'] ?? __('tickets.common.not_available', [], $locale)));

@@ -142,6 +142,7 @@ class InboundMaildirPollingTest extends TestCase
         $comment = TicketComment::query()->first();
         $this->assertNotNull($comment);
         $this->assertSame('public', $comment->visibility);
+        $this->assertNull($comment->parent_id);
         $this->assertSame("Please add this information.", $comment->body);
         $this->assertFileExists($this->processedDir.'/valid-token.eml');
     }

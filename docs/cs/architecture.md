@@ -86,7 +86,7 @@ flowchart TD
 
 ## Komentáře, interní poznámky a přílohy
 
-Veřejné komentáře jsou součástí konverzace viditelné zadavateli. Interní poznámky jsou pracovní kontext pouze pro oprávněné řešitele a adminy. Tyto dvě komunikační vrstvy musí zůstat oddělené.
+Veřejné komentáře jsou součástí konverzace viditelné zadavateli. Veřejný komentář může mít až dvě úrovně veřejných odpovědí; hlubší vnořená vlákna nejsou záměrně součástí workflow. Interní poznámky jsou pracovní kontext pouze pro oprávněné řešitele a adminy. Tyto dvě komunikační vrstvy musí zůstat oddělené.
 
 Přílohy mohou patřit k ticketu nebo k veřejnému komentáři. Soubory příloh se ukládají mimo public webroot a náhled/stahování prochází přes Laravel controllery s kontrolou oprávnění.
 
@@ -96,7 +96,9 @@ flowchart TD
     Ticket --> InternalNotes[Interní poznámky]
     Ticket --> AttachmentMetadata[Metadata příloh]
     AttachmentMetadata --> PrivateStorage[Neveřejné úložiště]
+    PublicComments --> PublicReplies[Veřejné odpovědi až do dvou úrovní]
     PublicComments --> RequesterVisible[Konverzace viditelná zadavateli]
+    PublicReplies --> RequesterVisible
     InternalNotes --> StaffOnly[Interní kontext pro pracovníky]
     PrivateStorage --> Controller[Autorizovaný controller pro náhled/stahování]
     Controller --> Browser[Prohlížeč]

@@ -40,6 +40,7 @@ return [
             'number' => 'Ticket number: :number',
             'subject' => 'Subject: :subject',
             'ticket_description' => 'Ticket description:',
+            'comment_reply_context' => 'This is a reply to an existing comment.',
             'comment_body' => 'Comment content:',
             'footer' => 'This message was sent automatically from the helpdesk.',
         ],

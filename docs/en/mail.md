@@ -62,7 +62,7 @@ If `HELPDESK_NOTIFY_ADMINS_ON_NEW_TICKETS=true`, admins may be added to created-
 Ticket notification recipients depend on the event type:
 
 - New ticket: the requester is notified as confirmation. Solver queue users are notified only when `HELPDESK_NOTIFY_SOLVERS_ON_NEW_TICKETS=true`. Admins are notified only when `HELPDESK_NOTIFY_ADMINS_ON_NEW_TICKETS=true`. Existing assignee or watcher records are not used as a general reason for a created-ticket notification.
-- Public comment: requester, current assignee, and watchers are notified. The comment author is excluded.
+- Public comment: requester, current assignee, and watchers are notified. The comment author is excluded. If the comment is a reply to an existing public comment, the parent comment author is also considered as a recipient and then passed through the same deduplication and permission filtering.
 - Assignee change: the requester and the new assignee are notified. If the actor assigns the ticket to themselves, no assignee-change e-mail is sent to that actor.
 - Manual expected resolution change: only the requester is notified. If the requester is also the actor, no e-mail is sent to that actor.
 - Expected resolution due-soon and overdue reminders: only the current assignee is notified. Requesters, admins, and watchers are not recipients of these reminder e-mails.

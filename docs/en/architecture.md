@@ -86,7 +86,7 @@ flowchart TD
 
 ## Comments, Internal Notes, and Attachments
 
-Public comments are part of the requester-visible conversation. Internal notes are staff-only context for authorized solvers and admins. These two communication streams must remain separate.
+Public comments are part of the requester-visible conversation. A public comment can have up to two levels of public replies; deeper nested threads are intentionally not part of the workflow. Internal notes are staff-only context for authorized solvers and admins. These two communication streams must remain separate.
 
 Attachments can belong to tickets or public comments. Attachment files are stored outside the public webroot, and preview/download actions go through Laravel controllers with authorization checks.
 
@@ -96,7 +96,9 @@ flowchart TD
     Ticket --> InternalNotes[Internal notes]
     Ticket --> AttachmentMetadata[Attachment metadata]
     AttachmentMetadata --> PrivateStorage[Private storage]
+    PublicComments --> PublicReplies[Public replies up to two levels]
     PublicComments --> RequesterVisible[Requester-visible conversation]
+    PublicReplies --> RequesterVisible
     InternalNotes --> StaffOnly[Staff-only context]
     PrivateStorage --> Controller[Authorized preview/download controller]
     Controller --> Browser[Browser]

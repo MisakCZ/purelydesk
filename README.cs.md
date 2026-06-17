@@ -17,7 +17,7 @@ Continuous integration ověřuje Composer metadata, Laravel testy, frontend buil
 - Mapování rolí z LDAP skupin.
 - Úrovně viditelnosti ticketů: `public`, `internal` a `private`.
 - Volba citlivého požadavku při založení ticketu.
-- Komentáře k ticketům a oddělené interní poznámky.
+- Komentáře k ticketům až se dvěma úrovněmi odpovědí a oddělené interní poznámky.
 - Workflow vyřešených ticketů s potvrzením zadavatelem a automatickým uzavřením.
 - Očekávané termíny vyřešení s výchozími hodnotami podle priority, připomínkami řešiteli a notifikací zadavatele při ruční změně termínu.
 - Přílohy k ticketům a veřejným komentářům.

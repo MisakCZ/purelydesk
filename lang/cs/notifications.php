@@ -40,6 +40,7 @@ return [
             'number' => 'Číslo ticketu: :number',
             'subject' => 'Předmět: :subject',
             'ticket_description' => 'Popis ticketu:',
+            'comment_reply_context' => 'Jde o odpověď na existující komentář.',
             'comment_body' => 'Obsah komentáře:',
             'footer' => 'Tato zpráva byla odeslána automaticky z helpdesku.',
         ],

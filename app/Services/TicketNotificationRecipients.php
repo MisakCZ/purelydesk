@@ -15,21 +15,30 @@ class TicketNotificationRecipients
     ) {}
 
     /**
+     * @param  array<int, User>  $additionalRecipients
      * @return Collection<int, User>
      */
-    public function forTicket(Ticket $ticket, string $event, ?User $actor = null, bool $excludeActor = true): Collection
+    public function forTicket(
+        Ticket $ticket,
+        string $event,
+        ?User $actor = null,
+        bool $excludeActor = true,
+        array $additionalRecipients = [],
+    ): Collection
     {
         $ticket->load([
-            'requester:id,name,display_name,username,email,preferred_locale',
-            'assignee:id,name,display_name,username,email,preferred_locale',
-            'watchers:id,name,display_name,username,email,preferred_locale',
+            'requester:id,name,display_name,username,email,preferred_locale,is_active',
+            'assignee:id,name,display_name,username,email,preferred_locale,is_active',
+            'watchers:id,name,display_name,username,email,preferred_locale,is_active',
         ]);
 
         return $this->baseRecipientsForEvent($ticket, $event)
+            ->merge($additionalRecipients)
             ->when(
                 $excludeActor && $actor instanceof User,
                 fn (Collection $users) => $users->reject(fn (User $user) => (int) $user->id === (int) $actor->id),
             )
+            ->filter(fn (User $user) => $user->is_active !== false)
             ->filter(fn (User $user) => filled($user->email))
             ->filter(fn (User $user) => $this->ticketPolicy->view($user, $ticket))
             ->unique(fn (User $user) => $this->deduplicationKey($user))
@@ -93,7 +102,7 @@ class TicketNotificationRecipients
 
         return User::query()
             ->whereHas('roles', fn (Builder $query) => $query->whereIn('slug', $roleSlugs->all()))
-            ->get(['id', 'name', 'display_name', 'username', 'email', 'preferred_locale']);
+            ->get(['id', 'name', 'display_name', 'username', 'email', 'preferred_locale', 'is_active']);
     }
 
     private function deduplicationKey(User $user): string

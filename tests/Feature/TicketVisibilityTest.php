@@ -1072,6 +1072,432 @@ class TicketVisibilityTest extends TestCase
         Notification::assertNotSentTo($commenter, TicketEventNotification::class);
     }
 
+    public function test_user_can_create_top_level_public_comment_as_before(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $ticket = $this->createTicket(['requester' => $requester]);
+
+        $this->actingAs($requester)
+            ->post(route('tickets.comments.store', $ticket), [
+                'body' => 'Top level public comment.',
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        $comment = TicketComment::query()->firstOrFail();
+
+        $this->assertSame('public', $comment->visibility);
+        $this->assertNull($comment->parent_id);
+        $this->assertSame('Top level public comment.', $comment->body);
+    }
+
+    public function test_user_can_reply_to_top_level_public_comment(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $assignee = $this->createUserWithRole($this->solverRole);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'assignee' => $assignee,
+        ]);
+        $parent = $ticket->comments()->create([
+            'user_id' => $requester->id,
+            'visibility' => 'public',
+            'body' => 'Parent comment.',
+        ]);
+
+        $this->actingAs($assignee)
+            ->post(route('tickets.comments.store', $ticket), [
+                'body' => 'Reply to parent comment.',
+                'parent_id' => $parent->id,
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        $this->assertDatabaseHas('ticket_comments', [
+            'ticket_id' => $ticket->id,
+            'user_id' => $assignee->id,
+            'parent_id' => $parent->id,
+            'visibility' => 'public',
+            'body' => 'Reply to parent comment.',
+        ]);
+    }
+
+    public function test_public_comment_replies_are_nested_and_ordered_under_parent(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'assignee' => $solver,
+        ]);
+        $parent = $ticket->comments()->create([
+            'user_id' => $requester->id,
+            'visibility' => 'public',
+            'body' => 'Parent visible comment.',
+            'created_at' => Carbon::parse('2026-06-17 08:00:00'),
+            'updated_at' => Carbon::parse('2026-06-17 08:00:00'),
+        ]);
+        $laterRoot = $ticket->comments()->create([
+            'user_id' => $requester->id,
+            'visibility' => 'public',
+            'body' => 'Later root comment.',
+            'created_at' => Carbon::parse('2026-06-17 08:05:00'),
+            'updated_at' => Carbon::parse('2026-06-17 08:05:00'),
+        ]);
+        $firstReply = $ticket->comments()->create([
+            'user_id' => $solver->id,
+            'parent_id' => $parent->id,
+            'visibility' => 'public',
+            'body' => 'First ordered reply.',
+            'created_at' => Carbon::parse('2026-06-17 08:01:00'),
+            'updated_at' => Carbon::parse('2026-06-17 08:01:00'),
+        ]);
+        $secondReply = $ticket->comments()->create([
+            'user_id' => $solver->id,
+            'parent_id' => $parent->id,
+            'visibility' => 'public',
+            'body' => 'Second ordered reply.',
+            'created_at' => Carbon::parse('2026-06-17 08:03:00'),
+            'updated_at' => Carbon::parse('2026-06-17 08:03:00'),
+        ]);
+        $nestedReply = $ticket->comments()->create([
+            'user_id' => $requester->id,
+            'parent_id' => $firstReply->id,
+            'visibility' => 'public',
+            'body' => 'Nested second level reply.',
+            'created_at' => Carbon::parse('2026-06-17 08:02:00'),
+            'updated_at' => Carbon::parse('2026-06-17 08:02:00'),
+        ]);
+
+        $this->actingAs($requester)
+            ->get(route('tickets.show', $ticket))
+            ->assertOk()
+            ->assertSeeInOrder([
+                'Parent visible comment.',
+                'First ordered reply.',
+                'Nested second level reply.',
+                'Second ordered reply.',
+                'Later root comment.',
+            ])
+            ->assertSee('comment-'.$parent->id, false)
+            ->assertSee('comment-'.$firstReply->id, false)
+            ->assertSee('comment-'.$nestedReply->id, false)
+            ->assertSee('comment-'.$secondReply->id, false)
+            ->assertSee('comment-'.$laterRoot->id, false);
+    }
+
+    public function test_reply_button_is_shown_only_until_first_reply_level(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'assignee' => $solver,
+        ]);
+        $parent = $ticket->comments()->create([
+            'user_id' => $requester->id,
+            'visibility' => 'public',
+            'body' => 'Parent with reply button.',
+        ]);
+        $reply = $ticket->comments()->create([
+            'user_id' => $solver->id,
+            'parent_id' => $parent->id,
+            'visibility' => 'public',
+            'body' => 'First level reply with reply button.',
+        ]);
+        $nestedReply = $ticket->comments()->create([
+            'user_id' => $requester->id,
+            'parent_id' => $reply->id,
+            'visibility' => 'public',
+            'body' => 'Second level reply without reply button.',
+        ]);
+
+        $this->actingAs($solver)
+            ->get(route('tickets.show', $ticket))
+            ->assertOk()
+            ->assertSee('reply-editor-'.$parent->id, false)
+            ->assertSee('reply-editor-'.$reply->id, false)
+            ->assertDontSee('reply-editor-'.$nestedReply->id, false);
+    }
+
+    public function test_reply_cannot_target_comment_from_another_ticket(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $ticket = $this->createTicket(['requester' => $requester]);
+        $otherTicket = $this->createTicket(['requester' => $requester]);
+        $otherComment = $otherTicket->comments()->create([
+            'user_id' => $requester->id,
+            'visibility' => 'public',
+            'body' => 'Other ticket comment.',
+        ]);
+
+        $this->actingAs($requester)
+            ->from(route('tickets.show', $ticket))
+            ->post(route('tickets.comments.store', $ticket), [
+                'body' => 'Invalid cross ticket reply.',
+                'parent_id' => $otherComment->id,
+            ])
+            ->assertRedirect(route('tickets.show', $ticket))
+            ->assertSessionHasErrors(['parent_id'], null, 'comment');
+
+        $this->assertDatabaseMissing('ticket_comments', [
+            'ticket_id' => $ticket->id,
+            'body' => 'Invalid cross ticket reply.',
+        ]);
+    }
+
+    public function test_reply_can_target_first_level_reply(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $ticket = $this->createTicket(['requester' => $requester]);
+        $parent = $ticket->comments()->create([
+            'user_id' => $requester->id,
+            'visibility' => 'public',
+            'body' => 'Parent comment.',
+        ]);
+        $reply = $ticket->comments()->create([
+            'user_id' => $requester->id,
+            'parent_id' => $parent->id,
+            'visibility' => 'public',
+            'body' => 'Existing reply.',
+        ]);
+
+        $this->actingAs($solver)
+            ->post(route('tickets.comments.store', $ticket), [
+                'body' => 'Second level reply should pass.',
+                'parent_id' => $reply->id,
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        $this->assertDatabaseHas('ticket_comments', [
+            'ticket_id' => $ticket->id,
+            'user_id' => $solver->id,
+            'parent_id' => $reply->id,
+            'visibility' => 'public',
+            'body' => 'Second level reply should pass.',
+        ]);
+    }
+
+    public function test_reply_cannot_target_second_level_reply(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $ticket = $this->createTicket(['requester' => $requester]);
+        $parent = $ticket->comments()->create([
+            'user_id' => $requester->id,
+            'visibility' => 'public',
+            'body' => 'Parent comment.',
+        ]);
+        $reply = $ticket->comments()->create([
+            'user_id' => $requester->id,
+            'parent_id' => $parent->id,
+            'visibility' => 'public',
+            'body' => 'Existing first level reply.',
+        ]);
+        $nestedReply = $ticket->comments()->create([
+            'user_id' => $requester->id,
+            'parent_id' => $reply->id,
+            'visibility' => 'public',
+            'body' => 'Existing second level reply.',
+        ]);
+
+        $this->actingAs($requester)
+            ->from(route('tickets.show', $ticket))
+            ->post(route('tickets.comments.store', $ticket), [
+                'body' => 'Third level reply should fail.',
+                'parent_id' => $nestedReply->id,
+            ])
+            ->assertRedirect(route('tickets.show', $ticket))
+            ->assertSessionHasErrors(['parent_id'], null, 'comment');
+
+        $this->assertDatabaseMissing('ticket_comments', [
+            'ticket_id' => $ticket->id,
+            'body' => 'Third level reply should fail.',
+        ]);
+    }
+
+    public function test_reply_cannot_target_internal_note(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'assignee' => $solver,
+            'visibility' => Ticket::VISIBILITY_INTERNAL,
+        ]);
+        $internalNote = $ticket->comments()->create([
+            'user_id' => $solver->id,
+            'visibility' => 'internal',
+            'body' => 'Internal note.',
+        ]);
+
+        $this->actingAs($solver)
+            ->from(route('tickets.show', $ticket))
+            ->post(route('tickets.comments.store', $ticket), [
+                'body' => 'Public reply to internal note should fail.',
+                'parent_id' => $internalNote->id,
+            ])
+            ->assertRedirect(route('tickets.show', $ticket))
+            ->assertSessionHasErrors(['parent_id'], null, 'comment');
+
+        $this->assertDatabaseMissing('ticket_comments', [
+            'ticket_id' => $ticket->id,
+            'body' => 'Public reply to internal note should fail.',
+        ]);
+    }
+
+    public function test_user_without_ticket_access_cannot_create_reply(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $outsider = $this->createUserWithRole($this->userRole);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'visibility' => Ticket::VISIBILITY_PRIVATE,
+        ]);
+        $parent = $ticket->comments()->create([
+            'user_id' => $requester->id,
+            'visibility' => 'public',
+            'body' => 'Private ticket parent.',
+        ]);
+
+        $this->actingAs($outsider)
+            ->post(route('tickets.comments.store', $ticket), [
+                'body' => 'Unauthorized reply.',
+                'parent_id' => $parent->id,
+            ])
+            ->assertForbidden();
+
+        $this->assertDatabaseMissing('ticket_comments', [
+            'ticket_id' => $ticket->id,
+            'body' => 'Unauthorized reply.',
+        ]);
+    }
+
+    public function test_reply_to_public_comment_notifies_parent_author_when_authorized(): void
+    {
+        config()->set('helpdesk.notifications.mail.enabled', true);
+        Notification::fake();
+        $requester = $this->createUserWithRole($this->userRole);
+        $assignee = $this->createUserWithRole($this->solverRole);
+        $parentAuthor = $this->createUserWithRole($this->userRole, [
+            'email' => 'parent-author@example.org',
+            'preferred_locale' => 'en',
+        ]);
+        $commenter = $this->createUserWithRole($this->userRole, [
+            'display_name' => 'Reply Actor',
+            'preferred_locale' => 'en',
+        ]);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'assignee' => $assignee,
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+        ]);
+        $parent = $ticket->comments()->create([
+            'user_id' => $parentAuthor->id,
+            'visibility' => 'public',
+            'body' => 'Parent comment from extra recipient.',
+        ]);
+
+        $this->actingAs($commenter)
+            ->post(route('tickets.comments.store', $ticket), [
+                'body' => 'Reply that should notify parent author.',
+                'parent_id' => $parent->id,
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        Notification::assertSentTo(
+            $parentAuthor,
+            TicketEventNotification::class,
+            function (TicketEventNotification $notification) use ($parentAuthor): bool {
+                $mailMessage = $notification->toMail($parentAuthor);
+
+                return $notification->event === 'public_comment'
+                    && in_array('This is a reply to an existing comment.', $mailMessage->introLines, true)
+                    && in_array('Reply that should notify parent author.', $mailMessage->introLines, true);
+            },
+        );
+        Notification::assertSentToTimes($parentAuthor, TicketEventNotification::class, 1);
+        Notification::assertNotSentTo($commenter, TicketEventNotification::class);
+    }
+
+    public function test_second_level_reply_notifies_direct_parent_author_when_authorized(): void
+    {
+        config()->set('helpdesk.notifications.mail.enabled', true);
+        Notification::fake();
+        $requester = $this->createUserWithRole($this->userRole);
+        $assignee = $this->createUserWithRole($this->solverRole);
+        $parentAuthor = $this->createUserWithRole($this->userRole, [
+            'email' => 'first-level-author@example.org',
+            'preferred_locale' => 'en',
+        ]);
+        $commenter = $this->createUserWithRole($this->userRole, [
+            'display_name' => 'Second Level Actor',
+            'preferred_locale' => 'en',
+        ]);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'assignee' => $assignee,
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+        ]);
+        $root = $ticket->comments()->create([
+            'user_id' => $requester->id,
+            'visibility' => 'public',
+            'body' => 'Root parent comment.',
+        ]);
+        $firstLevelReply = $ticket->comments()->create([
+            'user_id' => $parentAuthor->id,
+            'parent_id' => $root->id,
+            'visibility' => 'public',
+            'body' => 'First level reply from extra recipient.',
+        ]);
+
+        $this->actingAs($commenter)
+            ->post(route('tickets.comments.store', $ticket), [
+                'body' => 'Second level reply that should notify direct parent author.',
+                'parent_id' => $firstLevelReply->id,
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        Notification::assertSentTo(
+            $parentAuthor,
+            TicketEventNotification::class,
+            function (TicketEventNotification $notification) use ($parentAuthor): bool {
+                $mailMessage = $notification->toMail($parentAuthor);
+
+                return $notification->event === 'public_comment'
+                    && in_array('This is a reply to an existing comment.', $mailMessage->introLines, true)
+                    && in_array('Second level reply that should notify direct parent author.', $mailMessage->introLines, true);
+            },
+        );
+        Notification::assertSentToTimes($parentAuthor, TicketEventNotification::class, 1);
+        Notification::assertNotSentTo($commenter, TicketEventNotification::class);
+    }
+
+    public function test_reply_notification_deduplicates_parent_author_when_already_recipient(): void
+    {
+        config()->set('helpdesk.notifications.mail.enabled', true);
+        Notification::fake();
+        $requester = $this->createUserWithRole($this->userRole);
+        $assignee = $this->createUserWithRole($this->solverRole);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'assignee' => $assignee,
+        ]);
+        $parent = $ticket->comments()->create([
+            'user_id' => $requester->id,
+            'visibility' => 'public',
+            'body' => 'Requester parent comment.',
+        ]);
+
+        $this->actingAs($assignee)
+            ->post(route('tickets.comments.store', $ticket), [
+                'body' => 'Reply should be deduplicated.',
+                'parent_id' => $parent->id,
+            ])
+            ->assertRedirect(route('tickets.show', $ticket));
+
+        Notification::assertSentToTimes($requester, TicketEventNotification::class, 1);
+        Notification::assertNotSentTo($assignee, TicketEventNotification::class);
+    }
+
     public function test_private_ticket_comment_does_not_notify_unauthorized_watcher(): void
     {
         config()->set('helpdesk.notifications.mail.enabled', true);

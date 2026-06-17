@@ -62,7 +62,7 @@ Pokud je `HELPDESK_NOTIFY_ADMINS_ON_NEW_TICKETS=true`, admini mohou být přidá
 Příjemci ticketových notifikací závisí na typu události:
 
 - Nový ticket: zadavatel dostane potvrzení o založení. Uživatelé ve frontě solverů dostanou notifikaci jen při `HELPDESK_NOTIFY_SOLVERS_ON_NEW_TICKETS=true`. Admini dostanou notifikaci jen při `HELPDESK_NOTIFY_ADMINS_ON_NEW_TICKETS=true`. Existující řešitel nebo watcher záznam nejsou samy o sobě obecným důvodem pro notifikaci o novém ticketu.
-- Veřejný komentář: notifikaci dostane zadavatel, aktuální řešitel a sledující. Autor komentáře je vyloučen.
+- Veřejný komentář: notifikaci dostane zadavatel, aktuální řešitel a sledující. Autor komentáře je vyloučen. Pokud jde o odpověď na existující veřejný komentář, posuzuje se jako příjemce také autor rodičovského komentáře a následně projde stejnou deduplikací a filtrováním oprávnění.
 - Změna řešitele: notifikaci dostane zadavatel a nový řešitel. Pokud si aktér přiřadí ticket sám sobě, e-mail o změně řešitele se mu neposílá.
 - Ruční změna očekávaného termínu vyřešení: notifikaci dostane pouze zadavatel. Pokud je zadavatel zároveň aktér, e-mail se mu neposílá.
 - Připomínky blížícího se nebo překročeného očekávaného termínu vyřešení: notifikaci dostane pouze aktuální řešitel. Zadavatelé, admini ani sledující tyto připomínky nedostávají.

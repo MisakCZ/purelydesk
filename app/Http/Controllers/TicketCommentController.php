@@ -74,11 +74,15 @@ class TicketCommentController extends Controller
 
         $this->ticketNotificationService()->notify($ticket, 'public_comment', $actor, [
             'comment_body' => $comment->body,
+            'is_reply' => $parentComment instanceof TicketComment,
+            'additional_recipients' => $this->additionalReplyRecipients($parentComment),
         ]);
 
         return redirect()
             ->route('tickets.show', $ticket)
-            ->with('status', $parentComment instanceof TicketComment ? 'Odpověď byla přidána.' : 'Komentář byl přidán.');
+            ->with('status', $parentComment instanceof TicketComment
+                ? __('tickets.show.comments.reply_stored')
+                : __('tickets.show.comments.comment_stored'));
     }
 
     public function storeInternal(Request $request, Ticket $ticket): RedirectResponse
@@ -139,24 +143,60 @@ class TicketCommentController extends Controller
 
         if (! TicketComment::supportsThreading()) {
             throw ValidationException::withMessages([
-                'parent_id' => 'Odpovědi na komentáře budou dostupné po spuštění databázové migrace aplikace.',
+                'parent_id' => __('tickets.show.comments.reply_unavailable'),
             ])->errorBag('comment');
         }
 
         $parentComment = TicketComment::query()
+            ->with([
+                'parent:id,parent_id',
+                'user:id,name,display_name,username,email,preferred_locale,is_active',
+            ])
             ->whereKey((int) $parentId)
             ->where('ticket_id', $ticket->id)
             ->publicVisible()
-            ->rootComments()
             ->first();
 
-        if ($parentComment instanceof TicketComment) {
+        if ($parentComment instanceof TicketComment && $this->commentDepth($parentComment) < 2) {
             return $parentComment;
         }
 
         throw ValidationException::withMessages([
-            'parent_id' => 'Odpověď lze přidat jen k existujícímu veřejnému hlavnímu komentáři tohoto ticketu.',
+            'parent_id' => __('tickets.show.comments.reply_parent_invalid'),
         ])->errorBag('comment');
+    }
+
+    private function commentDepth(TicketComment $comment): int
+    {
+        $depth = 0;
+        $current = $comment;
+
+        while ($current->parent_id !== null) {
+            $depth++;
+            $current = $current->parent;
+
+            if (! $current instanceof TicketComment) {
+                break;
+            }
+
+            if ($depth >= 2) {
+                break;
+            }
+        }
+
+        return $depth;
+    }
+
+    /**
+     * @return array<int, User>
+     */
+    private function additionalReplyRecipients(?TicketComment $parentComment): array
+    {
+        if (! $parentComment instanceof TicketComment) {
+            return [];
+        }
+
+        return $parentComment->user instanceof User ? [$parentComment->user] : [];
     }
 
     private function resolveAuthor(string $errorBag, string $errorKey): User
