@@ -447,7 +447,8 @@ class DashboardDataService
                 'assignee:id,name,display_name,username',
                 'status:id,name,slug',
                 'priority:id,name,slug',
-            ]);
+            ])
+            ->withCount('internalComments');
 
         if (Ticket::supportsArchiving()) {
             $query->whereNull('archived_at');

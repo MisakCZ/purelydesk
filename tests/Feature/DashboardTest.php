@@ -6,6 +6,7 @@ use App\Models\Announcement;
 use App\Models\Role;
 use App\Models\Ticket;
 use App\Models\TicketCategory;
+use App\Models\TicketComment;
 use App\Models\TicketPriority;
 use App\Models\TicketStatus;
 use App\Models\User;
@@ -232,6 +233,37 @@ class DashboardTest extends TestCase
             ])
             ->assertDontSeeText('Current dashboard ticket 1')
             ->assertDontSeeText('Closed dashboard ticket should not show');
+    }
+
+    public function test_internal_note_indicator_on_dashboard_is_visible_only_to_authorized_users(): void
+    {
+        $requester = $this->createUserWithRoles([$this->userRole]);
+        $solver = $this->createUserWithRoles([$this->solverRole]);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'assignee' => $solver,
+            'subject' => 'Dashboard ticket with internal note',
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+        ]);
+
+        TicketComment::query()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $solver->id,
+            'visibility' => 'internal',
+            'body' => 'Dashboard internal note body',
+        ]);
+
+        $this->actingAs($solver)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSeeText('Dashboard ticket with internal note')
+            ->assertSeeText(__('tickets.index.meta.internal_note'));
+
+        $this->actingAs($requester)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSeeText('Dashboard ticket with internal note')
+            ->assertDontSeeText(__('tickets.index.meta.internal_note'));
     }
 
     public function test_solver_sla_resolved_count_uses_assigned_resolved_tickets(): void

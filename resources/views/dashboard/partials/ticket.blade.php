@@ -38,6 +38,22 @@
         {{ __('tickets.index.meta.requester', ['name' => $ticket->requester?->displayName() ?? __('tickets.common.not_available')]) }}
         <span aria-hidden="true">&middot;</span>
         {{ __('tickets.index.meta.assignee', ['name' => $ticket->assignee?->displayName() ?? __('tickets.index.meta.assignee_unassigned')]) }}
+        @can('viewInternalNotes', $ticket)
+            @if (($ticket->internal_comments_count ?? 0) > 0)
+                <span aria-hidden="true">&middot;</span>
+                <span class="dashboard-ticket-internal-note">
+                    <span class="dashboard-ticket-internal-note-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 4.5h9.5L18 7v12.5H6z"></path>
+                            <path d="M15 4.5V8h3"></path>
+                            <path d="M9 12h6"></path>
+                            <path d="M9 15.5h4"></path>
+                        </svg>
+                    </span>
+                    {{ __('tickets.index.meta.internal_note') }}
+                </span>
+            @endif
+        @endcan
     </div>
 
     <div class="dashboard-ticket-meta">

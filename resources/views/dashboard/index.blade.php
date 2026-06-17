@@ -482,6 +482,32 @@
             white-space: nowrap;
         }
 
+        .dashboard-current-meta-internal-note,
+        .dashboard-ticket-internal-note {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            color: color-mix(in srgb, var(--dashboard-violet, #7c3aed) 72%, var(--color-muted, #64748b));
+            font-weight: 720;
+        }
+
+        .dashboard-current-internal-note-icon,
+        .dashboard-ticket-internal-note-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 0.95rem;
+            height: 0.95rem;
+            color: currentColor;
+            flex: 0 0 auto;
+        }
+
+        .dashboard-current-internal-note-icon svg,
+        .dashboard-ticket-internal-note-icon svg {
+            width: 0.95rem;
+            height: 0.95rem;
+        }
+
         .dashboard-empty {
             margin: 0 1.15rem 1.15rem;
             padding: 0.75rem 0.85rem;
@@ -1049,6 +1075,21 @@
                                                     </span>
                                                 </span>
                                             @endif
+                                            @can('viewInternalNotes', $ticket)
+                                                @if (($ticket->internal_comments_count ?? 0) > 0)
+                                                    <span class="dashboard-current-meta-item dashboard-current-meta-internal-note">
+                                                        <span class="dashboard-current-internal-note-icon" aria-hidden="true">
+                                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                                                <path d="M6 4.5h9.5L18 7v12.5H6z"></path>
+                                                                <path d="M15 4.5V8h3"></path>
+                                                                <path d="M9 12h6"></path>
+                                                                <path d="M9 15.5h4"></path>
+                                                            </svg>
+                                                        </span>
+                                                        {{ __('tickets.index.meta.internal_note') }}
+                                                    </span>
+                                                @endif
+                                            @endcan
                                             <span class="dashboard-current-meta-item">
                                                 <span class="dashboard-current-meta-label">{{ __('dashboard.current.columns.deadline') }}:</span>
                                                 {{ $ticket->expected_resolution_at?->locale($locale)->translatedFormat($deadlineFormat) ?? __('tickets.common.not_available') }}

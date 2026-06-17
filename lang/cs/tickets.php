@@ -112,6 +112,7 @@ return [
             'assignee' => 'Řešitel: :name',
             'assignee_unassigned' => 'Bez přiřazení',
             'comments' => '{0} Bez komentářů|{1} 1 komentář|[2,4] :count komentáře|[5,*] :count komentářů',
+            'internal_note' => 'Interní poznámka',
             'updated_label' => 'Aktualizováno',
             'updated' => 'Aktualizováno :date',
             'deadline_label' => 'Termín',

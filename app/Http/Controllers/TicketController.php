@@ -869,7 +869,10 @@ class TicketController extends Controller
                 'requester:id,name,display_name,username',
                 'assignee:id,name,display_name,username',
             ])
-            ->withCount('publicComments');
+            ->withCount([
+                'publicComments',
+                'internalComments',
+            ]);
 
         if ($watcherUser instanceof User) {
             $query->withExists([

@@ -112,6 +112,7 @@ return [
             'assignee' => 'Assignee: :name',
             'assignee_unassigned' => 'Unassigned',
             'comments' => '{0} No comments|{1} 1 comment|[2,*] :count comments',
+            'internal_note' => 'Internal note',
             'updated_label' => 'Updated',
             'updated' => 'Updated :date',
             'deadline_label' => 'Deadline',

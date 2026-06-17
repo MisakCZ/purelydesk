@@ -1101,6 +1101,15 @@
             height: 0.95rem;
         }
 
+        .ticket-card-meta-internal-note {
+            color: color-mix(in srgb, var(--ticket-violet, #7c3aed) 72%, var(--color-muted, #64748b));
+            font-weight: 720;
+        }
+
+        .ticket-card-meta-internal-note .ticket-meta-icon {
+            color: currentColor;
+        }
+
         .ticket-card-meta-label {
             color: var(--color-muted, #64748b);
             font-weight: 760;
@@ -2666,6 +2675,21 @@
                                     </span>
                                     {{ trans_choice('tickets.index.meta.comments', $ticket->public_comments_count, ['count' => $ticket->public_comments_count]) }}
                                 </span>
+                                @can('viewInternalNotes', $ticket)
+                                    @if (($ticket->internal_comments_count ?? 0) > 0)
+                                        <span class="ticket-card-meta-item ticket-card-meta-internal-note">
+                                            <span class="ticket-meta-icon" aria-hidden="true">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M6 4.5h9.5L18 7v12.5H6z"></path>
+                                                    <path d="M15 4.5V8h3"></path>
+                                                    <path d="M9 12h6"></path>
+                                                    <path d="M9 15.5h4"></path>
+                                                </svg>
+                                            </span>
+                                            {{ __('tickets.index.meta.internal_note') }}
+                                        </span>
+                                    @endif
+                                @endcan
                             </div>
                         </div>
 

@@ -647,6 +647,37 @@ class TicketVisibilityTest extends TestCase
         ]);
     }
 
+    public function test_internal_note_indicator_on_ticket_list_is_visible_only_to_authorized_users(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $solver = $this->createUserWithRole($this->solverRole);
+        $ticket = $this->createTicket([
+            'requester' => $requester,
+            'assignee' => $solver,
+            'subject' => 'Ticket list item with internal note',
+            'visibility' => Ticket::VISIBILITY_PUBLIC,
+        ]);
+
+        TicketComment::query()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $solver->id,
+            'visibility' => 'internal',
+            'body' => 'Ticket list internal note body',
+        ]);
+
+        $this->actingAs($solver)
+            ->get(route('tickets.index', ['reset' => 1]))
+            ->assertOk()
+            ->assertSeeText('Ticket list item with internal note')
+            ->assertSeeText(__('tickets.index.meta.internal_note'));
+
+        $this->actingAs($requester)
+            ->get(route('tickets.index', ['reset' => 1]))
+            ->assertOk()
+            ->assertSeeText('Ticket list item with internal note')
+            ->assertDontSeeText(__('tickets.index.meta.internal_note'));
+    }
+
     public function test_assigning_assignee_on_new_ticket_moves_status_to_assigned(): void
     {
         $requester = $this->createUserWithRole($this->userRole);
