@@ -89,11 +89,14 @@ PurelyDesk může spojit běžné solverovy aktivity u jednoho ticketu pro jedno
 HELPDESK_MAIL_BATCH_NOTIFICATIONS=true
 HELPDESK_MAIL_BATCH_QUIET_MINUTES=10
 HELPDESK_MAIL_BATCH_MAX_MINUTES=30
+HELPDESK_MAIL_BATCH_ACTION_GRACE_MINUTES=3
 ```
 
-Při zapnutém slučování se pro zadavatele seskupují solverovy změny řešitele, statusu, běžné úpravy ticketu, veřejné komentáře a ruční změny očekávaného termínu podle kombinace `ticket + příjemce`. Dávka se odešle po uplynutí quiet periody od poslední události, nejpozději však po maximální době počítané od první události.
+Při zapnutém slučování se pro zadavatele seskupují solverovy změny řešitele, všechny běžné změny statusu, běžné úpravy ticketu, veřejné komentáře a ruční změny očekávaného termínu podle kombinace `ticket + příjemce`. Každý veřejný komentář zůstává samostatnou chronologickou položkou s autorem, časem a obsahem. Běžné mezistavy včetně `waiting_third_party` používají nakonfigurovanou quiet period od poslední události. Dávka se nikdy neodloží za maximální dobu počítanou od první události.
 
-Přechod do `waiting_user`, `resolved` nebo `closed` čekající dávku pro zadavatele ihned uzavře a odešle včetně této poslední události. Souhrn pro `waiting_user` výslovně uvádí, že helpdesk čeká na odpověď zadavatele.
+Události `waiting_user`, `resolved` a `closed` místo odeslání e-mailu přímo ve webovém requestu aktivují krátkou dokončovací grace period. Řešitel tak může do stejného souhrnu doplnit bezprostředně následující vysvětlující komentář. Událost aktivující grace period je součástí dávky a další slučované události vstoupí do stejné dávky, aniž by původní grace deadline prodloužily. Výsledný čas odeslání je nejbližší z aktuálního quiet deadline, maximálního deadline dávky a action grace deadline. Souhrn uvádí čekání na odpověď zadavatele pouze tehdy, pokud je `waiting_user` stále aktuálním stavem ticketu.
+
+`HELPDESK_MAIL_BATCH_ACTION_GRACE_MINUTES` nastavuje toto dokončovací okno a aplikace hodnotu omezuje na 1–15 minut. Souhrn po dosažení výsledného času `send_after` odesílá Laravel scheduler, nikoli HTTP request.
 
 Okamžitě se nadále odesílají:
 
@@ -106,7 +109,7 @@ Okamžitě se nadále odesílají:
 
 Interní poznámky nikdy nevytvářejí odchozí e-mail ani položku veřejné dávky. Existující výběr příjemců stále vylučuje aktéra, deduplikuje adresy a ověřuje viditelnost ticketu ještě před zařazením události. Bezprostředně před odesláním aplikace znovu ověří, že příjemce stále existuje, je aktivní, má platnou e-mailovou adresu a může ticket zobrazit podle aktuální `TicketPolicy`. Pokud kontrola neprojde, dávka se potlačí; to je důležité zejména po změně účastníků privátního ticketu.
 
-Laravel scheduler spouští každou minutu `helpdesk:send-pending-notification-batches`. Neúspěšné synchronní SMTP odeslání zůstane připravené k pozdějšímu opakování; command si dávku před odesláním atomicky rezervuje, aby ji opakované nebo souběžné běhy neodeslaly dvakrát. Queue worker není potřeba.
+Laravel scheduler spouští každou minutu `helpdesk:send-pending-notification-batches`. Neúspěšné synchronní SMTP odeslání zůstane připravené k pozdějšímu opakování; command si dávku před odesláním atomicky rezervuje, aby ji opakované nebo souběžné běhy neodeslaly dvakrát. Queue worker není potřeba a odeslání po akčním stavu neprovádí SMTP operaci uvnitř webového requestu.
 
 Hodnota `HELPDESK_MAIL_BATCH_NOTIFICATIONS=false` zachová okamžité odesílání každé jednotlivé události. Globální `HELPDESK_MAIL_NOTIFICATIONS=false` nadále vypíná všechny standardní ticketové e-mailové notifikace.
 

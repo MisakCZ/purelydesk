@@ -89,11 +89,14 @@ PurelyDesk can combine routine solver activity for one ticket and one requester 
 HELPDESK_MAIL_BATCH_NOTIFICATIONS=true
 HELPDESK_MAIL_BATCH_QUIET_MINUTES=10
 HELPDESK_MAIL_BATCH_MAX_MINUTES=30
+HELPDESK_MAIL_BATCH_ACTION_GRACE_MINUTES=3
 ```
 
-With batching enabled, solver-originated assignee changes, status changes, ordinary ticket edits, public comments, and manual expected-resolution changes for the requester are collected by `ticket + recipient`. The batch is sent after the configured quiet period following the last event, but never later than the maximum period measured from the first event.
+With batching enabled, solver-originated assignee changes, all routine status changes, ordinary ticket edits, public comments, and manual expected-resolution changes for the requester are collected by `ticket + recipient`. Every public comment remains a separate chronological item with its author, time, and content. Routine intermediate states, including `waiting_third_party`, use the configured quiet period following the last event. A batch is never delayed beyond the maximum period measured from its first event.
 
-A transition to `waiting_user`, `resolved`, or `closed` immediately closes and sends the pending requester batch, including that final event. The `waiting_user` summary clearly states that the helpdesk is waiting for the requester's reply.
+The `waiting_user`, `resolved`, and `closed` events activate a short action grace period instead of sending mail from the web request. This gives the solver time to add an immediately following explanatory comment to the same summary. The event that activates the grace period is included in the batch, and later batchable events join the same batch without extending the original grace deadline. The effective delivery time is the earliest of the current quiet deadline, the maximum batch deadline, and the action grace deadline. The `waiting_user` summary clearly states that the helpdesk is waiting for the requester's reply only when that is still the ticket's current state.
+
+`HELPDESK_MAIL_BATCH_ACTION_GRACE_MINUTES` configures this finishing window and is clamped by the application to 1–15 minutes. The Laravel scheduler, rather than the HTTP request, sends the summary after its effective `send_after` time.
 
 The following remain immediate:
 
@@ -106,7 +109,7 @@ The following remain immediate:
 
 Internal notes never create outbound mail or public batch items. Existing recipient resolution still excludes the actor, deduplicates addresses, and applies ticket visibility rules before an event is queued. Immediately before sending, the application checks again that the recipient still exists, is active, has a valid e-mail address, and can view the ticket under the current `TicketPolicy`. A batch is suppressed if this check fails, which is particularly important when a private ticket changes participants.
 
-The Laravel scheduler runs `helpdesk:send-pending-notification-batches` every minute. Failed synchronous SMTP deliveries remain available for a later retry; the command claims each batch before sending to prevent repeated or concurrent command runs from sending the same claimed batch twice. No queue worker is required.
+The Laravel scheduler runs `helpdesk:send-pending-notification-batches` every minute. Failed synchronous SMTP deliveries remain available for a later retry; the command claims each batch before sending to prevent repeated or concurrent command runs from sending the same claimed batch twice. No queue worker is required, and action-state delivery does not perform SMTP work inside the web request.
 
 Set `HELPDESK_MAIL_BATCH_NOTIFICATIONS=false` to preserve immediate per-event delivery. The global `HELPDESK_MAIL_NOTIFICATIONS=false` setting still disables all standard ticket notification e-mails.
 

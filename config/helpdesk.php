@@ -128,6 +128,7 @@ return [
                 'enabled' => env('HELPDESK_MAIL_BATCH_NOTIFICATIONS', true),
                 'quiet_minutes' => (int) env('HELPDESK_MAIL_BATCH_QUIET_MINUTES', 10),
                 'max_minutes' => (int) env('HELPDESK_MAIL_BATCH_MAX_MINUTES', 30),
+                'action_grace_minutes' => (int) env('HELPDESK_MAIL_BATCH_ACTION_GRACE_MINUTES', 3),
             ],
             'expected_resolution_deadline_notifications_enabled' => env('HELPDESK_EXPECTED_RESOLUTION_DEADLINE_NOTIFICATIONS', true),
             'expected_resolution_due_soon_hours' => (int) env('HELPDESK_EXPECTED_RESOLUTION_DUE_SOON_HOURS', 24),

@@ -36,6 +36,8 @@ class TicketNotificationBatchTest extends TestCase
 
     private TicketStatus $waitingUserStatus;
 
+    private TicketStatus $waitingThirdPartyStatus;
+
     private TicketStatus $resolvedStatus;
 
     private TicketStatus $closedStatus;
@@ -53,6 +55,7 @@ class TicketNotificationBatchTest extends TestCase
         $this->assignedStatus = $this->createStatus('Assigned', 'assigned');
         $this->inProgressStatus = $this->createStatus('In progress', 'in_progress');
         $this->waitingUserStatus = $this->createStatus('Waiting for user', 'waiting_user');
+        $this->waitingThirdPartyStatus = $this->createStatus('Waiting for third party', 'waiting_third_party');
         $this->resolvedStatus = $this->createStatus('Resolved', 'resolved');
         $this->closedStatus = $this->createStatus('Closed', 'closed', true);
         $this->priority = TicketPriority::query()->create([
@@ -71,6 +74,7 @@ class TicketNotificationBatchTest extends TestCase
         config()->set('helpdesk.notifications.mail.batch.enabled', true);
         config()->set('helpdesk.notifications.mail.batch.quiet_minutes', 10);
         config()->set('helpdesk.notifications.mail.batch.max_minutes', 30);
+        config()->set('helpdesk.notifications.mail.batch.action_grace_minutes', 3);
         config()->set('helpdesk.notifications.mail.notify_solvers_on_new_tickets', false);
         config()->set('helpdesk.notifications.mail.notify_admins_on_new_tickets', false);
     }
@@ -81,7 +85,7 @@ class TicketNotificationBatchTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_solver_changes_are_combined_and_waiting_user_flushes_the_batch(): void
+    public function test_waiting_user_uses_action_grace_before_scheduler_sends_the_batch(): void
     {
         Notification::fake();
         CarbonImmutable::setTestNow('2026-07-21 10:00:00');
@@ -108,12 +112,14 @@ class TicketNotificationBatchTest extends TestCase
         $ticket->update(['ticket_status_id' => $this->waitingUserStatus->id]);
         $this->notifications()->notify($ticket->refresh(), 'status_changed', $solver);
 
-        Notification::assertSentToTimes($requester, TicketNotificationBatchNotification::class, 1);
+        Notification::assertNothingSent();
         Notification::assertNotSentTo($solver, TicketNotificationBatchNotification::class);
         Notification::assertNotSentTo($requester, TicketEventNotification::class);
 
         $batch = TicketNotificationBatch::query()->with('items')->firstOrFail();
-        $this->assertSame(TicketNotificationBatch::STATUS_SENT, $batch->status);
+        $this->assertSame(TicketNotificationBatch::STATUS_PENDING, $batch->status);
+        $this->assertSame('2026-07-21 10:18:00', $batch->action_grace_until->format('Y-m-d H:i:s'));
+        $this->assertSame('2026-07-21 10:18:00', $batch->send_after->format('Y-m-d H:i:s'));
         $this->assertSame([
             'assignee_changed',
             'status_changed',
@@ -121,7 +127,15 @@ class TicketNotificationBatchTest extends TestCase
             'status_changed',
         ], $batch->items->pluck('event')->all());
 
-        $mail = (new TicketNotificationBatchNotification($batch->load(['ticket.status', 'items.actor'])))->toMail($requester);
+        CarbonImmutable::setTestNow('2026-07-21 10:17:59');
+        $this->artisan('helpdesk:send-pending-notification-batches')->assertSuccessful();
+        Notification::assertNothingSent();
+
+        CarbonImmutable::setTestNow('2026-07-21 10:18:00');
+        $this->artisan('helpdesk:send-pending-notification-batches')->assertSuccessful();
+        Notification::assertSentToTimes($requester, TicketNotificationBatchNotification::class, 1);
+
+        $mail = (new TicketNotificationBatchNotification($batch->refresh()->load(['ticket.status', 'items.actor'])))->toMail($requester);
         $this->assertStringContainsString('We are waiting for your reply', $mail->subject);
         $this->assertContains('Please verify the new configuration.', $mail->introLines);
         $this->assertContains('We are currently waiting for your reply.', $mail->introLines);
@@ -150,6 +164,147 @@ class TicketNotificationBatchTest extends TestCase
         Notification::assertSentToTimes($requester, TicketNotificationBatchNotification::class, 1);
     }
 
+    public function test_comment_after_waiting_user_stays_in_same_batch_without_extending_grace(): void
+    {
+        Notification::fake();
+        CarbonImmutable::setTestNow('2026-07-21 10:00:00');
+        [$ticket, $requester, $solver] = $this->ticketParticipants();
+        $this->notifications()->notify($ticket, 'ticket_updated', $solver);
+
+        CarbonImmutable::setTestNow('2026-07-21 10:10:00');
+        $ticket->update(['ticket_status_id' => $this->waitingUserStatus->id]);
+        $this->notifications()->notify($ticket->refresh(), 'status_changed', $solver);
+
+        CarbonImmutable::setTestNow('2026-07-21 10:11:00');
+        $this->notifications()->notify($ticket, 'public_comment', $solver, ['comment_body' => 'Please confirm the result.']);
+
+        $batch = TicketNotificationBatch::query()->with('items')->firstOrFail();
+        $this->assertSame(TicketNotificationBatch::STATUS_PENDING, $batch->status);
+        $this->assertSame('2026-07-21 10:13:00', $batch->action_grace_until->format('Y-m-d H:i:s'));
+        $this->assertSame('2026-07-21 10:13:00', $batch->send_after->format('Y-m-d H:i:s'));
+        $this->assertSame(['ticket_updated', 'status_changed', 'public_comment'], $batch->items->pluck('event')->all());
+        $this->assertDatabaseCount('ticket_notification_batches', 1);
+        Notification::assertNothingSent();
+
+        CarbonImmutable::setTestNow('2026-07-21 10:13:00');
+        $this->artisan('helpdesk:send-pending-notification-batches')->assertSuccessful();
+        Notification::assertSentToTimes($requester, TicketNotificationBatchNotification::class, 1);
+    }
+
+    public function test_resolved_and_following_comment_use_one_action_grace_batch(): void
+    {
+        Notification::fake();
+        CarbonImmutable::setTestNow('2026-07-21 10:00:00');
+        [$ticket, $requester, $solver] = $this->ticketParticipants();
+        $this->notifications()->notify($ticket, 'public_comment', $solver, ['comment_body' => 'Resolution prepared.']);
+
+        CarbonImmutable::setTestNow('2026-07-21 10:05:00');
+        $ticket->update(['ticket_status_id' => $this->resolvedStatus->id]);
+        $this->notifications()->notify($ticket->refresh(), 'resolved', $solver);
+
+        CarbonImmutable::setTestNow('2026-07-21 10:06:00');
+        $this->notifications()->notify($ticket, 'public_comment', $solver, ['comment_body' => 'Please test the fix.']);
+
+        $batch = TicketNotificationBatch::query()->with('items')->firstOrFail();
+        $this->assertSame(TicketNotificationBatch::STATUS_PENDING, $batch->status);
+        $this->assertSame('2026-07-21 10:08:00', $batch->send_after->format('Y-m-d H:i:s'));
+        $this->assertSame(['public_comment', 'resolved', 'public_comment'], $batch->items->pluck('event')->all());
+        $this->assertSame(['Resolution prepared.', 'Please test the fix.'], $batch->items->pluck('context')->pluck('comment_body')->filter()->values()->all());
+        Notification::assertNothingSent();
+
+        CarbonImmutable::setTestNow('2026-07-21 10:08:00');
+        $this->artisan('helpdesk:send-pending-notification-batches')->assertSuccessful();
+        Notification::assertSentToTimes($requester, TicketNotificationBatchNotification::class, 1);
+    }
+
+    public function test_closed_event_uses_action_grace_period(): void
+    {
+        Notification::fake();
+        CarbonImmutable::setTestNow('2026-07-21 10:00:00');
+        [$ticket, $requester, $solver] = $this->ticketParticipants();
+        $this->notifications()->notify($ticket, 'ticket_updated', $solver);
+
+        CarbonImmutable::setTestNow('2026-07-21 10:04:00');
+        $ticket->update(['ticket_status_id' => $this->closedStatus->id]);
+        $this->notifications()->notify($ticket->refresh(), 'closed', $solver);
+
+        $batch = TicketNotificationBatch::query()->with('items')->firstOrFail();
+        $this->assertSame(TicketNotificationBatch::STATUS_PENDING, $batch->status);
+        $this->assertSame('2026-07-21 10:07:00', $batch->send_after->format('Y-m-d H:i:s'));
+        $this->assertSame(['ticket_updated', 'closed'], $batch->items->pluck('event')->all());
+        Notification::assertNothingSent();
+
+        CarbonImmutable::setTestNow('2026-07-21 10:07:00');
+        $this->artisan('helpdesk:send-pending-notification-batches')->assertSuccessful();
+        Notification::assertSentToTimes($requester, TicketNotificationBatchNotification::class, 1);
+    }
+
+    public function test_intermediate_statuses_and_comments_use_standard_quiet_period(): void
+    {
+        Notification::fake();
+        CarbonImmutable::setTestNow('2026-07-21 10:00:00');
+        [$ticket, $requester, $solver] = $this->ticketParticipants();
+
+        $ticket->update(['ticket_status_id' => $this->waitingThirdPartyStatus->id]);
+        $this->notifications()->notify($ticket->refresh(), 'status_changed', $solver);
+        CarbonImmutable::setTestNow('2026-07-21 10:02:00');
+        $this->notifications()->notify($ticket, 'public_comment', $solver, ['comment_body' => 'The vendor confirmed replacement.']);
+        CarbonImmutable::setTestNow('2026-07-21 10:04:00');
+        $ticket->update(['ticket_status_id' => $this->inProgressStatus->id]);
+        $this->notifications()->notify($ticket->refresh(), 'status_changed', $solver);
+        CarbonImmutable::setTestNow('2026-07-21 10:06:00');
+        $this->notifications()->notify($ticket, 'public_comment', $solver, ['comment_body' => 'Replacement has been ordered.']);
+
+        $batch = TicketNotificationBatch::query()->with('items')->firstOrFail();
+        $this->assertNull($batch->action_grace_until);
+        $this->assertSame('2026-07-21 10:16:00', $batch->send_after->format('Y-m-d H:i:s'));
+        $this->assertSame(['status_changed', 'public_comment', 'status_changed', 'public_comment'], $batch->items->pluck('event')->all());
+        Notification::assertNothingSent();
+
+        CarbonImmutable::setTestNow('2026-07-21 10:16:00');
+        $this->artisan('helpdesk:send-pending-notification-batches')->assertSuccessful();
+        Notification::assertSentToTimes($requester, TicketNotificationBatchNotification::class, 1);
+
+        $mail = (new TicketNotificationBatchNotification($batch->refresh()->load(['ticket.status', 'items.actor'])))->toMail($requester);
+        $this->assertNotContains('We are currently waiting for your reply.', $mail->introLines);
+        $this->assertContains('Current ticket status: In progress', $mail->introLines);
+    }
+
+    public function test_maximum_deadline_takes_precedence_over_action_grace(): void
+    {
+        Notification::fake();
+        config()->set('helpdesk.notifications.mail.batch.quiet_minutes', 30);
+        config()->set('helpdesk.notifications.mail.batch.max_minutes', 30);
+        config()->set('helpdesk.notifications.mail.batch.action_grace_minutes', 15);
+        CarbonImmutable::setTestNow('2026-07-21 10:00:00');
+        [$ticket, , $solver] = $this->ticketParticipants();
+        $this->notifications()->notify($ticket, 'ticket_updated', $solver);
+
+        CarbonImmutable::setTestNow('2026-07-21 10:20:00');
+        $ticket->update(['ticket_status_id' => $this->waitingUserStatus->id]);
+        $this->notifications()->notify($ticket->refresh(), 'status_changed', $solver);
+
+        $batch = TicketNotificationBatch::query()->firstOrFail();
+        $this->assertSame('2026-07-21 10:35:00', $batch->action_grace_until->format('Y-m-d H:i:s'));
+        $this->assertSame('2026-07-21 10:30:00', $batch->send_after->format('Y-m-d H:i:s'));
+    }
+
+    public function test_action_event_never_delays_an_existing_earlier_send_after(): void
+    {
+        Notification::fake();
+        CarbonImmutable::setTestNow('2026-07-21 10:00:00');
+        [$ticket, , $solver] = $this->ticketParticipants();
+        $this->notifications()->notify($ticket, 'ticket_updated', $solver);
+
+        CarbonImmutable::setTestNow('2026-07-21 10:09:00');
+        $ticket->update(['ticket_status_id' => $this->waitingUserStatus->id]);
+        $this->notifications()->notify($ticket->refresh(), 'status_changed', $solver);
+
+        $batch = TicketNotificationBatch::query()->firstOrFail();
+        $this->assertSame('2026-07-21 10:12:00', $batch->action_grace_until->format('Y-m-d H:i:s'));
+        $this->assertSame('2026-07-21 10:10:00', $batch->send_after->format('Y-m-d H:i:s'));
+    }
+
     public function test_maximum_period_caps_further_postponement(): void
     {
         Notification::fake();
@@ -161,6 +316,31 @@ class TicketNotificationBatchTest extends TestCase
         $this->notifications()->notify($ticket, 'public_comment', $solver, ['comment_body' => 'Late event']);
 
         $this->assertSame('2026-07-21 10:30:00', TicketNotificationBatch::query()->firstOrFail()->send_after->format('Y-m-d H:i:s'));
+    }
+
+    public function test_multiple_public_comments_remain_separate_and_chronological(): void
+    {
+        Notification::fake();
+        CarbonImmutable::setTestNow('2026-07-21 10:00:00');
+        [$ticket, $requester, $solver] = $this->ticketParticipants();
+        $solver->update(['display_name' => 'Jane Solver']);
+
+        $this->notifications()->notify($ticket, 'public_comment', $solver, ['comment_body' => 'First explanation.']);
+        CarbonImmutable::setTestNow('2026-07-21 10:02:00');
+        $this->notifications()->notify($ticket, 'public_comment', $solver, ['comment_body' => 'Second explanation.']);
+
+        $batch = TicketNotificationBatch::query()->with(['ticket.status', 'items.actor'])->firstOrFail();
+        $this->assertSame(['public_comment', 'public_comment'], $batch->items->pluck('event')->all());
+        $this->assertSame(['First explanation.', 'Second explanation.'], $batch->items->pluck('context')->pluck('comment_body')->all());
+        $this->assertSame(['Jane Solver', 'Jane Solver'], $batch->items->pluck('context')->pluck('actor_name')->all());
+        $this->assertSame(['10:00:00', '10:02:00'], $batch->items->pluck('created_at')->map->format('H:i:s')->all());
+
+        $mail = (new TicketNotificationBatchNotification($batch))->toMail($requester);
+        $firstPosition = array_search('First explanation.', $mail->introLines, true);
+        $secondPosition = array_search('Second explanation.', $mail->introLines, true);
+        $this->assertIsInt($firstPosition);
+        $this->assertIsInt($secondPosition);
+        $this->assertLessThan($secondPosition, $firstPosition);
     }
 
     public function test_created_ticket_notification_remains_immediate(): void
@@ -221,23 +401,6 @@ class TicketNotificationBatchTest extends TestCase
         $this->assertNull($comment->parent_id);
         Notification::assertSentTo($solver, TicketEventNotification::class);
         $this->assertDatabaseCount('ticket_notification_batches', 0);
-    }
-
-    public function test_resolved_and_closed_events_flush_pending_batches(): void
-    {
-        Notification::fake();
-
-        foreach ([['resolved', $this->resolvedStatus], ['closed', $this->closedStatus]] as [$event, $status]) {
-            [$ticket, $requester, $solver] = $this->ticketParticipants();
-            $this->notifications()->notify($ticket, 'ticket_updated', $solver);
-            $ticket->update(['ticket_status_id' => $status->id]);
-            $this->notifications()->notify($ticket->refresh(), $event, $solver);
-
-            $batch = TicketNotificationBatch::query()->where('ticket_id', $ticket->id)->with('items')->firstOrFail();
-            $this->assertSame(TicketNotificationBatch::STATUS_SENT, $batch->status);
-            $this->assertSame(['ticket_updated', $event], $batch->items->pluck('event')->all());
-            Notification::assertSentToTimes($requester, TicketNotificationBatchNotification::class, 1);
-        }
     }
 
     public function test_problem_persists_is_immediate_for_solver_and_flushes_existing_requester_batch(): void
@@ -304,6 +467,20 @@ class TicketNotificationBatchTest extends TestCase
             'requester_id' => $replacementRequester->id,
             'visibility' => Ticket::VISIBILITY_PRIVATE,
         ]);
+
+        $result = app(TicketNotificationBatchSender::class)->send((int) TicketNotificationBatch::query()->value('id'));
+
+        $this->assertSame('suppressed', $result);
+        Notification::assertNotSentTo($requester, TicketNotificationBatchNotification::class);
+        $this->assertSame(TicketNotificationBatch::STATUS_SUPPRESSED, TicketNotificationBatch::query()->firstOrFail()->status);
+    }
+
+    public function test_batch_is_suppressed_when_recipient_email_becomes_invalid(): void
+    {
+        Notification::fake();
+        [$ticket, $requester, $solver] = $this->ticketParticipants();
+        $this->notifications()->notify($ticket, 'ticket_updated', $solver);
+        $requester->update(['email' => 'invalid-address']);
 
         $result = app(TicketNotificationBatchSender::class)->send((int) TicketNotificationBatch::query()->value('id'));
 

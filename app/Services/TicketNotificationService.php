@@ -48,7 +48,7 @@ class TicketNotificationService
             $recipient->notify(new TicketEventNotification($ticket, $event, $context));
         }
 
-        if ($this->batches->enabled() && $this->batches->shouldFlush($ticket, $event)) {
+        if ($this->batches->enabled() && $this->batches->shouldFlushImmediately($event)) {
             $this->batchSender->sendPendingForTicket($ticket);
         }
     }

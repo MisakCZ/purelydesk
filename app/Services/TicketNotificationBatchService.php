@@ -6,6 +6,7 @@ use App\Models\Ticket;
 use App\Models\TicketNotificationBatch;
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use DateTimeInterface;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 
@@ -36,10 +37,9 @@ class TicketNotificationBatchService
             && in_array($event, self::BATCHABLE_EVENTS, true);
     }
 
-    public function shouldFlush(Ticket $ticket, string $event): bool
+    public function shouldFlushImmediately(string $event): bool
     {
-        return in_array($event, ['resolved', 'closed', 'problem_persists'], true)
-            || ($event === 'status_changed' && $ticket->hasStatusSlug('waiting_user'));
+        return $event === 'problem_persists';
     }
 
     /**
@@ -95,6 +95,11 @@ class TicketNotificationBatchService
                 ]);
             }
 
+            $firstEventAt = CarbonImmutable::instance($batch->first_event_at);
+            $previousSendAfter = CarbonImmutable::instance($batch->send_after);
+            $activatesActionGrace = $this->activatesActionGrace($ticket, $event);
+            $actionGraceUntil = $this->actionGraceUntil($ticket, $event, $batch->action_grace_until, $now);
+
             $itemContext = $this->itemContext($ticket, $actor, $context);
             $activityId = $itemContext['ticket_activity_id'] ?? null;
             unset($itemContext['ticket_activity_id']);
@@ -107,10 +112,16 @@ class TicketNotificationBatchService
                 'created_at' => $now,
             ]);
 
-            $firstEventAt = CarbonImmutable::instance($batch->first_event_at);
+            $sendAfter = $this->sendAfter($firstEventAt, $now, $actionGraceUntil);
+
+            if ($activatesActionGrace && $previousSendAfter->lessThan($sendAfter)) {
+                $sendAfter = $previousSendAfter;
+            }
+
             $batch->forceFill([
                 'last_event_at' => $now,
-                'send_after' => $this->sendAfter($firstEventAt, $now),
+                'action_grace_until' => $actionGraceUntil,
+                'send_after' => $sendAfter,
                 'status' => TicketNotificationBatch::STATUS_PENDING,
                 'failed_at' => null,
                 'last_error' => null,
@@ -120,12 +131,47 @@ class TicketNotificationBatchService
         }, 3);
     }
 
-    private function sendAfter(CarbonImmutable $firstEventAt, CarbonImmutable $lastEventAt): CarbonImmutable
+    private function sendAfter(
+        CarbonImmutable $firstEventAt,
+        CarbonImmutable $lastEventAt,
+        ?CarbonImmutable $actionGraceUntil = null,
+    ): CarbonImmutable
     {
         $quietDeadline = $lastEventAt->addMinutes($this->quietMinutes());
         $maximumDeadline = $firstEventAt->addMinutes($this->maximumMinutes());
+        $sendAfter = $quietDeadline->lessThan($maximumDeadline) ? $quietDeadline : $maximumDeadline;
 
-        return $quietDeadline->lessThan($maximumDeadline) ? $quietDeadline : $maximumDeadline;
+        return $actionGraceUntil instanceof CarbonImmutable && $actionGraceUntil->lessThan($sendAfter)
+            ? $actionGraceUntil
+            : $sendAfter;
+    }
+
+    private function actionGraceUntil(
+        Ticket $ticket,
+        string $event,
+        ?DateTimeInterface $currentGraceUntil,
+        CarbonImmutable $now,
+    ): ?CarbonImmutable
+    {
+        $current = $currentGraceUntil !== null
+            ? CarbonImmutable::instance($currentGraceUntil)
+            : null;
+
+        if (! $this->activatesActionGrace($ticket, $event)) {
+            return $current;
+        }
+
+        $candidate = $now->addMinutes($this->actionGraceMinutes());
+
+        return $current instanceof CarbonImmutable && $current->lessThan($candidate)
+            ? $current
+            : $candidate;
+    }
+
+    private function activatesActionGrace(Ticket $ticket, string $event): bool
+    {
+        return in_array($event, ['resolved', 'closed'], true)
+            || ($event === 'status_changed' && $ticket->hasStatusSlug('waiting_user'));
     }
 
     private function quietMinutes(): int
@@ -138,6 +184,11 @@ class TicketNotificationBatchService
         $configured = min(240, max(5, (int) config('helpdesk.notifications.mail.batch.max_minutes', 30)));
 
         return max($this->quietMinutes(), $configured);
+    }
+
+    private function actionGraceMinutes(): int
+    {
+        return min(15, max(1, (int) config('helpdesk.notifications.mail.batch.action_grace_minutes', 3)));
     }
 
     /**

@@ -116,12 +116,7 @@ class TicketNotificationBatchNotification extends Notification
 
     private function waitingForUser(): bool
     {
-        return $this->batch->items->contains(function (TicketNotificationBatchItem $item): bool {
-            $context = $item->context ?? [];
-
-            return $item->event === 'status_changed'
-                && ($context['status_slug'] ?? null) === 'waiting_user';
-        });
+        return $this->batch->ticket->hasStatusSlug('waiting_user');
     }
 
     private function replyToAddress(object $notifiable): string
