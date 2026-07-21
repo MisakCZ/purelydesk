@@ -50,7 +50,7 @@ class TicketCommentController extends Controller
             'public',
         );
 
-        $this->ticketActivityService()->recordPublicComment($ticket, $comment, $actor);
+        $activity = $this->ticketActivityService()->recordPublicComment($ticket, $comment, $actor);
 
         $workflowAttributes = $this->workflowAutomationService()->attributesForRequesterActivity($ticket, $actor);
 
@@ -76,6 +76,7 @@ class TicketCommentController extends Controller
             'comment_body' => $comment->body,
             'is_reply' => $parentComment instanceof TicketComment,
             'additional_recipients' => $this->additionalReplyRecipients($parentComment),
+            'ticket_activity_id' => $activity->id,
         ]);
 
         return redirect()

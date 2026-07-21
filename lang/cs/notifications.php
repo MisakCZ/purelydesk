@@ -60,6 +60,32 @@ return [
             'expected_resolution_overdue' => 'Očekávaný termín vyřešení :expected_resolution_at byl překročen. Pokud termín nelze splnit, můžeš v detailu ticketu upravit očekávaný termín vyřešení. Zadavatel bude o změně termínu informován e-mailem. Přidej prosím k ticketu srozumitelný důvod posunu, ideálně jako veřejný komentář, pokud má být důvod viditelný pro zadavatele.',
         ],
     ],
+    'ticket_batch' => [
+        'subjects' => [
+            'summary' => '[Helpdesk #:number] Souhrn :count změn ticketu',
+            'waiting_user' => '[Helpdesk #:number] Čekáme na vaši odpověď – souhrn :count změn',
+        ],
+        'intro' => 'Během krátké doby proběhly u ticketu tyto změny (:count):',
+        'item' => ':time — :actor: :event',
+        'time_format' => 'j. n. Y H:i',
+        'comment_label' => 'Obsah veřejného komentáře:',
+        'truncated_suffix' => '… [zkráceno, celý komentář je v detailu ticketu]',
+        'current_status' => 'Aktuální stav ticketu: :status',
+        'waiting_user_notice' => 'Aktuálně čekáme na vaši odpověď.',
+        'events' => [
+            'assignee_changed' => 'řešitel byl změněn na :assignee',
+            'status_changed' => 'stav byl změněn na :status',
+            'ticket_updated' => 'údaje ticketu byly upraveny',
+            'public_comment' => 'byl přidán veřejný komentář',
+            'expected_resolution_changed' => 'očekávaný termín vyřešení byl změněn',
+            'resolved' => 'ticket byl označen jako vyřešený',
+            'closed' => 'ticket byl uzavřen',
+            'problem_persists' => 'zadavatel oznámil, že problém trvá',
+        ],
+        'console' => [
+            'finished' => 'Dávkové notifikace zpracovány: :sent odesláno, :suppressed potlačeno, :failed selhalo.',
+        ],
+    ],
     'expected_resolution_deadlines' => [
         'console' => [
             'finished' => 'Upozornění na termíny vyřešení zpracována: :due_soon blížících se termínů, :overdue překročených termínů.',

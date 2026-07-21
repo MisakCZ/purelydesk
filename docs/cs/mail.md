@@ -81,6 +81,35 @@ Příjemci notifikací jsou filtrováni přes aktuální pravidla viditelnosti t
 
 Tím se zabrání úniku informací o privátních ticketech přes watcher záznam.
 
+## Krátkodobé slučování notifikací
+
+PurelyDesk může spojit běžné solverovy aktivity u jednoho ticketu pro jednoho zadavatele do jediného e-mailu. Slučování zohledňuje konkrétního příjemce: stejná změna může být zařazena do souhrnu pro zadavatele a současně okamžitě odeslána nově přiřazenému řešiteli jako provozní notifikace.
+
+```env
+HELPDESK_MAIL_BATCH_NOTIFICATIONS=true
+HELPDESK_MAIL_BATCH_QUIET_MINUTES=10
+HELPDESK_MAIL_BATCH_MAX_MINUTES=30
+```
+
+Při zapnutém slučování se pro zadavatele seskupují solverovy změny řešitele, statusu, běžné úpravy ticketu, veřejné komentáře a ruční změny očekávaného termínu podle kombinace `ticket + příjemce`. Dávka se odešle po uplynutí quiet periody od poslední události, nejpozději však po maximální době počítané od první události.
+
+Přechod do `waiting_user`, `resolved` nebo `closed` čekající dávku pro zadavatele ihned uzavře a odešle včetně této poslední události. Souhrn pro `waiting_user` výslovně uvádí, že helpdesk čeká na odpověď zadavatele.
+
+Okamžitě se nadále odesílají:
+
+- potvrzení nového ticketu a notifikace solverové frontě;
+- notifikace nově přiřazenému řešiteli;
+- veřejné komentáře zadavatele směrem k aktuálnímu řešiteli, včetně experimentálních inbound odpovědí;
+- `problem_persists` směrem k řešiteli;
+- připomínky blížícího se a překročeného očekávaného termínu;
+- upozornění na odmítnuté inbound přílohy a další provozní varování.
+
+Interní poznámky nikdy nevytvářejí odchozí e-mail ani položku veřejné dávky. Existující výběr příjemců stále vylučuje aktéra, deduplikuje adresy a ověřuje viditelnost ticketu ještě před zařazením události. Bezprostředně před odesláním aplikace znovu ověří, že příjemce stále existuje, je aktivní, má platnou e-mailovou adresu a může ticket zobrazit podle aktuální `TicketPolicy`. Pokud kontrola neprojde, dávka se potlačí; to je důležité zejména po změně účastníků privátního ticketu.
+
+Laravel scheduler spouští každou minutu `helpdesk:send-pending-notification-batches`. Neúspěšné synchronní SMTP odeslání zůstane připravené k pozdějšímu opakování; command si dávku před odesláním atomicky rezervuje, aby ji opakované nebo souběžné běhy neodeslaly dvakrát. Queue worker není potřeba.
+
+Hodnota `HELPDESK_MAIL_BATCH_NOTIFICATIONS=false` zachová okamžité odesílání každé jednotlivé události. Globální `HELPDESK_MAIL_NOTIFICATIONS=false` nadále vypíná všechny standardní ticketové e-mailové notifikace.
+
 ## Experimentální příchozí odpovědi z lokálního Maildiru
 
 Příchozí odpovědi se zpracovávají z lokálního Postfix Maildiru. Aplikace nepoužívá IMAP. Tato funkcionalita je experimentální a aktuálně převádí pouze validní odpovědi na notifikace existujících ticketů na veřejné komentáře u existujících ticketů.
@@ -284,7 +313,7 @@ php artisan helpdesk:fetch-inbound-mail
 
 S vypnutým inboundem má command skončit úspěšně a nic nezpracovat. Po zapnutí inbound mailu čte maximálně `HELPDESK_INBOUND_MAILDIR_MAX_MESSAGES` zpráv za jeden běh.
 
-V produkci spouštějte Laravel scheduler každou minutu. Scheduler spouští `helpdesk:fetch-inbound-mail` každých pět minut. Cron a systemd timer jsou popsané v dokumentu [Nasazení](deployment.md).
+V produkci spouštějte Laravel scheduler každou minutu. Scheduler spouští `helpdesk:fetch-inbound-mail` každých pět minut a každou minutu kontroluje připravené dávky notifikací. Cron a systemd timer jsou popsané v dokumentu [Nasazení](deployment.md).
 
 ### Reply tokeny a autorizace
 

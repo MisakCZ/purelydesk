@@ -38,6 +38,15 @@ Artisan::command('helpdesk:notify-expected-resolution-deadlines', function (): i
     return 0;
 })->purpose('Send expected resolution due soon and overdue reminders');
 
+Artisan::command('helpdesk:send-pending-notification-batches', function (): int {
+    $counts = app(\App\Services\TicketNotificationBatchSender::class)->sendDue();
+
+    $this->info(__('notifications.ticket_batch.console.finished', $counts));
+
+    return $counts['failed'] > 0 ? 1 : 0;
+})->purpose('Send pending batched helpdesk ticket notifications');
+
 Schedule::command('helpdesk:close-resolved-tickets')->hourly();
 Schedule::command('helpdesk:fetch-inbound-mail')->everyFiveMinutes();
 Schedule::command('helpdesk:notify-expected-resolution-deadlines')->hourly();
+Schedule::command('helpdesk:send-pending-notification-batches')->everyMinute()->withoutOverlapping();

@@ -10,6 +10,8 @@ class TicketNotificationService
 {
     public function __construct(
         private readonly TicketNotificationRecipients $recipients,
+        private readonly TicketNotificationBatchService $batches,
+        private readonly TicketNotificationBatchSender $batchSender,
     ) {}
 
     /**
@@ -32,16 +34,22 @@ class TicketNotificationService
             is_array($additionalRecipients) ? $additionalRecipients : [],
         );
 
-        if ($recipients->isEmpty()) {
-            return;
-        }
-
         if ($actor instanceof User) {
             $context['actor_name'] ??= $actor->notificationName();
         }
 
-        $notification = new TicketEventNotification($ticket, $event, $context);
+        foreach ($recipients as $recipient) {
+            if ($this->batches->shouldBatch($ticket, $event, $actor, $recipient)) {
+                $this->batches->add($ticket, $recipient, $event, $actor, $context);
 
-        $recipients->each(fn (User $recipient) => $recipient->notify($notification));
+                continue;
+            }
+
+            $recipient->notify(new TicketEventNotification($ticket, $event, $context));
+        }
+
+        if ($this->batches->enabled() && $this->batches->shouldFlush($ticket, $event)) {
+            $this->batchSender->sendPendingForTicket($ticket);
+        }
     }
 }

@@ -23,7 +23,7 @@ Continuous integration runs Composer validation, Laravel tests, frontend build, 
 - Attachments for tickets and public comments.
 - Protected attachment preview and download through Laravel controllers.
 - Image attachment lightbox gallery.
-- Outgoing e-mail notifications.
+- Outgoing e-mail notifications with optional short-term batching of solver updates for requesters.
 - Inbound reply processing is under development and documented as an experimental Maildir-based feature.
 - Czech and English UI localization.
 - Conventional Laravel Blade UI without a SPA frontend.

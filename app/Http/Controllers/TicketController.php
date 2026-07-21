@@ -612,6 +612,7 @@ class TicketController extends Controller
             $actor,
         );
         $history = $this->latestHistoryForAction($ticket, $action);
+        $notificationActivityId = null;
 
         if ($history instanceof TicketHistory) {
             if ($action === 'assignee_update'
@@ -625,11 +626,19 @@ class TicketController extends Controller
                 }
             }
 
-            $this->ticketActivityService()->recordTicketUpdate($ticket, $history, $action, $actor);
+            $notificationActivityId = $this->ticketActivityService()
+                ->recordTicketUpdate($ticket, $history, $action, $actor)
+                ->id;
         }
 
         $this->ticketWatcherService()->syncAutomaticParticipants($ticket);
-        $this->sendTicketUpdateNotification($ticket, $action, $actor, $beforeNotificationSnapshot);
+        $this->sendTicketUpdateNotification(
+            $ticket,
+            $action,
+            $actor,
+            $beforeNotificationSnapshot,
+            $notificationActivityId,
+        );
 
         if ($request instanceof Request && $request->expectsJson()) {
             $responseLocale = app(LocaleManager::class)->resolveForRequest($request);
@@ -735,7 +744,13 @@ class TicketController extends Controller
     /**
      * @param  array<string, mixed>  $before
      */
-    private function sendTicketUpdateNotification(Ticket $ticket, string $action, ?User $actor, array $before): void
+    private function sendTicketUpdateNotification(
+        Ticket $ticket,
+        string $action,
+        ?User $actor,
+        array $before,
+        ?int $ticketActivityId = null,
+    ): void
     {
         $ticket->load([
             'status:id,name,slug',
@@ -780,6 +795,7 @@ class TicketController extends Controller
             'assignee' => $ticket->assignee?->displayName() ?? __('tickets.common.unassigned'),
             'close_reason' => $this->closeReasonForNotification($ticket, $action, $actor),
             'old_expected_resolution_at' => $before['expected_resolution_at'] ?? null,
+            'ticket_activity_id' => $ticketActivityId,
         ]);
     }
 

@@ -23,7 +23,7 @@ Continuous integration ověřuje Composer metadata, Laravel testy, frontend buil
 - Přílohy k ticketům a veřejným komentářům.
 - Chráněný náhled a stahování příloh přes Laravel controllery.
 - Lightbox galerie pro obrázkové přílohy.
-- Odchozí e-mailové notifikace.
+- Odchozí e-mailové notifikace s volitelným krátkodobým slučováním solverových změn pro zadavatele.
 - Příchozí e-mailové odpovědi přes lokální Maildir polling jsou experimentální funkcionalita ve vývoji.
 - Česká a anglická lokalizace UI.
 - Konvenční Laravel Blade UI bez SPA frontendu.

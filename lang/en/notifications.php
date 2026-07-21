@@ -60,6 +60,32 @@ return [
             'expected_resolution_overdue' => 'The expected resolution date :expected_resolution_at has passed. If the deadline cannot be met, you can update the expected resolution date from the ticket detail/edit form. The requester will be notified by e-mail about the changed deadline. Please add a clear reason for the postponement, preferably as a public comment if the requester should see the reason.',
         ],
     ],
+    'ticket_batch' => [
+        'subjects' => [
+            'summary' => '[Helpdesk #:number] Summary of :count ticket changes',
+            'waiting_user' => '[Helpdesk #:number] We are waiting for your reply – summary of :count changes',
+        ],
+        'intro' => 'The following changes were made to the ticket within a short period (:count):',
+        'item' => ':time — :actor: :event',
+        'time_format' => 'M j, Y H:i',
+        'comment_label' => 'Public comment content:',
+        'truncated_suffix' => '… [shortened; the full comment is available in the ticket detail]',
+        'current_status' => 'Current ticket status: :status',
+        'waiting_user_notice' => 'We are currently waiting for your reply.',
+        'events' => [
+            'assignee_changed' => 'the assignee was changed to :assignee',
+            'status_changed' => 'the status was changed to :status',
+            'ticket_updated' => 'the ticket details were updated',
+            'public_comment' => 'a public comment was added',
+            'expected_resolution_changed' => 'the expected resolution date was changed',
+            'resolved' => 'the ticket was marked as resolved',
+            'closed' => 'the ticket was closed',
+            'problem_persists' => 'the requester reported that the problem persists',
+        ],
+        'console' => [
+            'finished' => 'Batched notifications processed: :sent sent, :suppressed suppressed, :failed failed.',
+        ],
+    ],
     'expected_resolution_deadlines' => [
         'console' => [
             'finished' => 'Expected resolution deadline reminders processed: :due_soon due soon, :overdue overdue.',

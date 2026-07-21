@@ -81,6 +81,35 @@ Notification recipients are filtered through current ticket visibility rules:
 
 This prevents a watcher record from leaking information about private tickets.
 
+## Short-Term Notification Batching
+
+PurelyDesk can combine routine solver activity for one ticket and one requester into a single e-mail. Batching is recipient-aware: a change may be queued for the requester while an operational notification about the same event is sent immediately to a newly assigned solver.
+
+```env
+HELPDESK_MAIL_BATCH_NOTIFICATIONS=true
+HELPDESK_MAIL_BATCH_QUIET_MINUTES=10
+HELPDESK_MAIL_BATCH_MAX_MINUTES=30
+```
+
+With batching enabled, solver-originated assignee changes, status changes, ordinary ticket edits, public comments, and manual expected-resolution changes for the requester are collected by `ticket + recipient`. The batch is sent after the configured quiet period following the last event, but never later than the maximum period measured from the first event.
+
+A transition to `waiting_user`, `resolved`, or `closed` immediately closes and sends the pending requester batch, including that final event. The `waiting_user` summary clearly states that the helpdesk is waiting for the requester's reply.
+
+The following remain immediate:
+
+- new-ticket confirmations and solver-queue notifications;
+- assignment notifications to a newly assigned solver;
+- requester public comments, including experimental inbound replies, sent to the current solver;
+- `problem_persists` notifications to the solver;
+- expected-resolution due-soon and overdue reminders;
+- inbound attachment rejection notices and other operational warnings.
+
+Internal notes never create outbound mail or public batch items. Existing recipient resolution still excludes the actor, deduplicates addresses, and applies ticket visibility rules before an event is queued. Immediately before sending, the application checks again that the recipient still exists, is active, has a valid e-mail address, and can view the ticket under the current `TicketPolicy`. A batch is suppressed if this check fails, which is particularly important when a private ticket changes participants.
+
+The Laravel scheduler runs `helpdesk:send-pending-notification-batches` every minute. Failed synchronous SMTP deliveries remain available for a later retry; the command claims each batch before sending to prevent repeated or concurrent command runs from sending the same claimed batch twice. No queue worker is required.
+
+Set `HELPDESK_MAIL_BATCH_NOTIFICATIONS=false` to preserve immediate per-event delivery. The global `HELPDESK_MAIL_NOTIFICATIONS=false` setting still disables all standard ticket notification e-mails.
+
 ## Experimental Inbound Replies from Local Maildir
 
 Inbound replies are processed from a local Postfix Maildir. The application does not use IMAP. This feature is experimental and currently only converts valid replies to existing ticket notifications into public comments on existing tickets.
@@ -284,7 +313,7 @@ php artisan helpdesk:fetch-inbound-mail
 
 With inbound disabled, the command should exit successfully and process nothing. After enabling inbound mail, it reads up to `HELPDESK_INBOUND_MAILDIR_MAX_MESSAGES` messages per run.
 
-In production, run Laravel's scheduler every minute. The scheduler runs `helpdesk:fetch-inbound-mail` every five minutes. See [Deployment](deployment.md) for cron and systemd timer examples.
+In production, run Laravel's scheduler every minute. The scheduler runs `helpdesk:fetch-inbound-mail` every five minutes and checks pending notification batches every minute. See [Deployment](deployment.md) for cron and systemd timer examples.
 
 ### Reply Tokens and Authorization
 

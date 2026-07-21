@@ -12,6 +12,8 @@ class InboundEmailReplyService
 {
     public function __construct(
         private readonly InboundAttachmentRejectedNotifier $attachmentRejectedNotifier,
+        private readonly TicketActivityService $ticketActivityService,
+        private readonly TicketNotificationService $ticketNotificationService,
     ) {}
 
     /**
@@ -54,6 +56,13 @@ class InboundEmailReplyService
             'sender_user_id' => $sender->id,
             'sender_email' => $senderEmail,
         ])->save();
+
+        $activity = $this->ticketActivityService->recordPublicComment($ticket, $comment, $sender);
+        $this->ticketNotificationService->notify($ticket, 'public_comment', $sender, [
+            'comment_body' => $comment->body,
+            'is_reply' => false,
+            'ticket_activity_id' => $activity->id,
+        ]);
 
         if ($hasRejectedAttachments) {
             $this->sendAttachmentRejectedNotice($incomingEmail, $ticket, $sender, $senderEmail);

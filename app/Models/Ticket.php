@@ -396,4 +396,9 @@ class Ticket extends Model
     {
         return $this->hasMany(TicketReadState::class);
     }
+
+    public function notificationBatches(): HasMany
+    {
+        return $this->hasMany(TicketNotificationBatch::class);
+    }
 }
