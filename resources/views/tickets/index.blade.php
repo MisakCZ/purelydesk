@@ -2314,7 +2314,9 @@
                                 id="search_input"
                                 type="search"
                                 value="{{ $filters['search'] }}"
-                                placeholder="{{ __('tickets.index.filters.search_placeholder') }}"
+                                placeholder="{{ $canSearchInternalNotes
+                                    ? __('tickets.index.filters.search_placeholder_internal')
+                                    : __('tickets.index.filters.search_placeholder_public') }}"
                                 data-filter-search-input
                             >
                         </div>

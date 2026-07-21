@@ -34,6 +34,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class TicketController extends Controller
@@ -64,6 +65,8 @@ class TicketController extends Controller
         $canViewArchivedTickets = $actor instanceof User
             && $actor->isAdmin()
             && Ticket::supportsArchiving();
+        $canSearchInternalNotes = $actor instanceof User
+            && ($actor->isAdmin() || $actor->isSolver());
 
         $tickets = $this->applyTicketSorting(
             $this->applyTicketFilters($this->ticketIndexQuery($actor, $filters['archive']), $filters, $actor),
@@ -123,6 +126,7 @@ class TicketController extends Controller
             'hasActiveFilters' => collect($this->filterOnlyTicketState($filters))->contains(fn ($value) => $value !== ''),
             'canCreateTickets' => $this->ticketPolicy()->create($actor),
             'canViewArchivedTickets' => $canViewArchivedTickets,
+            'canSearchInternalNotes' => $canSearchInternalNotes,
             'unreadSummaries' => $unreadSummaries,
         ]);
     }
@@ -925,14 +929,8 @@ class TicketController extends Controller
     private function applyTicketFilters(Builder $query, array $filters, ?User $watcherUser = null): Builder
     {
         return $query
-            ->when($filters['search'] !== '', function (Builder $query) use ($filters): void {
-                $search = '%'.addcslashes($filters['search'], '\\%_').'%';
-
-                $query->where(function (Builder $query) use ($search): void {
-                    $query
-                        ->where('subject', 'like', $search)
-                        ->orWhere('description', 'like', $search);
-                });
+            ->when($filters['search'] !== '', function (Builder $query) use ($filters, $watcherUser): void {
+                $this->applyTicketSearch($query, $filters['search'], $watcherUser);
             })
             ->when($filters['status'] !== '', function (Builder $query) use ($filters): void {
                 if (ctype_digit($filters['status'])) {
@@ -1032,6 +1030,51 @@ class TicketController extends Controller
 
                 $query->whereHas('watchers', fn (Builder $query) => $query->whereKey($watcherUser->id));
             });
+    }
+
+    private function applyTicketSearch(Builder $query, string $search, ?User $actor): void
+    {
+        $likeSearch = '%'.addcslashes($search, '\\%_').'%';
+        $canSearchInternalNotes = $actor instanceof User
+            && ($actor->isAdmin() || $actor->isSolver());
+        $matchesInternalNoteAlias = $canSearchInternalNotes
+            && $this->matchesInternalNoteSearchAlias($search);
+
+        $query->where(function (Builder $query) use (
+            $likeSearch,
+            $canSearchInternalNotes,
+            $matchesInternalNoteAlias,
+        ): void {
+            $query
+                ->where('tickets.subject', 'like', $likeSearch)
+                ->orWhere('tickets.description', 'like', $likeSearch)
+                ->orWhereHas('publicComments', fn (Builder $query) => $query->where('body', 'like', $likeSearch));
+
+            if (! $canSearchInternalNotes) {
+                return;
+            }
+
+            $query->orWhereHas('internalComments', fn (Builder $query) => $query->where('body', 'like', $likeSearch));
+
+            if ($matchesInternalNoteAlias) {
+                $query->orWhereHas('internalComments');
+            }
+        });
+    }
+
+    private function matchesInternalNoteSearchAlias(string $search): bool
+    {
+        $aliases = __('tickets.index.filters.internal_note_search_aliases');
+
+        if (! is_array($aliases)) {
+            return false;
+        }
+
+        $normalizedSearch = Str::lower(Str::squish($search));
+
+        return collect($aliases)->contains(
+            fn ($alias) => is_string($alias) && Str::lower(Str::squish($alias)) === $normalizedSearch,
+        );
     }
 
     private function applyTicketRelationFilter(Builder $query, string $relation, ?User $actor): void
