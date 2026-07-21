@@ -32,6 +32,10 @@ class TicketEventNotification extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
+        $this->ticket->loadMissing([
+            'requester:id,name,display_name,username,email',
+        ]);
+
         $locale = $notifiable->preferred_locale ?: app()->getLocale();
         $number = $this->ticket->ticket_number ?? __('tickets.common.no_number', [], $locale);
         $eventLabel = __("notifications.ticket.events.{$this->event}", [], $locale);
@@ -44,6 +48,7 @@ class TicketEventNotification extends Notification
             ->greeting(__('notifications.ticket.greeting', [], $locale))
             ->line($this->replyInstruction($locale))
             ->line(__('notifications.ticket.lines.originator', ['name' => $this->originatorName($locale)], $locale))
+            ->line(__('notifications.ticket.lines.requester', ['name' => $this->requesterName($locale)], $locale))
             ->line(__('notifications.ticket.lines.event', ['event' => $eventLabel], $locale))
             ->line(__('notifications.ticket.lines.number', ['number' => $number], $locale))
             ->line(__('notifications.ticket.lines.subject', ['subject' => $this->ticket->subject], $locale))
@@ -108,6 +113,19 @@ class TicketEventNotification extends Notification
         }
 
         return __('notifications.ticket.system_actor', [], $locale);
+    }
+
+    private function requesterName(string $locale): string
+    {
+        if (! $this->ticket->requester instanceof User) {
+            return __('tickets.common.not_available', [], $locale);
+        }
+
+        $name = trim($this->ticket->requester->notificationName());
+
+        return $name !== ''
+            ? $name
+            : __('tickets.common.not_available', [], $locale);
     }
 
     private function subjectEvent(string $locale): string

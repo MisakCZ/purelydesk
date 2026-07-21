@@ -381,7 +381,18 @@ class TicketNotificationBatchTest extends TestCase
 
         $this->notifications()->notify($ticket, 'public_comment', $requester, ['comment_body' => 'Requester response']);
 
-        Notification::assertSentTo($solver, TicketEventNotification::class);
+        Notification::assertSentTo(
+            $solver,
+            TicketEventNotification::class,
+            function (TicketEventNotification $notification) use ($requester, $solver): bool {
+                $locale = $solver->preferred_locale ?: app()->getLocale();
+                $mailMessage = $notification->toMail($solver);
+
+                return $notification->event === 'public_comment'
+                    && in_array(__('notifications.ticket.lines.originator', ['name' => $requester->notificationName()], $locale), $mailMessage->introLines, true)
+                    && in_array(__('notifications.ticket.lines.requester', ['name' => $requester->notificationName()], $locale), $mailMessage->introLines, true);
+            },
+        );
         $this->assertDatabaseCount('ticket_notification_batches', 0);
     }
 

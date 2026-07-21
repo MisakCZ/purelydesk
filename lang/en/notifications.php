@@ -36,6 +36,7 @@ return [
         ],
         'lines' => [
             'originator' => 'From: :name',
+            'requester' => 'Requester: :name',
             'event' => 'Event: :event',
             'number' => 'Ticket number: :number',
             'subject' => 'Subject: :subject',

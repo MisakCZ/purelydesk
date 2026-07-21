@@ -36,6 +36,7 @@ return [
         ],
         'lines' => [
             'originator' => 'Od: :name',
+            'requester' => 'Zadavatel: :name',
             'event' => 'Událost: :event',
             'number' => 'Číslo ticketu: :number',
             'subject' => 'Předmět: :subject',

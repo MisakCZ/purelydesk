@@ -71,6 +71,8 @@ Ticket notification recipients depend on the event type:
 
 All recipient lists are deduplicated and filtered through the current ticket visibility policy before mail is sent.
 
+A standard ticket notification distinguishes the author of the specific event (`From`) from the ticket's current requester (`Requester`). It also includes the ticket number and subject together with the relevant event description or content.
+
 ## Permission Filtering
 
 Notification recipients are filtered through current ticket visibility rules:

@@ -71,6 +71,8 @@ Příjemci ticketových notifikací závisí na typu události:
 
 Všechny seznamy příjemců se před odesláním deduplikují a filtrují přes aktuální policy viditelnosti ticketu.
 
+Standardní ticketová notifikace v těle rozlišuje autora konkrétní události (`Od`) a aktuálního zadavatele ticketu (`Zadavatel`). Dále obsahuje číslo a předmět ticketu a relevantní popis nebo obsah události.
+
 ## Filtrování podle oprávnění
 
 Příjemci notifikací jsou filtrováni přes aktuální pravidla viditelnosti ticketů:

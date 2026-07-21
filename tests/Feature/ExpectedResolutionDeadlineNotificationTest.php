@@ -72,8 +72,8 @@ class ExpectedResolutionDeadlineNotificationTest extends TestCase
     {
         Notification::fake();
         CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-05-13 10:00:00'));
-        $requester = $this->createUserWithRole($this->userRole);
-        $assignee = $this->createUserWithRole($this->solverRole);
+        $requester = $this->createUserWithRole($this->userRole, ['display_name' => 'Jan Novák']);
+        $assignee = $this->createUserWithRole($this->solverRole, ['preferred_locale' => 'en']);
         $admin = $this->createUserWithRole($this->adminRole);
         $watcher = $this->createUserWithRole($this->userRole);
         $ticket = $this->createTicket([
@@ -86,7 +86,17 @@ class ExpectedResolutionDeadlineNotificationTest extends TestCase
         $counts = $this->service()->notifyDueDeadlines();
 
         $this->assertSame(['due_soon' => 1, 'overdue' => 0], $counts);
-        Notification::assertSentTo($assignee, TicketEventNotification::class, fn (TicketEventNotification $notification): bool => $notification->event === 'expected_resolution_due_soon');
+        Notification::assertSentTo(
+            $assignee,
+            TicketEventNotification::class,
+            function (TicketEventNotification $notification) use ($assignee): bool {
+                $mailMessage = $notification->toMail($assignee);
+
+                return $notification->event === 'expected_resolution_due_soon'
+                    && in_array(__('notifications.ticket.lines.originator', ['name' => 'Helpdesk'], 'en'), $mailMessage->introLines, true)
+                    && in_array(__('notifications.ticket.lines.requester', ['name' => 'Jan Novák'], 'en'), $mailMessage->introLines, true);
+            },
+        );
         Notification::assertNotSentTo($requester, TicketEventNotification::class);
         Notification::assertNotSentTo($admin, TicketEventNotification::class);
         Notification::assertNotSentTo($watcher, TicketEventNotification::class);
@@ -104,16 +114,27 @@ class ExpectedResolutionDeadlineNotificationTest extends TestCase
     {
         Notification::fake();
         CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-05-13 10:00:00'));
-        $assignee = $this->createUserWithRole($this->solverRole);
+        $assignee = $this->createUserWithRole($this->solverRole, ['preferred_locale' => 'en']);
         $ticket = $this->createTicket([
             'assignee_id' => $assignee->id,
             'expected_resolution_at' => CarbonImmutable::now()->subHour(),
         ]);
+        $requesterName = $ticket->requester()->firstOrFail()->notificationName();
 
         $counts = $this->service()->notifyDueDeadlines();
 
         $this->assertSame(['due_soon' => 0, 'overdue' => 1], $counts);
-        Notification::assertSentTo($assignee, TicketEventNotification::class, fn (TicketEventNotification $notification): bool => $notification->event === 'expected_resolution_overdue');
+        Notification::assertSentTo(
+            $assignee,
+            TicketEventNotification::class,
+            function (TicketEventNotification $notification) use ($assignee, $requesterName): bool {
+                $mailMessage = $notification->toMail($assignee);
+
+                return $notification->event === 'expected_resolution_overdue'
+                    && in_array(__('notifications.ticket.lines.originator', ['name' => 'Helpdesk'], 'en'), $mailMessage->introLines, true)
+                    && in_array(__('notifications.ticket.lines.requester', ['name' => $requesterName], 'en'), $mailMessage->introLines, true);
+            },
+        );
 
         Notification::fake();
         CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-05-14 09:00:00'));

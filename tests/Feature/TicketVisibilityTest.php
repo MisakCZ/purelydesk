@@ -835,7 +835,7 @@ class TicketVisibilityTest extends TestCase
             'display_name' => 'Jan Novák',
             'preferred_locale' => 'en',
         ]);
-        $solver = $this->createUserWithRole($this->solverRole);
+        $solver = $this->createUserWithRole($this->solverRole, ['preferred_locale' => 'en']);
         $admin = $this->createUserWithRole($this->adminRole);
 
         $this->actingAs($requester);
@@ -861,7 +861,17 @@ class TicketVisibilityTest extends TestCase
                     && in_array('New ticket notification body.', $mailMessage->introLines, true);
             },
         );
-        Notification::assertSentTo($solver, TicketEventNotification::class);
+        Notification::assertSentTo(
+            $solver,
+            TicketEventNotification::class,
+            function (TicketEventNotification $notification) use ($solver): bool {
+                $mailMessage = $notification->toMail($solver);
+
+                return $notification->event === 'created'
+                    && in_array(__('notifications.ticket.lines.originator', ['name' => 'Jan Novák'], 'en'), $mailMessage->introLines, true)
+                    && in_array(__('notifications.ticket.lines.requester', ['name' => 'Jan Novák'], 'en'), $mailMessage->introLines, true);
+            },
+        );
         Notification::assertNotSentTo($admin, TicketEventNotification::class);
     }
 
@@ -1061,6 +1071,7 @@ class TicketVisibilityTest extends TestCase
                         && (int) $notification->ticket->id === (int) $ticket->id
                         && $mailMessage->subject === '[Helpdesk #'.$ticket->ticket_number.'] Petr Svoboda added a comment.'
                         && in_array(__('notifications.ticket.lines.originator', ['name' => 'Petr Svoboda'], 'en'), $mailMessage->introLines, true)
+                        && in_array(__('notifications.ticket.lines.requester', ['name' => $ticket->requester->notificationName()], 'en'), $mailMessage->introLines, true)
                         && in_array('Ticket description:', $mailMessage->introLines, true)
                         && in_array($ticket->description, $mailMessage->introLines, true)
                         && in_array('Comment content:', $mailMessage->introLines, true)
@@ -1598,9 +1609,12 @@ class TicketVisibilityTest extends TestCase
     {
         config()->set('helpdesk.notifications.mail.enabled', true);
         Notification::fake();
-        $requester = $this->createUserWithRole($this->userRole);
-        $solver = $this->createUserWithRole($this->solverRole);
-        $newAssignee = $this->createUserWithRole($this->solverRole);
+        $requester = $this->createUserWithRole($this->userRole, [
+            'display_name' => 'Jan Novák',
+            'preferred_locale' => 'en',
+        ]);
+        $solver = $this->createUserWithRole($this->solverRole, ['display_name' => 'Petr Solver']);
+        $newAssignee = $this->createUserWithRole($this->solverRole, ['preferred_locale' => 'en']);
         $watcher = $this->createUserWithRole($this->userRole);
         $assignedStatus = TicketStatus::query()->create([
             'name' => 'Assigned',
@@ -1627,8 +1641,14 @@ class TicketVisibilityTest extends TestCase
         Notification::assertSentTo(
             $newAssignee,
             TicketEventNotification::class,
-            fn (TicketEventNotification $notification) => $notification->event === 'assignee_changed'
-                && (int) $notification->ticket->id === (int) $ticket->id,
+            function (TicketEventNotification $notification) use ($newAssignee, $ticket): bool {
+                $mailMessage = $notification->toMail($newAssignee);
+
+                return $notification->event === 'assignee_changed'
+                    && (int) $notification->ticket->id === (int) $ticket->id
+                    && in_array(__('notifications.ticket.lines.originator', ['name' => 'Petr Solver'], 'en'), $mailMessage->introLines, true)
+                    && in_array(__('notifications.ticket.lines.requester', ['name' => 'Jan Novák'], 'en'), $mailMessage->introLines, true);
+            },
         );
         Notification::assertSentTo(
             $requester,
@@ -1687,6 +1707,51 @@ class TicketVisibilityTest extends TestCase
         ])->assertRedirect(route('tickets.index'));
 
         Notification::assertNothingSent();
+    }
+
+    public function test_ticket_notification_localizes_distinct_originator_and_requester_lines(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole, [
+            'display_name' => 'Jan Novák',
+        ]);
+        $recipient = $this->createUserWithRole($this->solverRole, [
+            'preferred_locale' => 'cs',
+        ]);
+        $ticket = $this->createTicket(['requester' => $requester]);
+        $ticket->unsetRelation('requester');
+
+        $mail = (new TicketEventNotification($ticket, 'status_changed', [
+            'actor_name' => 'Petr Řešitel',
+        ]))->toMail($recipient);
+
+        $this->assertContains('Od: Petr Řešitel', $mail->introLines);
+        $this->assertContains('Zadavatel: Jan Novák', $mail->introLines);
+        $this->assertNotSame(
+            array_search('Od: Petr Řešitel', $mail->introLines, true),
+            array_search('Zadavatel: Jan Novák', $mail->introLines, true),
+        );
+    }
+
+    public function test_ticket_notification_uses_safe_fallback_for_unavailable_requester_name(): void
+    {
+        $requester = $this->createUserWithRole($this->userRole);
+        $recipient = $this->createUserWithRole($this->solverRole, [
+            'preferred_locale' => 'en',
+        ]);
+        $ticket = $this->createTicket(['requester' => $requester]);
+        $ticket->setRelation('requester', new User());
+
+        $mail = (new TicketEventNotification($ticket, 'ticket_updated', [
+            'actor_name' => 'Peter Solver',
+        ]))->toMail($recipient);
+
+        $this->assertContains('From: Peter Solver', $mail->introLines);
+        $this->assertContains(
+            __('notifications.ticket.lines.requester', [
+                'name' => __('tickets.common.not_available', [], 'en'),
+            ], 'en'),
+            $mail->introLines,
+        );
     }
 
     public function test_ticket_notification_hides_reply_marker_and_reply_to_when_inbound_mail_is_disabled(): void
@@ -2815,6 +2880,11 @@ class TicketVisibilityTest extends TestCase
                     $recipient,
                     TicketEventNotification::class,
                     fn (TicketEventNotification $notification) => $notification->event === 'closed'
+                        && in_array(
+                            __('notifications.ticket.lines.requester', ['name' => $requester->notificationName()], 'en'),
+                            $notification->toMail($recipient)->introLines,
+                            true,
+                        )
                         && str_contains(
                             $this->notificationHtml($notification, $recipient),
                             __('notifications.ticket.descriptions.closed_automatically', ['days' => 5], 'en'),
